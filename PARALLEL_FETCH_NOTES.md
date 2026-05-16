@@ -40,7 +40,7 @@ Run the workflow manually with:
 ```text
 force_refresh: true
 data_branch: data-test
-download_workers: 4
+download_workers: 6
 ```
 
 Then compare:
@@ -59,3 +59,16 @@ The frontend can test against the sandbox with:
 ```text
 VITE_XCBENZ_DATA_BASE_URL=https://raw.githubusercontent.com/<owner>/<sandbox-repo>/data-test
 ```
+
+## Notes From First Run
+
+The first manual run proved the split workflow shape:
+
+- CH1 fetch completed in about 16 minutes.
+- CH2 fetch completed in about 23 minutes.
+- Web export generation completed.
+- The final push failed because `static_data/vertical_constants_icon-ch1-eps.grib2`
+  is larger than GitHub's normal 100 MB blob limit.
+
+`static_data/` is runner-side input data, not browser-facing output, so it is
+not published to `data-test`.
