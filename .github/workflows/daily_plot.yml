@@ -34,7 +34,7 @@ on:
       download_workers:
         description: "Bounded concurrent STAC/download workers per horizon"
         type: string
-        default: "4"
+        default: "6"
   schedule:
     - cron: "17,47 * * * *"
 
@@ -45,7 +45,8 @@ concurrency:
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
   DATA_BRANCH: ${{ github.event.inputs.data_branch || 'data-test' }}
-  DOWNLOAD_WORKERS: ${{ github.event.inputs.download_workers || '4' }}
+  DOWNLOAD_WORKERS: ${{ github.event.inputs.download_workers || '6' }}
+  WEB_EXPORT_DATA_ROOT: https://raw.githubusercontent.com/${{ github.repository }}/${{ github.event.inputs.data_branch || 'data-test' }}
 
 jobs:
   preflight:
@@ -238,6 +239,11 @@ jobs:
         env:
           WIND_WEB_LEVELS: 10m_AGL,800m_AGL,1500m_AMSL,2000m_AMSL,3000m_AMSL,4000m_AMSL
         run: uv run python generate_web_exports.py
+
+      - name: Validate publish outputs
+        env:
+          EXPECTED_WEB_EXPORT_DATA_ROOT: ${{ env.WEB_EXPORT_DATA_ROOT }}
+        run: python scripts/validate_outputs.py
 
       - name: Measure output
         run: |

@@ -72,3 +72,18 @@ The first manual run proved the split workflow shape:
 
 `static_data/` is runner-side input data, not browser-facing output, so it is
 not published to `data-test`.
+
+## Notes From Successful Run
+
+The second manual run used `download_workers: 6` and completed successfully in
+about 16 minutes end to end. The worker default is now 6 for scheduled and
+manual runs.
+
+The sandbox sets `web_exports/manifest.json` `source.data_root` to:
+
+```text
+https://raw.githubusercontent.com/sebosimo/XCBenz_Data_Parallel/data-test
+```
+
+This keeps frontend smoke tests pointed at the sandbox instead of the production
+data branch.

@@ -27,6 +27,7 @@ SCHEMA_VERSION = 1
 WEB_DIR = Path("web_exports")
 LOCATIONS_FILE = Path("locations.json")
 SOURCE_MANIFEST_FILE = Path("manifest.json")
+DEFAULT_DATA_ROOT = "https://raw.githubusercontent.com/sebosimo/XCBenz_Data/data"
 
 MODELS = (
     {
@@ -881,7 +882,7 @@ def main() -> None:
         "source": {
             "netcdf_manifest": "manifest.json",
             "netcdf_manifest_generated_at": source_manifest.get("generated_at"),
-            "data_root": "https://raw.githubusercontent.com/sebosimo/XCBenz_Data/data",
+            "data_root": os.getenv("WEB_EXPORT_DATA_ROOT", DEFAULT_DATA_ROOT),
         },
         "urls": {
             "locations": "web_exports/locations.json",
