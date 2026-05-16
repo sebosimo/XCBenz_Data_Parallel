@@ -1,0 +1,287 @@
+name: Parallel Sounding Workflow
+
+on:
+  workflow_dispatch:
+    inputs:
+      force_refresh:
+        description: "Download fresh data even if the latest runs are already published?"
+        type: boolean
+        default: true
+      enable_wind_maps:
+        description: "Generate packed wind-map files?"
+        type: boolean
+        default: true
+      enable_wind_maps_ch1:
+        description: "Generate CH1 wind maps?"
+        type: boolean
+        default: true
+      enable_wind_maps_ch2:
+        description: "Generate CH2 wind maps?"
+        type: boolean
+        default: true
+      enable_sunshine_maps:
+        description: "Generate browser-ready sunshine-map files?"
+        type: boolean
+        default: true
+      wind_map_max_seconds:
+        description: "Wind-map active-processing budget in seconds (0 disables)"
+        type: string
+        default: "0"
+      data_branch:
+        description: "Branch used for sandbox data publishing"
+        type: string
+        default: "data-test"
+      download_workers:
+        description: "Bounded concurrent STAC/download workers per horizon"
+        type: string
+        default: "4"
+  schedule:
+    - cron: "17,47 * * * *"
+
+concurrency:
+  group: parallel-weather-data-update
+  cancel-in-progress: false
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+  DATA_BRANCH: ${{ github.event.inputs.data_branch || 'data-test' }}
+  DOWNLOAD_WORKERS: ${{ github.event.inputs.download_workers || '4' }}
+
+jobs:
+  preflight:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    outputs:
+      should_run: ${{ steps.preflight.outputs.should_run }}
+      reason: ${{ steps.preflight.outputs.reason }}
+      latest_ch1: ${{ steps.preflight.outputs.latest_ch1 }}
+      latest_ch2: ${{ steps.preflight.outputs.latest_ch2 }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 1
+
+      - name: Check latest available runs
+        id: preflight
+        env:
+          FORCE_REFRESH: ${{ github.event.inputs.force_refresh || 'false' }}
+        run: python scripts/preflight_runs.py
+
+  fetch-ch1:
+    needs: preflight
+    if: needs.preflight.outputs.should_run == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 1
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+        with:
+          enable-cache: true
+
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libeccodes-dev
+
+      - name: Install Python dependencies
+        run: |
+          uv venv
+          uv pip install -r requirements.txt
+
+      - name: Restore CH1 cache from sandbox data branch
+        run: |
+          git fetch --depth=1 origin "$DATA_BRANCH" 2>/dev/null || echo "$DATA_BRANCH branch not found yet - starting fresh"
+          git checkout FETCH_HEAD -- static_data/ cache_data/ cache_data_packed/ cache_wind_packed/ch1/ cache_sunshine_maps/ch1/ 2>/dev/null || true
+          git reset HEAD -- static_data/ cache_data/ cache_data_packed/ cache_wind_packed/ cache_sunshine_maps/ manifest.json 2>/dev/null || true
+          echo "CH1 .nc files: $(find cache_data -name '*.nc' 2>/dev/null | wc -l)"
+          echo "Packed CH1 .nc files: $(find cache_data_packed -name '*.nc' 2>/dev/null | wc -l)"
+          echo "Packed CH1 wind-map .nc files: $(find cache_wind_packed/ch1 -name '*.nc' 2>/dev/null | wc -l)"
+
+      - name: Fetch CH1 weather data
+        env:
+          FORCE_REFRESH: ${{ github.event.inputs.force_refresh || 'false' }}
+          ENABLE_WIND_MAPS: ${{ github.event.inputs.enable_wind_maps || 'true' }}
+          ENABLE_WIND_MAPS_CH1: ${{ github.event.inputs.enable_wind_maps_ch1 || 'true' }}
+          WIND_MAP_MAX_SECONDS: ${{ github.event.inputs.wind_map_max_seconds || '0' }}
+          ENABLE_SUNSHINE_MAPS: ${{ github.event.inputs.enable_sunshine_maps || 'true' }}
+        run: uv run python fetch_data.py
+
+      - name: Upload CH1 outputs
+        uses: actions/upload-artifact@v4
+        with:
+          name: ch1-output
+          if-no-files-found: ignore
+          retention-days: 1
+          path: |
+            static_data/
+            cache_data/
+            cache_data_packed/
+            cache_wind_packed/ch1/
+            cache_sunshine_maps/ch1/
+
+  fetch-ch2:
+    needs: preflight
+    if: needs.preflight.outputs.should_run == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 1
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+        with:
+          enable-cache: true
+
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libeccodes-dev
+
+      - name: Install Python dependencies
+        run: |
+          uv venv
+          uv pip install -r requirements.txt
+
+      - name: Restore CH2 cache from sandbox data branch
+        run: |
+          git fetch --depth=1 origin "$DATA_BRANCH" 2>/dev/null || echo "$DATA_BRANCH branch not found yet - starting fresh"
+          git checkout FETCH_HEAD -- static_data/ cache_data_ch2/ cache_data_ch2_packed/ cache_wind_packed/ch2/ cache_sunshine_maps/ch2/ 2>/dev/null || true
+          git reset HEAD -- static_data/ cache_data_ch2/ cache_data_ch2_packed/ cache_wind_packed/ cache_sunshine_maps/ manifest.json 2>/dev/null || true
+          echo "CH2 .nc files: $(find cache_data_ch2 -name '*.nc' 2>/dev/null | wc -l)"
+          echo "Packed CH2 .nc files: $(find cache_data_ch2_packed -name '*.nc' 2>/dev/null | wc -l)"
+          echo "Packed CH2 wind-map .nc files: $(find cache_wind_packed/ch2 -name '*.nc' 2>/dev/null | wc -l)"
+
+      - name: Fetch CH2 weather data
+        env:
+          FORCE_REFRESH: ${{ github.event.inputs.force_refresh || 'false' }}
+          ENABLE_WIND_MAPS: ${{ github.event.inputs.enable_wind_maps || 'true' }}
+          ENABLE_WIND_MAPS_CH2: ${{ github.event.inputs.enable_wind_maps_ch2 || 'true' }}
+          WIND_MAP_MAX_SECONDS: ${{ github.event.inputs.wind_map_max_seconds || '0' }}
+          ENABLE_SUNSHINE_MAPS: ${{ github.event.inputs.enable_sunshine_maps || 'true' }}
+        run: uv run python fetch_data_ch2.py
+
+      - name: Upload CH2 outputs
+        uses: actions/upload-artifact@v4
+        with:
+          name: ch2-output
+          if-no-files-found: ignore
+          retention-days: 1
+          path: |
+            static_data/
+            cache_data_ch2/
+            cache_data_ch2_packed/
+            cache_wind_packed/ch2/
+            cache_sunshine_maps/ch2/
+
+  publish:
+    needs:
+      - preflight
+      - fetch-ch1
+      - fetch-ch2
+    if: needs.preflight.outputs.should_run == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 1
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+        with:
+          enable-cache: true
+
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libeccodes-dev
+
+      - name: Install Python dependencies
+        run: |
+          uv venv
+          uv pip install -r requirements.txt
+
+      - name: Restore current sandbox data branch
+        run: |
+          git fetch --depth=1 origin "$DATA_BRANCH" 2>/dev/null || echo "$DATA_BRANCH branch not found yet - starting fresh"
+          git checkout FETCH_HEAD -- cache_data/ cache_data_ch2/ cache_data_packed/ cache_data_ch2_packed/ cache_wind_packed/ cache_sunshine_maps/ static_data/ manifest.json web_exports/ 2>/dev/null || true
+          git reset HEAD -- cache_data/ cache_data_ch2/ cache_data_packed/ cache_data_ch2_packed/ cache_wind_packed/ cache_sunshine_maps/ static_data/ manifest.json web_exports/ 2>/dev/null || true
+
+      - name: Download CH1 outputs
+        uses: actions/download-artifact@v4
+        with:
+          name: ch1-output
+          path: .
+
+      - name: Download CH2 outputs
+        uses: actions/download-artifact@v4
+        with:
+          name: ch2-output
+          path: .
+
+      - name: Generate combined manifest
+        run: uv run python generate_combined_manifest.py
+
+      - name: Generate web exports
+        env:
+          WIND_WEB_LEVELS: 10m_AGL,800m_AGL,1500m_AMSL,2000m_AMSL,3000m_AMSL,4000m_AMSL
+        run: uv run python generate_web_exports.py
+
+      - name: Measure output
+        run: |
+          echo "CH1 .nc files: $(find cache_data -name '*.nc' 2>/dev/null | wc -l)"
+          echo "CH2 .nc files: $(find cache_data_ch2 -name '*.nc' 2>/dev/null | wc -l)"
+          echo "Packed wind-map .nc files: $(find cache_wind_packed -name '*.nc' 2>/dev/null | wc -l)"
+          echo "Sunshine map step binaries: $(find cache_sunshine_maps -name '*.bin' 2>/dev/null | wc -l)"
+          echo "web_exports files: $(find web_exports -type f 2>/dev/null | wc -l)"
+          du -sh cache_data cache_data_ch2 cache_wind_packed cache_sunshine_maps web_exports 2>/dev/null || true
+
+      - name: Commit and push sandbox data
+        run: |
+          git config --global user.name "GitHub Action"
+          git config --global user.email "actions@github.com"
+          git config --global http.postBuffer 524288000
+
+          mkdir -p cache_data cache_data_ch2 cache_data_packed cache_data_ch2_packed cache_wind_packed cache_sunshine_maps static_data
+
+          git checkout --orphan data-temp
+          git rm -rf --cached . 2>/dev/null || true
+          git add -f static_data/
+          git add -f cache_data/
+          git add -f cache_data_ch2/
+          git add -f cache_data_packed/
+          git add -f cache_data_ch2_packed/
+          git add -f cache_wind_packed/
+          git add -f cache_sunshine_maps/
+          git add manifest.json
+          git add -f web_exports/
+          if [ -n "$(git status --porcelain)" ]; then
+            git commit -m "Parallel data snapshot: $(date -u +'%Y-%m-%d %H:%M') UTC"
+            git push origin HEAD:"$DATA_BRANCH" --force
+          else
+            echo "No data to push to $DATA_BRANCH"
+          fi
+          git checkout -f main
+          git branch -D data-temp
+
+  noop:
+    needs: preflight
+    if: needs.preflight.outputs.should_run != 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Skip unchanged data
+        run: echo "Skipping data update: ${{ needs.preflight.outputs.reason }}"
