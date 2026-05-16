@@ -284,4 +284,5 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Skip unchanged data
-        run: echo "Skipping data update: ${{ needs.preflight.outputs.reason }}"
+        run: |
+          echo "Skipping data update: ${{ needs.preflight.outputs.reason }}"
