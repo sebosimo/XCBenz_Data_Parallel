@@ -159,15 +159,14 @@ jobs:
       - name: Restore CH2 cache from sandbox data branch
         run: |
           git fetch --depth=1 origin "$DATA_BRANCH" 2>/dev/null || echo "$DATA_BRANCH branch not found yet - starting fresh"
-          git checkout FETCH_HEAD -- cache_data_ch2/ cache_data_ch2_packed/ cache_wind_packed/ch2/ cache_sunshine_maps/ch2/ 2>/dev/null || true
-          git reset HEAD -- cache_data_ch2/ cache_data_ch2_packed/ cache_wind_packed/ cache_sunshine_maps/ manifest.json 2>/dev/null || true
-          echo "CH2 .nc files: $(find cache_data_ch2 -name '*.nc' 2>/dev/null | wc -l)"
-          echo "Packed CH2 .nc files: $(find cache_data_ch2_packed -name '*.nc' 2>/dev/null | wc -l)"
+          git checkout FETCH_HEAD -- cache_wind_packed/ch2/ cache_sunshine_maps/ch2/ 2>/dev/null || true
+          git reset HEAD -- cache_wind_packed/ cache_sunshine_maps/ manifest.json 2>/dev/null || true
           echo "Packed CH2 wind-map .nc files: $(find cache_wind_packed/ch2 -name '*.nc' 2>/dev/null | wc -l)"
 
-      - name: Fetch CH2 weather data
+      - name: Fetch CH2 map data
         env:
           FORCE_REFRESH: ${{ github.event.inputs.force_refresh || 'false' }}
+          CH2_PROFILE_MODE: none
           ENABLE_WIND_MAPS: ${{ github.event.inputs.enable_wind_maps || 'true' }}
           ENABLE_WIND_MAPS_CH2: ${{ github.event.inputs.enable_wind_maps_ch2 || 'true' }}
           WIND_MAP_MAX_SECONDS: ${{ github.event.inputs.wind_map_max_seconds || '0' }}
@@ -181,21 +180,85 @@ jobs:
           if-no-files-found: ignore
           retention-days: 1
           path: |
-            cache_data_ch2/
-            cache_data_ch2_packed/
             cache_wind_packed/ch2/
             cache_sunshine_maps/ch2/
+
+  fetch-ch2-profiles:
+    needs: preflight
+    if: needs.preflight.outputs.should_run == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    strategy:
+      fail-fast: false
+      matrix:
+        chunk:
+          - id: H000_H030
+            start: "0"
+            end: "30"
+          - id: H031_H060
+            start: "31"
+            end: "60"
+          - id: H061_H090
+            start: "61"
+            end: "90"
+          - id: H091_H120
+            start: "91"
+            end: "120"
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 1
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+        with:
+          enable-cache: true
+
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libeccodes-dev
+
+      - name: Install Python dependencies
+        run: |
+          uv venv
+          uv pip install -r requirements.txt
+
+      - name: Fetch CH2 direct profile chunk
+        env:
+          FORCE_REFRESH: ${{ github.event.inputs.force_refresh || 'false' }}
+          CH2_PROFILE_MODE: direct-chunk
+          CH2_PROFILE_CHUNK_ID: ${{ matrix.chunk.id }}
+          CH2_HORIZON_START: ${{ matrix.chunk.start }}
+          CH2_HORIZON_END: ${{ matrix.chunk.end }}
+          ENABLE_WIND_MAPS: "false"
+          ENABLE_WIND_MAPS_CH2: "false"
+          ENABLE_SUNSHINE_MAPS: "false"
+        run: uv run python fetch_data_ch2.py
+
+      - name: Upload CH2 profile chunk
+        uses: actions/upload-artifact@v4
+        with:
+          name: ch2-profile-${{ matrix.chunk.id }}
+          if-no-files-found: error
+          retention-days: 1
+          path: |
+            web_profile_chunks/
 
   publish:
     needs:
       - preflight
       - fetch-ch1
       - fetch-ch2
+      - fetch-ch2-profiles
     if: |
       always() &&
       needs.preflight.outputs.should_run == 'true' &&
       (needs.fetch-ch1.result == 'success' || needs.fetch-ch1.result == 'skipped') &&
-      (needs.fetch-ch2.result == 'success' || needs.fetch-ch2.result == 'skipped')
+      (needs.fetch-ch2.result == 'success' || needs.fetch-ch2.result == 'skipped') &&
+      (needs.fetch-ch2-profiles.result == 'success' || needs.fetch-ch2-profiles.result == 'skipped')
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -236,6 +299,13 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: ch2-output
+          path: .
+
+      - name: Download CH2 profile chunks
+        uses: actions/download-artifact@v4
+        with:
+          pattern: ch2-profile-*
+          merge-multiple: true
           path: .
 
       - name: Apply data retention

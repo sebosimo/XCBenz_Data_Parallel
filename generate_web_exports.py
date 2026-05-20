@@ -22,6 +22,13 @@ from typing import Any
 import numpy as np
 import xarray as xr
 
+from web_profiles import (
+    EMAGRAM_BUNDLE_VARIABLES,
+    build_bundle_step_values,
+    merge_profile_chunks,
+    write_emagram_bundle,
+)
+
 
 SCHEMA_VERSION = 1
 WEB_DIR = Path(os.getenv("WEB_EXPORT_DIR", "web_exports"))
@@ -36,6 +43,7 @@ MODELS = (
         "label": "ICON-CH1",
         "cache_dir": Path("cache_data"),
         "packed_cache_dir": Path("cache_data_packed"),
+        "profile_chunk_dir": Path("web_profile_chunks") / "icon-ch1",
         "horizon_digits": 2,
     },
     {
@@ -43,24 +51,13 @@ MODELS = (
         "label": "ICON-CH2",
         "cache_dir": Path("cache_data_ch2"),
         "packed_cache_dir": Path("cache_data_ch2_packed"),
+        "profile_chunk_dir": Path("web_profile_chunks") / "icon-ch2",
         "horizon_digits": 3,
     },
 )
 
 PROFILE_VARIABLES = ("HEIGHT", "P", "T", "QV", "U", "V")
 RADIATION_VARIABLES = ("ASWDIR_S", "ASWDIFD_S")
-EMAGRAM_BUNDLE_VARIABLES = (
-    "p",
-    "t",
-    "qv",
-    "u",
-    "v",
-    "temperature_c",
-    "pressure_hpa",
-    "dewpoint_c",
-    "wind_speed_ms",
-    "wind_dir_deg",
-)
 WIND_WEB_DEFAULT_LEVEL = "800m_AGL"
 WIND_WEB_DEFAULT_GRID_STRIDE = 2
 WIND_WEB_SCALE_FACTOR = 0.25
@@ -326,6 +323,40 @@ def scan_packed_profiles(cache_dir: Path, locations: dict[str, Any]) -> dict[str
     return runs
 
 
+def scan_profile_chunks(root: Path, locations: dict[str, Any]) -> dict[str, dict[str, list[Path]]]:
+    runs: dict[str, dict[str, list[Path]]] = {}
+    if not root.exists():
+        return runs
+    expected_chunks = set()
+    if root.name == "icon-ch2":
+        expected_chunks = {"H000_H030", "H031_H060", "H061_H090", "H091_H120"}
+    saw_chunks = False
+
+    for run_dir in sorted((p for p in root.iterdir() if p.is_dir()), reverse=True):
+        found: dict[str, dict[str, Path]] = {}
+        for chunk_dir in sorted(p for p in run_dir.iterdir() if p.is_dir()):
+            for location_id in sorted(locations):
+                chunk_path = chunk_dir / location_id / "chunk.json"
+                if chunk_path.is_file():
+                    saw_chunks = True
+                    found.setdefault(location_id, {})[chunk_dir.name] = chunk_path
+        run_locations: dict[str, list[Path]] = {}
+        for location_id, chunk_paths in found.items():
+            missing_chunks = expected_chunks.difference(chunk_paths)
+            if missing_chunks:
+                log(
+                    f"WARN direct profile chunks incomplete for {root.name} {run_dir.name} "
+                    f"{location_id}: missing {sorted(missing_chunks)}"
+                )
+                continue
+            run_locations[location_id] = [chunk_paths[name] for name in sorted(chunk_paths)]
+        if run_locations:
+            runs[run_dir.name] = run_locations
+    if saw_chunks and expected_chunks and not runs:
+        raise RuntimeError(f"Found {root.name} direct profile chunks, but no run had all expected chunks")
+    return runs
+
+
 def export_profile(
     model_key: str,
     run_tag: str,
@@ -413,7 +444,6 @@ def export_profiles_from_packed(
     source_path: Path,
 ) -> list[dict[str, Any]]:
     output_dir = WEB_DIR / "emagrams" / model_key / run_tag / location_id
-    output_dir.mkdir(parents=True, exist_ok=True)
 
     with xr.open_dataset(source_path) as ds:
         ds.load()
@@ -443,39 +473,14 @@ def export_profiles_from_packed(
             qv_values = np.asarray(ds["QV"].isel(time=step_index).values) if "QV" in ds else None
             u_values = np.asarray(ds["U"].isel(time=step_index).values) if "U" in ds else None
             v_values = np.asarray(ds["V"].isel(time=step_index).values) if "V" in ds else None
-
-            variable_arrays = {
-                "p": p_values,
-                "t": t_values,
-                "qv": qv_values,
-                "u": u_values,
-                "v": v_values,
-                "temperature_c": temperature_to_celsius(t_values) if t_values is not None else None,
-                "pressure_hpa": pressure_to_hpa(p_values) if p_values is not None else None,
-                "dewpoint_c": (
-                    dewpoint_from_specific_humidity(p_values, qv_values)
-                    if p_values is not None and qv_values is not None
-                    else None
-                ),
-                "wind_speed_ms": wind_speed(u_values, v_values) if u_values is not None and v_values is not None else None,
-                "wind_dir_deg": (
-                    wind_direction_from(u_values, v_values)
-                    if u_values is not None and v_values is not None
-                    else None
-                ),
-            }
-            for variable_index, variable_name in enumerate(EMAGRAM_BUNDLE_VARIABLES):
-                variable_values = variable_arrays.get(variable_name)
-                if variable_values is None:
-                    continue
-                variable_values = np.asarray(variable_values, dtype=np.float32)
-                if variable_values.shape[0] != level_count:
-                    log(
-                        f"WARN bundle variable {variable_name} length mismatch for "
-                        f"{model_key} {run_tag} {location_id} {step_label}: {variable_values.shape[0]} != {level_count}"
-                    )
-                    continue
-                values[step_index, variable_index, :] = variable_values
+            values[step_index, :, :] = build_bundle_step_values(
+                p=p_values,
+                t=t_values,
+                qv=qv_values,
+                u=u_values,
+                v=v_values,
+                level_count=level_count,
+            )
 
             surface = {}
             for var, key in (("ASWDIR_S", "aswdir_s_wm2"), ("ASWDIFD_S", "aswdifd_s_wm2")):
@@ -491,53 +496,23 @@ def export_profiles_from_packed(
                     "valid_time": valid_time,
                     "horizon": horizon,
                     "surface": surface or None,
-                    "bundle_step_index": step_index,
                 }
             )
 
-    data_path = output_dir / "profiles.bin"
-    data_path.write_bytes(values.tobytes())
-    bundle_path = output_dir / "bundle.json"
-    payload = {
-        "schema_version": SCHEMA_VERSION,
-        "product": "emagram_bundle",
-        "model": model_key,
-        "run": run_tag,
-        "location": location_payload(location_id, location_meta),
-        "ref_time": attrs.get("ref_time"),
-        "source": rel(source_path),
-        "units": {
-            "height": "m",
-            "p": "Pa",
-            "t": "K",
-            "qv": "kg kg-1",
-            "u": "m s-1",
-            "v": "m s-1",
-            "temperature_c": "degC",
-            "pressure_hpa": "hPa",
-            "dewpoint_c": "degC",
-            "wind_speed_ms": "m s-1",
-            "wind_dir_deg": "degrees_from",
-            "aswdir_s_wm2": "W m-2",
-            "aswdifd_s_wm2": "W m-2",
-        },
-        "encoding": {
-            "format": "float32-le-step-variable-level",
-            "dtype": "float32",
-            "variables": list(EMAGRAM_BUNDLE_VARIABLES),
-            "step_count": step_count,
-            "level_count": level_count,
-            "data": rel(data_path),
-            "byte_length": int(data_path.stat().st_size),
-            "missing_value": "NaN",
-        },
-        "height": array_to_list(height_values, 3),
-        "steps": exports,
-    }
-    write_json(bundle_path, payload)
-    for item in exports:
-        item["bundle_url"] = rel(bundle_path)
-    return exports
+    return write_emagram_bundle(
+        output_dir=output_dir,
+        model_key=model_key,
+        run_tag=run_tag,
+        location_id=location_id,
+        location_meta=location_meta,
+        ref_time=attrs.get("ref_time"),
+        source=rel(source_path),
+        height_values=height_values,
+        steps=exports,
+        values=values,
+        url_for=rel,
+        write_json=write_json,
+    )
 
 
 def export_thermal_panel(
@@ -952,17 +927,25 @@ def export_model(model: dict[str, Any], locations: dict[str, Any]) -> dict[str, 
     model_key = model["key"]
     cache_dir = model["cache_dir"]
     packed_cache_dir = model.get("packed_cache_dir")
+    profile_chunk_dir = model.get("profile_chunk_dir")
+    scanned_chunk_runs = (
+        scan_profile_chunks(profile_chunk_dir, locations)
+        if isinstance(profile_chunk_dir, Path)
+        else {}
+    )
     scanned_packed_runs = (
         scan_packed_profiles(packed_cache_dir, locations)
         if isinstance(packed_cache_dir, Path)
         else {}
     )
-    scanned_runs = scanned_packed_runs or scan_profiles(cache_dir, locations)
+    scanned_runs = scanned_chunk_runs or scanned_packed_runs or scan_profiles(cache_dir, locations)
+    profile_source = "direct_chunks" if scanned_chunk_runs else ("packed" if scanned_packed_runs else "hourly")
     model_manifest: dict[str, Any] = {
         "label": model["label"],
         "cache_dir": str(cache_dir),
         "packed_cache_dir": str(packed_cache_dir) if packed_cache_dir else None,
-        "profile_source": "packed" if scanned_packed_runs else "hourly",
+        "profile_chunk_dir": str(profile_chunk_dir) if profile_chunk_dir else None,
+        "profile_source": profile_source,
         "latest_run": max(scanned_runs.keys()) if scanned_runs else None,
         "runs": {},
         "counts": {
@@ -980,7 +963,22 @@ def export_model(model: dict[str, Any], locations: dict[str, Any]) -> dict[str, 
         run_manifest = {"locations": {}}
         for location_id, source_entry in run_locations.items():
             location_meta = locations[location_id]
-            if scanned_packed_runs:
+            if scanned_chunk_runs:
+                try:
+                    profile_exports = merge_profile_chunks(
+                        source_entry,
+                        output_dir=WEB_DIR / "emagrams" / model_key / run_tag / location_id,
+                        model_key=model_key,
+                        run_tag=run_tag,
+                        location_id=location_id,
+                        location_meta=location_meta,
+                        url_for=rel,
+                        write_json=write_json,
+                    )
+                except Exception as exc:
+                    log(f"WARN profile chunk merge failed for {model_key} {run_tag} {location_id}: {exc}")
+                    profile_exports = []
+            elif scanned_packed_runs:
                 try:
                     profile_exports = export_profiles_from_packed(
                         model_key,
