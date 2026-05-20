@@ -739,6 +739,9 @@ def main():
     )
 
     wind_config = None
+    wind_map_out_root = os.getenv("CH2_WIND_MAP_OUT_ROOT", CACHE_DIR_WIND_PACKED)
+    sunshine_map_out_root = os.getenv("CH2_SUNSHINE_MAP_OUT_ROOT", CACHE_DIR_SUNSHINE_MAPS)
+    require_full_horizon_run = env_flag("CH2_REQUIRE_FULL_HORIZON_RUN", profile_mode == "direct-chunk")
     wind_enabled = is_wind_maps_enabled("ch2")
     sunshine_enabled = is_sunshine_maps_enabled("ch2")
     if wind_enabled or sunshine_enabled:
@@ -783,8 +786,8 @@ def main():
 
     for ref_time in runs:
         tag = ref_time.strftime('%Y%m%d_%H%M')
-        sunshine_missing = sunshine_enabled and not is_sunshine_run_complete("ch2", tag)
-        if profile_mode == "direct-chunk" and not has_profile_horizon(ref_time, MAX_HORIZON):
+        sunshine_missing = sunshine_enabled and not is_sunshine_run_complete("ch2", tag, root=sunshine_map_out_root)
+        if require_full_horizon_run and not has_profile_horizon(ref_time, MAX_HORIZON):
             log(f"CH2 run {tag} does not expose H{MAX_HORIZON:03d} yet; trying next available run.")
             continue
         if profile_mode == "netcdf" and not force_refresh and is_run_complete_locally(tag, locations, MAX_HORIZON) and not sunshine_missing:
@@ -797,12 +800,12 @@ def main():
         any_success = False
         profile_buffers = {} if profile_mode == "direct-chunk" else None
         wind_accumulator = (
-            WindMapAccumulator("ch2", tag, ref_time, wind_config, log=log)
+            WindMapAccumulator("ch2", tag, ref_time, wind_config, log=log, out_root=wind_map_out_root)
             if wind_enabled and wind_config is not None
             else None
         )
         sunshine_accumulator = (
-            SunshineMapAccumulator("ch2", tag, ref_time, wind_config, log=log)
+            SunshineMapAccumulator("ch2", tag, ref_time, wind_config, log=log, out_root=sunshine_map_out_root)
             if sunshine_enabled and wind_config is not None
             else None
         )
