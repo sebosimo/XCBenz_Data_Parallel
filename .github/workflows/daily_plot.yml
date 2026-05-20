@@ -55,6 +55,8 @@ jobs:
       contents: read
     outputs:
       should_run: ${{ steps.preflight.outputs.should_run }}
+      should_run_ch1: ${{ steps.preflight.outputs.should_run_ch1 }}
+      should_run_ch2: ${{ steps.preflight.outputs.should_run_ch2 }}
       reason: ${{ steps.preflight.outputs.reason }}
       latest_ch1: ${{ steps.preflight.outputs.latest_ch1 }}
       latest_ch2: ${{ steps.preflight.outputs.latest_ch2 }}
@@ -72,7 +74,7 @@ jobs:
 
   fetch-ch1:
     needs: preflight
-    if: needs.preflight.outputs.should_run == 'true'
+    if: needs.preflight.outputs.should_run_ch1 == 'true'
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -129,7 +131,7 @@ jobs:
 
   fetch-ch2:
     needs: preflight
-    if: needs.preflight.outputs.should_run == 'true'
+    if: needs.preflight.outputs.should_run_ch2 == 'true'
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -189,7 +191,11 @@ jobs:
       - preflight
       - fetch-ch1
       - fetch-ch2
-    if: needs.preflight.outputs.should_run == 'true'
+    if: |
+      always() &&
+      needs.preflight.outputs.should_run == 'true' &&
+      (needs.fetch-ch1.result == 'success' || needs.fetch-ch1.result == 'skipped') &&
+      (needs.fetch-ch2.result == 'success' || needs.fetch-ch2.result == 'skipped')
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -221,16 +227,21 @@ jobs:
           git reset HEAD -- cache_data/ cache_data_ch2/ cache_data_packed/ cache_data_ch2_packed/ cache_wind_packed/ cache_sunshine_maps/ manifest.json web_exports/ 2>/dev/null || true
 
       - name: Download CH1 outputs
+        if: needs.preflight.outputs.should_run_ch1 == 'true'
         uses: actions/download-artifact@v4
         with:
           name: ch1-output
           path: .
 
       - name: Download CH2 outputs
+        if: needs.preflight.outputs.should_run_ch2 == 'true'
         uses: actions/download-artifact@v4
         with:
           name: ch2-output
           path: .
+
+      - name: Apply data retention
+        run: python scripts/apply_retention.py
 
       - name: Generate combined manifest
         run: uv run python generate_combined_manifest.py

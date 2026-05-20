@@ -87,3 +87,35 @@ https://raw.githubusercontent.com/sebosimo/XCBenz_Data_Parallel/data-test
 
 This keeps frontend smoke tests pointed at the sandbox instead of the production
 data branch.
+
+## Partial Run Backfill
+
+Preflight now checks more than run-tag presence. A scheduled, non-forced run
+continues if the latest published run has fewer than the expected horizon count:
+
+- CH1 normal runs: 34 steps (`H00`-`H33`)
+- CH1 03Z long run: 46 steps (`H00`-`H45`)
+- CH2 runs: 121 steps (`H000`-`H120`)
+
+This matters because MeteoSwiss can expose a new run before all horizons are
+available. The fetch scripts already skip completed local horizons, so repeated
+scheduled attempts backfill missing horizons instead of redownloading the whole
+published run.
+
+Preflight also emits per-model run decisions. If only CH1 has a new or
+incomplete run, the CH2 fetch job is skipped entirely, and the publish job
+restores the existing CH2 data from `data-test` before merging the fresh CH1
+artifact.
+
+## Retention
+
+The parallel workflow applies the same data-branch retention policy as the
+existing archive in the final publish workspace before generating
+`manifest.json` and `web_exports/`.
+
+- CH1 keeps the two most recent runs plus the 03Z anchor from today/yesterday.
+- CH2 keeps the two most recent runs plus the 00Z anchor from today/yesterday.
+
+This publish-side pruning is required because artifact downloads overlay files
+onto a restored data branch; they do not delete old run directories on their
+own.

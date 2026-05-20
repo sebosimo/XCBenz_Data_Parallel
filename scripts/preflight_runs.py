@@ -81,6 +81,28 @@ def load_existing_manifest() -> dict:
         return {}
 
 
+def expected_horizon_count(model: str, run_tag: str) -> int:
+    if model == "ch2":
+        return 121
+
+    try:
+        run_hour = int(run_tag.split("_", 1)[1][:2])
+    except Exception:
+        return 34
+    return 46 if run_hour == 3 else 34
+
+
+def published_step_count(run_payload: dict) -> int:
+    if not isinstance(run_payload, dict) or not run_payload:
+        return 0
+
+    counts = []
+    for steps in run_payload.values():
+        if isinstance(steps, list):
+            counts.append(len(steps))
+    return min(counts) if counts else 0
+
+
 def write_output(name: str, value: str) -> None:
     output_path = os.environ.get("GITHUB_OUTPUT")
     if output_path:
@@ -94,23 +116,37 @@ def main() -> int:
     force_refresh = os.environ.get("FORCE_REFRESH", "").strip().lower() in {"1", "true", "yes", "on"}
     if force_refresh:
         write_output("should_run", "true")
+        write_output("should_run_ch1", "true")
+        write_output("should_run_ch2", "true")
         write_output("reason", "force_refresh")
         return 0
 
     latest = {model: latest_run(model) for model in COLLECTIONS}
     manifest = load_existing_manifest()
     missing = []
+    model_should_run = {model: False for model in COLLECTIONS}
     for model, cfg in COLLECTIONS.items():
         tag = latest.get(model)
         if not tag:
             missing.append(f"{model}:no_available_run")
+            model_should_run[model] = True
             continue
         runs = manifest.get(cfg["manifest_key"]) or {}
         if tag not in runs:
             missing.append(f"{model}:{tag}")
+            model_should_run[model] = True
+            continue
+
+        expected = expected_horizon_count(model, tag)
+        published = published_step_count(runs.get(tag) or {})
+        if published < expected:
+            missing.append(f"{model}:{tag}_incomplete:{published}/{expected}")
+            model_should_run[model] = True
 
     should_run = bool(missing)
     write_output("should_run", "true" if should_run else "false")
+    for model, value in model_should_run.items():
+        write_output(f"should_run_{model}", "true" if value else "false")
     write_output("reason", ",".join(missing) if missing else "latest_runs_already_published")
     for model, tag in latest.items():
         write_output(f"latest_{model}", tag or "")

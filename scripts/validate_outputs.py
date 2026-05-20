@@ -48,6 +48,8 @@ def main() -> int:
         runs = model.get("runs") or {}
         if not runs:
             return fail(f"web manifest has no runs for {model_key}")
+        if len(runs) > 4:
+            return fail(f"web manifest has {len(runs)} runs for {model_key}; retention should keep at most 4")
         latest = model.get("latest_run")
         if latest and latest not in runs:
             return fail(f"{model_key} latest_run {latest!r} is absent from runs")
