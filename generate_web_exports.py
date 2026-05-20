@@ -357,6 +357,21 @@ def scan_profile_chunks(root: Path, locations: dict[str, Any]) -> dict[str, dict
     return runs
 
 
+def scan_profile_chunks_with_fallback(root: Path, locations: dict[str, Any]) -> dict[str, dict[str, list[Path]]]:
+    runs = scan_profile_chunks(root, locations)
+    if runs or root.exists():
+        return runs
+
+    # GitHub's artifact download layout can vary depending on the upload root.
+    # Accept a flattened ``icon-ch2/...`` tree as a defensive fallback.
+    fallback_root = Path(root.name)
+    if fallback_root == root or not fallback_root.exists():
+        return runs
+
+    log(f"WARN scanning flattened direct profile chunk layout at {fallback_root}")
+    return scan_profile_chunks(fallback_root, locations)
+
+
 def export_profile(
     model_key: str,
     run_tag: str,
@@ -929,7 +944,7 @@ def export_model(model: dict[str, Any], locations: dict[str, Any]) -> dict[str, 
     packed_cache_dir = model.get("packed_cache_dir")
     profile_chunk_dir = model.get("profile_chunk_dir")
     scanned_chunk_runs = (
-        scan_profile_chunks(profile_chunk_dir, locations)
+        scan_profile_chunks_with_fallback(profile_chunk_dir, locations)
         if isinstance(profile_chunk_dir, Path)
         else {}
     )

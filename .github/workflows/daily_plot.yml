@@ -306,7 +306,7 @@ jobs:
         with:
           pattern: ch2-profile-*
           merge-multiple: true
-          path: .
+          path: web_profile_chunks
 
       - name: Apply data retention
         run: python scripts/apply_retention.py
