@@ -34,12 +34,14 @@ MODELS = (
         "key": "icon-ch1",
         "label": "ICON-CH1",
         "cache_dir": Path("cache_data"),
+        "packed_cache_dir": Path("cache_data_packed"),
         "horizon_digits": 2,
     },
     {
         "key": "icon-ch2",
         "label": "ICON-CH2",
         "cache_dir": Path("cache_data_ch2"),
+        "packed_cache_dir": Path("cache_data_ch2_packed"),
         "horizon_digits": 3,
     },
 )
@@ -285,6 +287,26 @@ def scan_profiles(cache_dir: Path, locations: dict[str, Any]) -> dict[str, dict[
     return runs
 
 
+def scan_packed_profiles(cache_dir: Path, locations: dict[str, Any]) -> dict[str, dict[str, Path]]:
+    runs: dict[str, dict[str, Path]] = {}
+    if not cache_dir.exists():
+        return runs
+
+    for run_dir in sorted((p for p in cache_dir.iterdir() if p.is_dir()), reverse=True):
+        run_locations: dict[str, Path] = {}
+        for location_id in sorted(locations):
+            candidates = [run_dir / f"{location_id}.nc"]
+            sanitized = sanitize_name(location_id)
+            if sanitized != location_id:
+                candidates.append(run_dir / f"{sanitized}.nc")
+            packed_path = next((p for p in candidates if p.is_file()), None)
+            if packed_path:
+                run_locations[location_id] = packed_path
+        if run_locations:
+            runs[run_dir.name] = run_locations
+    return runs
+
+
 def export_profile(
     model_key: str,
     run_tag: str,
@@ -362,6 +384,113 @@ def export_profile(
         "valid_time": attrs.get("valid_time"),
         "horizon": clean_number(attrs.get("horizon")),
     }
+
+
+def export_profiles_from_packed(
+    model_key: str,
+    run_tag: str,
+    location_id: str,
+    location_meta: dict[str, Any],
+    source_path: Path,
+) -> list[dict[str, Any]]:
+    output_dir = WEB_DIR / "emagrams" / model_key / run_tag / location_id
+    exports: list[dict[str, Any]] = []
+
+    with xr.open_dataset(source_path) as ds:
+        ds.load()
+        attrs = dict(ds.attrs)
+        step_labels = [normalize_step_label(item) for item in np.asarray(ds["step_label"].values).tolist()]
+        horizons = np.asarray(ds["horizon"].values).tolist() if "horizon" in ds else [None] * len(step_labels)
+        valid_epochs = (
+            np.asarray(ds["valid_time_epoch"].values, dtype=np.int64).tolist()
+            if "valid_time_epoch" in ds
+            else [None] * len(step_labels)
+        )
+        height_values = np.asarray(ds["height"].values) if "height" in ds else None
+
+        for step_index, step_label in enumerate(step_labels):
+            profile: dict[str, Any] = {}
+            if height_values is not None:
+                profile["height"] = array_to_list(height_values, 3)
+
+            for var in PROFILE_VARIABLES:
+                if var == "HEIGHT":
+                    continue
+                if var not in ds:
+                    continue
+                values = np.asarray(ds[var].isel(time=step_index).values)
+                if values.ndim:
+                    profile[var.lower()] = array_to_list(values, 3)
+
+            derived: dict[str, Any] = {}
+            t_values = np.asarray(ds["T"].isel(time=step_index).values) if "T" in ds else None
+            p_values = np.asarray(ds["P"].isel(time=step_index).values) if "P" in ds else None
+            qv_values = np.asarray(ds["QV"].isel(time=step_index).values) if "QV" in ds else None
+            u_values = np.asarray(ds["U"].isel(time=step_index).values) if "U" in ds else None
+            v_values = np.asarray(ds["V"].isel(time=step_index).values) if "V" in ds else None
+
+            if t_values is not None:
+                derived["temperature_c"] = array_to_list(temperature_to_celsius(t_values), 2)
+            if p_values is not None:
+                derived["pressure_hpa"] = array_to_list(pressure_to_hpa(p_values), 1)
+            if p_values is not None and qv_values is not None:
+                derived["dewpoint_c"] = array_to_list(dewpoint_from_specific_humidity(p_values, qv_values), 2)
+            if u_values is not None and v_values is not None:
+                derived["wind_speed_ms"] = array_to_list(wind_speed(u_values, v_values), 2)
+                derived["wind_dir_deg"] = array_to_list(wind_direction_from(u_values, v_values), 0)
+
+            surface = {}
+            for var, key in (("ASWDIR_S", "aswdir_s_wm2"), ("ASWDIFD_S", "aswdifd_s_wm2")):
+                if var in ds:
+                    surface[key] = clean_number(np.asarray(ds[var].isel(time=step_index).values).item(), 2)
+            surface = {k: v for k, v in surface.items() if v is not None}
+
+            valid_time = epoch_to_iso(valid_epochs[step_index]) if valid_epochs[step_index] is not None else None
+            horizon = clean_number(horizons[step_index]) if horizons[step_index] is not None else None
+            output_path = output_dir / f"{step_label}.json"
+            payload = {
+                "schema_version": SCHEMA_VERSION,
+                "product": "emagram_profile",
+                "model": model_key,
+                "run": run_tag,
+                "step": step_label,
+                "location": location_payload(location_id, location_meta),
+                "ref_time": attrs.get("ref_time"),
+                "valid_time": valid_time,
+                "horizon": horizon,
+                "source": rel(source_path),
+                "units": {
+                    "height": "m",
+                    "p": "Pa",
+                    "t": "K",
+                    "qv": "kg kg-1",
+                    "u": "m s-1",
+                    "v": "m s-1",
+                    "temperature_c": "degC",
+                    "pressure_hpa": "hPa",
+                    "dewpoint_c": "degC",
+                    "wind_speed_ms": "m s-1",
+                    "wind_dir_deg": "degrees_from",
+                    "aswdir_s_wm2": "W m-2",
+                    "aswdifd_s_wm2": "W m-2",
+                },
+                "profile": profile,
+                "derived": derived,
+            }
+            if surface:
+                payload["surface"] = surface
+
+            write_json(output_path, payload)
+            exports.append(
+                {
+                    "step": step_label,
+                    "url": rel(output_path),
+                    "valid_time": valid_time,
+                    "horizon": horizon,
+                }
+            )
+
+    return exports
 
 
 def export_thermal_panel(
@@ -770,10 +899,18 @@ def export_sunshine_maps(source_manifest: dict[str, Any]) -> dict[str, Any] | No
 def export_model(model: dict[str, Any], locations: dict[str, Any]) -> dict[str, Any]:
     model_key = model["key"]
     cache_dir = model["cache_dir"]
-    scanned_runs = scan_profiles(cache_dir, locations)
+    packed_cache_dir = model.get("packed_cache_dir")
+    scanned_packed_runs = (
+        scan_packed_profiles(packed_cache_dir, locations)
+        if isinstance(packed_cache_dir, Path)
+        else {}
+    )
+    scanned_runs = scanned_packed_runs or scan_profiles(cache_dir, locations)
     model_manifest: dict[str, Any] = {
         "label": model["label"],
         "cache_dir": str(cache_dir),
+        "packed_cache_dir": str(packed_cache_dir) if packed_cache_dir else None,
+        "profile_source": "packed" if scanned_packed_runs else "hourly",
         "latest_run": max(scanned_runs.keys()) if scanned_runs else None,
         "runs": {},
         "counts": {
@@ -789,24 +926,37 @@ def export_model(model: dict[str, Any], locations: dict[str, Any]) -> dict[str, 
 
     for run_tag, run_locations in scanned_runs.items():
         run_manifest = {"locations": {}}
-        for location_id, step_files in run_locations.items():
+        for location_id, source_entry in run_locations.items():
             location_meta = locations[location_id]
-            profile_exports: list[dict[str, Any]] = []
-            for profile_path in step_files:
-                out_path = (
-                    WEB_DIR
-                    / "emagrams"
-                    / model_key
-                    / run_tag
-                    / location_id
-                    / f"{profile_path.stem}.json"
-                )
+            if scanned_packed_runs:
                 try:
-                    profile_exports.append(
-                        export_profile(model_key, run_tag, location_id, location_meta, profile_path, out_path)
+                    profile_exports = export_profiles_from_packed(
+                        model_key,
+                        run_tag,
+                        location_id,
+                        location_meta,
+                        source_entry,
                     )
                 except Exception as exc:
-                    log(f"WARN profile export failed for {profile_path}: {exc}")
+                    log(f"WARN packed profile export failed for {source_entry}: {exc}")
+                    profile_exports = []
+            else:
+                profile_exports = []
+                for profile_path in source_entry:
+                    out_path = (
+                        WEB_DIR
+                        / "emagrams"
+                        / model_key
+                        / run_tag
+                        / location_id
+                        / f"{profile_path.stem}.json"
+                    )
+                    try:
+                        profile_exports.append(
+                            export_profile(model_key, run_tag, location_id, location_meta, profile_path, out_path)
+                        )
+                    except Exception as exc:
+                        log(f"WARN profile export failed for {profile_path}: {exc}")
 
             thermal_export = None
             thermal_path = cache_dir / run_tag / "thermals" / f"{sanitize_name(location_id)}.nc"

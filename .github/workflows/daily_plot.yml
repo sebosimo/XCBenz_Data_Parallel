@@ -74,7 +74,7 @@ jobs:
 
   fetch-ch1:
     needs: preflight
-    if: needs.preflight.outputs.should_run_ch1 == 'true'
+    if: needs.preflight.outputs.should_run == 'true'
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -131,7 +131,7 @@ jobs:
 
   fetch-ch2:
     needs: preflight
-    if: needs.preflight.outputs.should_run_ch2 == 'true'
+    if: needs.preflight.outputs.should_run == 'true'
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -223,18 +223,16 @@ jobs:
       - name: Restore current sandbox data branch
         run: |
           git fetch --depth=1 origin "$DATA_BRANCH" 2>/dev/null || echo "$DATA_BRANCH branch not found yet - starting fresh"
-          git checkout FETCH_HEAD -- cache_data/ cache_data_ch2/ cache_data_packed/ cache_data_ch2_packed/ cache_wind_packed/ cache_sunshine_maps/ manifest.json web_exports/ 2>/dev/null || true
-          git reset HEAD -- cache_data/ cache_data_ch2/ cache_data_packed/ cache_data_ch2_packed/ cache_wind_packed/ cache_sunshine_maps/ manifest.json web_exports/ 2>/dev/null || true
+          git checkout FETCH_HEAD -- web_exports/ 2>/dev/null || true
+          git reset HEAD -- web_exports/ 2>/dev/null || true
 
       - name: Download CH1 outputs
-        if: needs.preflight.outputs.should_run_ch1 == 'true'
         uses: actions/download-artifact@v4
         with:
           name: ch1-output
           path: .
 
       - name: Download CH2 outputs
-        if: needs.preflight.outputs.should_run_ch2 == 'true'
         uses: actions/download-artifact@v4
         with:
           name: ch2-output
@@ -263,7 +261,7 @@ jobs:
           echo "Packed wind-map .nc files: $(find cache_wind_packed -name '*.nc' 2>/dev/null | wc -l)"
           echo "Sunshine map step binaries: $(find cache_sunshine_maps -name '*.bin' 2>/dev/null | wc -l)"
           echo "web_exports files: $(find web_exports -type f 2>/dev/null | wc -l)"
-          du -sh cache_data cache_data_ch2 cache_wind_packed cache_sunshine_maps web_exports 2>/dev/null || true
+          du -sh cache_data cache_data_ch2 cache_data_packed cache_data_ch2_packed cache_wind_packed cache_sunshine_maps web_exports 2>/dev/null || true
 
       - name: Commit and push sandbox data
         run: |
@@ -271,20 +269,13 @@ jobs:
           git config --global user.email "actions@github.com"
           git config --global http.postBuffer 524288000
 
-          mkdir -p cache_data cache_data_ch2 cache_data_packed cache_data_ch2_packed cache_wind_packed cache_sunshine_maps
+          mkdir -p web_exports
 
           git checkout --orphan data-temp
           git rm -rf --cached . 2>/dev/null || true
-          git add -f cache_data/
-          git add -f cache_data_ch2/
-          git add -f cache_data_packed/
-          git add -f cache_data_ch2_packed/
-          git add -f cache_wind_packed/
-          git add -f cache_sunshine_maps/
-          git add manifest.json
           git add -f web_exports/
-          if [ -n "$(git status --porcelain)" ]; then
-            git commit -m "Parallel data snapshot: $(date -u +'%Y-%m-%d %H:%M') UTC"
+          if ! git diff --cached --quiet; then
+            git commit -m "Web export snapshot: $(date -u +'%Y-%m-%d %H:%M') UTC"
             git push origin HEAD:"$DATA_BRANCH" --force
           else
             echo "No data to push to $DATA_BRANCH"

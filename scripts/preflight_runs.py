@@ -21,12 +21,14 @@ COLLECTIONS = {
         "slot_hours": 3,
         "lookback_slots": 16,
         "manifest_key": "runs",
+        "web_model_key": "icon-ch1",
     },
     "ch2": {
         "url": "https://data.geo.admin.ch/api/stac/v1/collections/ch.meteoschweiz.ogd-forecasting-icon-ch2/items",
         "slot_hours": 6,
         "lookback_slots": 20,
         "manifest_key": "runs_ch2",
+        "web_model_key": "icon-ch2",
     },
 }
 
@@ -68,17 +70,23 @@ def latest_run(model: str) -> str | None:
 def load_existing_manifest() -> dict:
     repository = os.environ.get("GITHUB_REPOSITORY", "sebosimo/XCBenz_Data")
     branch = os.environ.get("DATA_BRANCH", "data-test")
-    url = f"https://raw.githubusercontent.com/{repository}/{branch}/manifest.json"
-    try:
-        return get_json(url, timeout=10)
-    except urllib.error.HTTPError as exc:
-        if exc.code == 404:
-            log(f"No existing manifest on {branch}; running full update.")
-            return {}
-        raise
-    except Exception as exc:  # noqa: BLE001 - absence should not block updates.
-        log(f"Could not read existing manifest: {exc}")
-        return {}
+    base_url = f"https://raw.githubusercontent.com/{repository}/{branch}"
+    for path in ("web_exports/manifest.json", "manifest.json"):
+        url = f"{base_url}/{path}"
+        try:
+            manifest = get_json(url, timeout=10)
+            log(f"Loaded existing manifest from {path}")
+            return manifest
+        except urllib.error.HTTPError as exc:
+            if exc.code == 404:
+                continue
+            raise
+        except Exception as exc:  # noqa: BLE001 - absence should not block updates.
+            log(f"Could not read existing {path}: {exc}")
+            continue
+
+    log(f"No existing manifest on {branch}; running full update.")
+    return {}
 
 
 def expected_horizon_count(model: str, run_tag: str) -> int:
@@ -97,10 +105,33 @@ def published_step_count(run_payload: dict) -> int:
         return 0
 
     counts = []
+    locations = run_payload.get("locations")
+    if isinstance(locations, dict):
+        for location_payload in locations.values():
+            if isinstance(location_payload, dict):
+                steps = location_payload.get("steps")
+                if isinstance(steps, list):
+                    counts.append(len(steps))
+        return min(counts) if counts else 0
+
     for steps in run_payload.values():
         if isinstance(steps, list):
             counts.append(len(steps))
     return min(counts) if counts else 0
+
+
+def published_runs(manifest: dict, model: str) -> dict:
+    cfg = COLLECTIONS[model]
+    models = manifest.get("models")
+    if isinstance(models, dict):
+        web_model = models.get(cfg["web_model_key"])
+        if isinstance(web_model, dict):
+            runs = web_model.get("runs")
+            if isinstance(runs, dict):
+                return runs
+
+    runs = manifest.get(cfg["manifest_key"])
+    return runs if isinstance(runs, dict) else {}
 
 
 def write_output(name: str, value: str) -> None:
@@ -131,7 +162,7 @@ def main() -> int:
             missing.append(f"{model}:no_available_run")
             model_should_run[model] = True
             continue
-        runs = manifest.get(cfg["manifest_key"]) or {}
+        runs = published_runs(manifest, model)
         if tag not in runs:
             missing.append(f"{model}:{tag}")
             model_should_run[model] = True
