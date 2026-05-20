@@ -4,11 +4,14 @@ from __future__ import annotations
 
 import json
 import shutil
+import sys
 from pathlib import Path
 from typing import Any
 
 import numpy as np
 import xarray as xr
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from wind_maps import wind_netcdf_encoding
 
