@@ -196,6 +196,23 @@ def fetch_variable_file(collection, variable, reference_datetime, horizon, targe
         return variable, target_path, False
 
 
+def has_profile_horizon(reference_datetime, horizon):
+    """Return true when a CH2 run has the required pressure-level horizon."""
+    try:
+        req = ogd_api.Request(
+            collection=COLLECTION_CH2,
+            variable="T",
+            reference_datetime=reference_datetime,
+            horizon=get_iso_horizon(horizon),
+            perturbed=False,
+        )
+        return bool(ogd_api.get_asset_urls(req))
+    except Exception as exc:
+        label = reference_datetime.strftime("%Y%m%d_%H%M")
+        log(f"CH2 profile horizon probe failed for {label} H+{horizon:03d}: {exc}", "WARNING")
+        return False
+
+
 def fetch_variable_files(collection, variables, reference_datetime, horizon, tag, horizon_label, prefix):
     workers = env_int("DOWNLOAD_WORKERS", default=4, minimum=1, maximum=8)
     jobs = [
@@ -767,6 +784,9 @@ def main():
     for ref_time in runs:
         tag = ref_time.strftime('%Y%m%d_%H%M')
         sunshine_missing = sunshine_enabled and not is_sunshine_run_complete("ch2", tag)
+        if profile_mode == "direct-chunk" and not has_profile_horizon(ref_time, MAX_HORIZON):
+            log(f"CH2 run {tag} does not expose H{MAX_HORIZON:03d} yet; trying next available run.")
+            continue
         if profile_mode == "netcdf" and not force_refresh and is_run_complete_locally(tag, locations, MAX_HORIZON) and not sunshine_missing:
             if not is_packed_run_complete_locally(tag, locations):
                 write_packed_run_files(tag, locations)
