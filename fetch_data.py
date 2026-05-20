@@ -6,6 +6,7 @@ import requests
 import time
 import shutil
 from concurrent.futures import ThreadPoolExecutor, as_completed
+from pathlib import Path
 
 # Set GRIB definitions for COSMO/ICON
 COSMO_DEFS = r"C:\Users\sebas\.conda\envs\weather_final\share\eccodes-cosmo-resources\definitions"
@@ -37,6 +38,12 @@ from wind_maps import (
     is_wind_maps_enabled,
     load_config as load_wind_map_config,
 )
+from web_profiles import (
+    SURFACE_RADIATION_KEYS,
+    build_bundle_step_values,
+    clean_number,
+    write_profile_chunk,
+)
 
 # Suppress warnings
 warnings.filterwarnings("ignore")
@@ -57,6 +64,7 @@ CACHE_DIR_TRACES = "cache_data"
 CACHE_DIR_TRACES_PACKED = "cache_data_packed"
 CACHE_DIR_MAPS = "cache_wind"
 CACHE_DIR_MAPS_PACKED = CACHE_DIR_WIND_PACKED
+PROFILE_CHUNK_DIR = "web_profile_chunks"
 STATIC_DIR = "static_data"
 HHL_FILENAME = "vertical_constants_icon-ch1-eps.grib2"
 HGRID_FILENAME = "horizontal_constants_icon-ch1-eps.grib2"
@@ -72,6 +80,7 @@ os.makedirs(CACHE_DIR_TRACES_PACKED, exist_ok=True)
 os.makedirs(CACHE_DIR_MAPS, exist_ok=True)
 os.makedirs(CACHE_DIR_MAPS_PACKED, exist_ok=True)
 os.makedirs(CACHE_DIR_SUNSHINE_MAPS, exist_ok=True)
+os.makedirs(PROFILE_CHUNK_DIR, exist_ok=True)
 
 
 def compressed_encoding(ds):
@@ -122,6 +131,16 @@ def env_int(name, default=1, minimum=1, maximum=16):
     except ValueError:
         return default
     return max(minimum, min(maximum, value))
+
+def env_choice(name, default, choices):
+    raw = os.getenv(name)
+    if raw is None:
+        return default
+    value = str(raw).strip().lower()
+    return value if value in choices else default
+
+def step_label(h):
+    return f"H{h:02d}"
 
 def log(msg, level="INFO"):
     timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
@@ -543,11 +562,168 @@ def _process_traces_with_radiation(fields, locations, tag, h, ref, loc_rad_map):
         process_traces(fields, no_rad, tag, h, ref)
 
 
+def _sample_field(fields):
+    return next((v for v in fields.values() if v is not None and hasattr(v, "dims")), None)
+
+
+def _field_lat_lon_names(sample):
+    return "latitude" if "latitude" in sample.coords else "lat", "longitude" if "longitude" in sample.coords else "lon"
+
+
+def _location_indices(sample, locations):
+    lat_n, lon_n = _field_lat_lon_names(sample)
+    lats, lons = sample[lat_n].values, sample[lon_n].values
+    return {
+        name: int(np.argmin((lats - coords["lat"]) ** 2 + (lons - coords["lon"]) ** 2))
+        for name, coords in locations.items()
+    }
+
+
+def _point_profile(data, lat_name, idx):
+    spatial_dim = data[lat_name].dims[0]
+    profile = data.squeeze().isel({spatial_dim: idx}).compute()
+    return np.asarray(profile.values, dtype=np.float32).ravel()
+
+
+def _height_profile(fields, lat_name, idx, fallback_level_count):
+    if "HHL" not in fields or fields["HHL"] is None:
+        return np.arange(fallback_level_count, dtype=np.float32)
+    hhl = fields["HHL"]
+    spatial_dim = hhl[lat_name].dims[0]
+    hhl_profile = hhl.squeeze().isel({spatial_dim: idx}).compute()
+    h_vals = np.asarray(hhl_profile.values, dtype=np.float32).ravel()
+    return ((h_vals[:-1] + h_vals[1:]) / 2.0).astype(np.float32)
+
+
+def append_profile_chunk(buffers, fields, locations, tag, h, ref, loc_rad_map=None):
+    sample = _sample_field(fields)
+    if sample is None:
+        return False
+    lat_name, _lon_name = _field_lat_lon_names(sample)
+    indices = _location_indices(sample, locations)
+    valid_time = ref + datetime.timedelta(hours=h)
+
+    for name, idx in indices.items():
+        raw_profiles = {}
+        for var in VARS_TRACES:
+            if var not in fields:
+                raw_profiles[var] = None
+                continue
+            raw_profiles[var] = _point_profile(fields[var], lat_name, idx)
+
+        level_source = next((arr for arr in raw_profiles.values() if arr is not None), None)
+        if level_source is None:
+            continue
+        level_count = int(level_source.shape[0])
+        height = _height_profile(fields, lat_name, idx, level_count)
+        if height.shape[0] != level_count:
+            log(
+                f"CH1 direct profile height length mismatch for {name} H+{h:02d}: "
+                f"{height.shape[0]} != {level_count}",
+                "WARNING",
+            )
+            height = height[:level_count]
+
+        buffer = buffers.setdefault(name, {"height": height, "steps": [], "values": []})
+        if len(buffer["height"]) != len(height) or not np.allclose(buffer["height"], height, equal_nan=True):
+            log(f"CH1 direct profile height changed within chunk for {name} H+{h:02d}", "WARNING")
+
+        surface = {}
+        for source_key, output_key in SURFACE_RADIATION_KEYS.items():
+            raw_value = (loc_rad_map or {}).get(name, {}).get(source_key)
+            value = clean_number(raw_value, 2)
+            if value is not None:
+                surface[output_key] = value
+
+        buffer["steps"].append(
+            {
+                "step": step_label(h),
+                "valid_time": valid_time.isoformat(),
+                "horizon": h,
+                "surface": surface or None,
+            }
+        )
+        buffer["values"].append(
+            build_bundle_step_values(
+                p=raw_profiles.get("P"),
+                t=raw_profiles.get("T"),
+                qv=raw_profiles.get("QV"),
+                u=raw_profiles.get("U"),
+                v=raw_profiles.get("V"),
+                level_count=level_count,
+            )
+        )
+    return True
+
+
+def finalize_profile_chunk(buffers, locations, tag, chunk_id, ref):
+    written = 0
+    for name, buffer in buffers.items():
+        if not buffer["steps"]:
+            continue
+        values = np.stack(buffer["values"]).astype("<f4")
+        write_profile_chunk(
+            output_root=Path(PROFILE_CHUNK_DIR),
+            model_key="icon-ch1",
+            run_tag=tag,
+            chunk_id=chunk_id,
+            location_id=name,
+            location_meta=locations[name],
+            ref_time=ref.isoformat(),
+            height_values=np.asarray(buffer["height"], dtype=np.float32),
+            steps=buffer["steps"],
+            values=values,
+        )
+        written += 1
+    log(f"CH1 direct profile chunk {chunk_id} wrote {written} location artifact(s)", "NOTICE")
+    return written
+
+
+def seed_previous_radiation(collection, ref_time, tag, start_h):
+    if start_h <= 1:
+        return {var: None for var in VARS_SUNSHINE_MAPS}
+
+    seed_h = start_h - 1
+    iso_h = get_iso_horizon(seed_h)
+    previous = {var: None for var in VARS_SUNSHINE_MAPS}
+    downloaded = fetch_variable_files(
+        collection,
+        VARS_SUNSHINE_MAPS,
+        ref_time,
+        iso_h,
+        tag,
+        f"{seed_h:02d}",
+        "temp_rad_seed",
+    )
+    for var, tmp in downloaded.items():
+        try:
+            ds_r = xr.open_dataset(tmp, engine="cfgrib", backend_kwargs={"indexpath": ""})
+            previous[var] = ds_r[next(iter(ds_r.data_vars))].load().values.ravel()
+            ds_r.close()
+        except Exception as e:
+            log(f"CH1 radiation seed decode failed for {var} H+{seed_h:02d}: {e}", "WARNING")
+        finally:
+            if os.path.exists(tmp):
+                os.remove(tmp)
+    return previous
+
+
 def main():
     log("Main start...")
     force_refresh = env_flag("FORCE_REFRESH", default=False)
+    profile_mode = env_choice("CH1_PROFILE_MODE", "netcdf", {"netcdf", "direct-chunk", "none"})
+    horizon_start = env_int("CH1_HORIZON_START", default=0, minimum=0, maximum=45)
+    horizon_end = env_int("CH1_HORIZON_END", default=45, minimum=0, maximum=45)
+    if horizon_end < horizon_start:
+        horizon_start, horizon_end = horizon_end, horizon_start
+    chunk_id = os.getenv("CH1_PROFILE_CHUNK_ID") or f"H{horizon_start:03d}_H{horizon_end:03d}"
     if force_refresh:
         log("FORCE_REFRESH enabled: existing CH1 run-complete checks will be ignored.", "NOTICE")
+    log(
+        f"CH1 profile mode: {profile_mode}; horizon range H{horizon_start:03d}-H{horizon_end:03d}; "
+        f"chunk_id={chunk_id}",
+        "NOTICE",
+    )
 
     wind_config = None
     wind_enabled = is_wind_maps_enabled("ch1")
@@ -590,13 +766,23 @@ def main():
         tag = ref_time.strftime('%Y%m%d_%H%M')
         max_h = 45 if ref_time.hour == 3 else 33
         sunshine_missing = sunshine_enabled and not is_sunshine_run_complete("ch1", tag)
-        if not force_refresh and is_run_complete_locally(tag, locations, max_h) and not sunshine_missing:
+        if profile_mode == "netcdf" and not force_refresh and is_run_complete_locally(tag, locations, max_h) and not sunshine_missing:
             if not is_packed_run_complete_locally(tag, locations):
                 write_packed_run_files(tag, locations)
             log(f"Run {tag} complete locally."); break
-        
-        log(f"Processing run: {tag}")
+
+        run_horizon_end = min(horizon_end, max_h)
+        if run_horizon_end < horizon_start:
+            log(
+                f"Run {tag} has max horizon H{max_h:02d}, outside requested "
+                f"H{horizon_start:03d}-H{horizon_end:03d}; trying next run.",
+                "WARNING",
+            )
+            continue
+
+        log(f"Processing run: {tag} (H{horizon_start:03d}-H{run_horizon_end:03d})")
         any_success = False
+        profile_buffers = {} if profile_mode == "direct-chunk" else None
         wind_accumulator = (
             WindMapAccumulator("ch1", tag, ref_time, wind_config, log=log)
             if wind_enabled and wind_config is not None
@@ -609,18 +795,26 @@ def main():
         )
         # Cache previous raw radiation values for de-accumulation (running mean → hourly mean)
         # Formula: hourly_mean[n→n+1h] = (n+1)*raw[n+1h] - n*raw[nh]
-        prev_rad_raw = {var: None for var in VARS_SUNSHINE_MAPS}   # raw cumulative means/sums
+        prev_rad_raw = seed_previous_radiation(
+            "ogd-forecasting-icon-ch1",
+            ref_time,
+            tag,
+            horizon_start,
+        )
 
-        for h in range(max_h + 1):
+        for h in range(horizon_start, run_horizon_end + 1):
             iso_h = get_iso_horizon(h)
             valid_time_str = (ref_time + datetime.timedelta(hours=h)).strftime('%Y-%m-%dT%H:%M:%SZ')
             # Only log detailed info if we actually have chance of finding data
 
             fields = {"HHL": hhl} if hhl is not None else {}
             has_new_data = False
+            profile_variables = VARS_TRACES if profile_mode in {"netcdf", "direct-chunk"} else []
+            map_variables = ["U", "V", *VARS_NATIVE_10M_WIND] if (wind_enabled or sunshine_enabled) else []
+            variables_to_fetch = list(dict.fromkeys([*profile_variables, *map_variables]))
             downloaded_fields = fetch_variable_files(
                 "ogd-forecasting-icon-ch1",
-                ["T", "U", "V", "P", "QV", *VARS_NATIVE_10M_WIND],
+                variables_to_fetch,
                 ref_time,
                 iso_h,
                 tag,
@@ -709,9 +903,14 @@ def main():
                         }
                     # Pass rad_scalars as per-location dict into process_traces
                     # We override the function call below to pass per-location radiation
-                    _process_traces_with_radiation(fields, locations, tag, h, ref_time, loc_rad_map)
+                    if profile_mode == "netcdf":
+                        _process_traces_with_radiation(fields, locations, tag, h, ref_time, loc_rad_map)
                 else:
-                    process_traces(fields, locations, tag, h, ref_time)
+                    loc_rad_map = {}
+                    if profile_mode == "netcdf":
+                        process_traces(fields, locations, tag, h, ref_time)
+                if profile_mode == "direct-chunk" and profile_buffers is not None:
+                    append_profile_chunk(profile_buffers, fields, locations, tag, h, ref_time, loc_rad_map)
                 if sunshine_accumulator is not None and rad_scalars and sample_field is not None:
                     sunshine_accumulator.append(sample_field, rad_scalars, h, ref_time)
                 if wind_accumulator is not None:
@@ -725,7 +924,12 @@ def main():
                 wind_accumulator.finalize()
             if sunshine_accumulator is not None:
                 sunshine_accumulator.finalize()
-            write_packed_run_files(tag, locations)
+            if profile_mode == "direct-chunk" and profile_buffers is not None:
+                finalize_profile_chunk(profile_buffers, locations, tag, chunk_id, ref_time)
+            if profile_mode == "netcdf":
+                write_packed_run_files(tag, locations)
+            if profile_mode != "netcdf":
+                break
             # Compute thermal forecasts for the newly fetched run
             try:
                 import compute_thermals

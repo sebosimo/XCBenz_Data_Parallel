@@ -328,7 +328,9 @@ def scan_profile_chunks(root: Path, locations: dict[str, Any]) -> dict[str, dict
     if not root.exists():
         return runs
     expected_chunks = set()
-    if root.name == "icon-ch2":
+    if root.name == "icon-ch1":
+        expected_chunks = {"H000_H016", "H017_H045"}
+    elif root.name == "icon-ch2":
         expected_chunks = {"H000_H030", "H031_H060", "H061_H090", "H091_H120"}
     saw_chunks = False
 
