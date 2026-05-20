@@ -12,8 +12,8 @@ from wind_maps import _HorizontalWeights, _lat_lon_coord, _regular_crop_grid
 CACHE_DIR_SUNSHINE_MAPS = "cache_sunshine_maps"
 SUNSHINE_SCHEMA_VERSION = 1
 SUNSHINE_SCALE_FACTOR = 1.0
-SUNSHINE_FILL_VALUE = np.int16(-32768)
-SUNSHINE_COMPONENTS = ["sunshine_duration_s", "sunshine_fraction_pct"]
+SUNSHINE_FILL_VALUE = np.uint8(255)
+SUNSHINE_COMPONENTS = ["sunshine_fraction_pct"]
 
 
 def _default_log(msg, level="INFO"):
@@ -134,14 +134,12 @@ class SunshineMapAccumulator:
                 where=np.isfinite(possible) & (possible > 0),
             )
             fraction = np.clip(fraction, 0.0, 100.0)
-            duration = np.clip(duration, 0.0, 3600.0)
-
             step_label = f"H{int(horizon):03d}" if self.model == "ch2" else f"H{int(horizon):02d}"
-            interleaved = np.empty(duration.size * len(SUNSHINE_COMPONENTS), dtype="<i2")
-            for offset, values in enumerate((duration, fraction)):
+            interleaved = np.empty(fraction.size * len(SUNSHINE_COMPONENTS), dtype="u1")
+            for offset, values in enumerate((fraction,)):
                 scaled = np.rint(values / SUNSHINE_SCALE_FACTOR)
                 scaled[~np.isfinite(scaled)] = SUNSHINE_FILL_VALUE
-                interleaved[offset::len(SUNSHINE_COMPONENTS)] = np.clip(scaled, -32767, 32767).astype("<i2").ravel()
+                interleaved[offset::len(SUNSHINE_COMPONENTS)] = np.clip(scaled, 0, 255).astype("u1").ravel()
 
             os.makedirs(self.steps_dir, exist_ok=True)
             step_path = os.path.join(self.steps_dir, f"{step_label}.bin")
@@ -152,7 +150,6 @@ class SunshineMapAccumulator:
             if valid_time.tzinfo is None:
                 valid_time = valid_time.replace(tzinfo=datetime.timezone.utc)
 
-            valid_duration = duration[np.isfinite(duration)]
             valid_fraction = fraction[np.isfinite(fraction)]
             self.steps.append(
                 {
@@ -161,7 +158,6 @@ class SunshineMapAccumulator:
                     "valid_time": valid_time.isoformat(),
                     "path": step_path.replace(os.sep, "/"),
                     "byte_length": int(os.path.getsize(step_path)),
-                    "max_sunshine_duration_s": float(np.nanmax(valid_duration)) if valid_duration.size else None,
                     "max_sunshine_fraction_pct": float(np.nanmax(valid_fraction)) if valid_fraction.size else None,
                 }
             )
@@ -202,9 +198,10 @@ class SunshineMapAccumulator:
                 },
             },
             "encoding": {
-                "format": "int16-le-interleaved-components",
+                "format": "uint8-interleaved-components",
+                "dtype": "uint8",
                 "components": SUNSHINE_COMPONENTS,
-                "units": ["s", "%"],
+                "units": ["%"],
                 "scale_factor": SUNSHINE_SCALE_FACTOR,
                 "add_offset": 0.0,
                 "missing_value": int(SUNSHINE_FILL_VALUE),

@@ -50,8 +50,8 @@ PROFILE_VARIABLES = ("HEIGHT", "P", "T", "QV", "U", "V")
 RADIATION_VARIABLES = ("ASWDIR_S", "ASWDIFD_S")
 WIND_WEB_DEFAULT_LEVEL = "800m_AGL"
 WIND_WEB_DEFAULT_GRID_STRIDE = 2
-WIND_WEB_SCALE_FACTOR = 0.1
-WIND_WEB_FILL_VALUE = -32768
+WIND_WEB_SCALE_FACTOR = 0.25
+WIND_WEB_FILL_VALUE = -128
 SUNSHINE_WEB_DIR = WEB_DIR / "sunshine_maps"
 WIND_WEB_STYLE = {
     "source": "XCBenz wind-map style v1",
@@ -610,12 +610,11 @@ def wind_axis_payload(values: np.ndarray, precision: int = 5) -> dict[str, Any]:
 
 def raw_wind_component(ds: xr.Dataset, name: str, step_index: int, grid_stride: int) -> np.ndarray:
     values = np.asarray(ds[name].values[step_index, ::grid_stride, ::grid_stride])
-    if np.issubdtype(values.dtype, np.integer):
-        return values.astype("<i2", copy=False)
-
     scaled = np.rint(values.astype(float) / WIND_WEB_SCALE_FACTOR)
-    scaled[~np.isfinite(scaled)] = WIND_WEB_FILL_VALUE
-    return np.clip(scaled, -32767, 32767).astype("<i2")
+    missing = ~np.isfinite(scaled)
+    scaled = np.clip(scaled, -127, 127)
+    scaled[missing] = WIND_WEB_FILL_VALUE
+    return scaled.astype("i1")
 
 
 def wind_step_summary(u_raw: np.ndarray, v_raw: np.ndarray) -> dict[str, Any]:
@@ -642,7 +641,7 @@ def export_wind_level(
     output_dir = WEB_DIR / "wind_maps" / model_key / run_tag / level_name
     steps_dir = output_dir / "steps"
 
-    with xr.open_dataset(source_path, mask_and_scale=False) as ds:
+    with xr.open_dataset(source_path) as ds:
         ds.load()
         attrs = dict(ds.attrs)
         lat = np.asarray(ds["latitude"].values[::grid_stride, ::grid_stride], dtype=float)
@@ -657,7 +656,7 @@ def export_wind_level(
         for step_index, step_label in enumerate(step_labels):
             u_raw = raw_wind_component(ds, "u", step_index, grid_stride)
             v_raw = raw_wind_component(ds, "v", step_index, grid_stride)
-            interleaved = np.empty(u_raw.size * 2, dtype="<i2")
+            interleaved = np.empty(u_raw.size * 2, dtype="i1")
             interleaved[0::2] = u_raw.ravel()
             interleaved[1::2] = v_raw.ravel()
 
@@ -698,7 +697,8 @@ def export_wind_level(
             "lat": wind_axis_payload(lat[:, 0]),
         },
         "encoding": {
-            "format": "int16-le-interleaved-u-v",
+            "format": "int8-interleaved-u-v",
+            "dtype": "int8",
             "components": ["u", "v"],
             "units": "m s-1",
             "scale_factor": WIND_WEB_SCALE_FACTOR,
@@ -1062,8 +1062,8 @@ def main() -> None:
         },
         "notes": [
             "Generated from existing NetCDF files; no additional MeteoSwiss downloads are performed.",
-            "Wind map exports are split into browser-readable metadata JSON plus lazy-loaded int16 binary u/v slices.",
-            "Sunshine map exports are browser-readable metadata JSON plus lazy-loaded int16 binary sunshine-duration/fraction slices.",
+            "Wind map exports are split into browser-readable metadata JSON plus lazy-loaded int8 binary u/v slices.",
+            "Sunshine map exports are browser-readable metadata JSON plus lazy-loaded uint8 binary sunshine-fraction slices.",
         ],
     }
 
