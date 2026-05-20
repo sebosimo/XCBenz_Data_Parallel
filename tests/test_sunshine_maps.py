@@ -2,6 +2,7 @@ import datetime
 import json
 import os
 import shutil
+import tempfile
 import unittest
 from types import SimpleNamespace
 
@@ -12,11 +13,7 @@ from sunshine_maps import SunshineMapAccumulator, is_sunshine_maps_enabled
 
 
 def _temp_workspace():
-    root = os.path.join(os.getcwd(), ".test_tmp_sunshine")
-    if os.path.exists(root):
-        shutil.rmtree(root)
-    os.makedirs(root)
-    return root
+    return tempfile.mkdtemp(prefix="xcb_sunshine_", dir=os.getenv("TEST_TMPDIR", r"C:\tmp"))
 
 
 class SunshineMapTests(unittest.TestCase):
@@ -69,12 +66,13 @@ class SunshineMapTests(unittest.TestCase):
 
             with open(metadata_path, "r", encoding="utf-8") as f:
                 metadata = json.load(f)
-            self.assertEqual(metadata["encoding"]["components"], ["sunshine_duration_s", "sunshine_fraction_pct"])
+            self.assertEqual(metadata["encoding"]["components"], ["sunshine_fraction_pct"])
+            self.assertEqual(metadata["encoding"]["dtype"], "uint8")
             self.assertEqual(metadata["steps"][0]["path"].replace("\\", "/"), step_path.replace("\\", "/"))
 
-            values = np.fromfile(step_path, dtype="<i2")
-            self.assertEqual(values.size, 8)  # 2x2 grid, two interleaved components
-            self.assertIn(100, values[1::2])
+            values = np.fromfile(step_path, dtype="u1")
+            self.assertEqual(values.size, 4)  # 2x2 grid, fraction component only
+            self.assertIn(100, values)
         finally:
             shutil.rmtree(tmp, ignore_errors=True)
 

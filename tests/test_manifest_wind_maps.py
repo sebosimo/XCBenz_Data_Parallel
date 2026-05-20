@@ -1,5 +1,6 @@
 import os
 import shutil
+import tempfile
 import unittest
 from unittest import mock
 
@@ -10,11 +11,7 @@ from generate_combined_manifest import scan_wind_maps
 
 
 def _temp_workspace():
-    root = os.path.join(os.getcwd(), ".test_tmp_manifest")
-    if os.path.exists(root):
-        shutil.rmtree(root)
-    os.makedirs(root)
-    return root
+    return tempfile.mkdtemp(prefix="xcb_manifest_", dir=os.getenv("TEST_TMPDIR", r"C:\tmp"))
 
 
 def _touch_wind_file(path):

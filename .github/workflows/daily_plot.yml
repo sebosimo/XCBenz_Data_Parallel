@@ -247,7 +247,16 @@ jobs:
       - name: Generate web exports
         env:
           WIND_WEB_LEVELS: 10m_AGL,800m_AGL,1500m_AMSL,2000m_AMSL,3000m_AMSL,4000m_AMSL
+          WEB_EXPORT_DIR: web_exports_staging
+          WEB_EXPORT_URL_PREFIX: web_exports
         run: uv run python generate_web_exports.py
+
+      - name: Merge staged web exports and apply web retention
+        env:
+          WEB_EXPORT_STAGING_DIR: web_exports_staging
+          WEB_EXPORT_DIR: web_exports
+          WEB_EXPORT_DATA_ROOT: ${{ env.WEB_EXPORT_DATA_ROOT }}
+        run: python scripts/apply_web_retention.py
 
       - name: Validate publish outputs
         env:
@@ -261,6 +270,7 @@ jobs:
           echo "Packed wind-map .nc files: $(find cache_wind_packed -name '*.nc' 2>/dev/null | wc -l)"
           echo "Sunshine map step binaries: $(find cache_sunshine_maps -name '*.bin' 2>/dev/null | wc -l)"
           echo "web_exports files: $(find web_exports -type f 2>/dev/null | wc -l)"
+          echo "web_exports .nc files: $(find web_exports -name '*.nc' 2>/dev/null | wc -l)"
           du -sh cache_data cache_data_ch2 cache_data_packed cache_data_ch2_packed cache_wind_packed cache_sunshine_maps web_exports 2>/dev/null || true
 
       - name: Commit and push sandbox data

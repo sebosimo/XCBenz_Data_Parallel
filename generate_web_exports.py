@@ -24,7 +24,8 @@ import xarray as xr
 
 
 SCHEMA_VERSION = 1
-WEB_DIR = Path("web_exports")
+WEB_DIR = Path(os.getenv("WEB_EXPORT_DIR", "web_exports"))
+WEB_URL_PREFIX = os.getenv("WEB_EXPORT_URL_PREFIX", "web_exports").strip("/")
 LOCATIONS_FILE = Path("locations.json")
 SOURCE_MANIFEST_FILE = Path("manifest.json")
 DEFAULT_DATA_ROOT = "https://raw.githubusercontent.com/sebosimo/XCBenz_Data/data"
@@ -48,6 +49,18 @@ MODELS = (
 
 PROFILE_VARIABLES = ("HEIGHT", "P", "T", "QV", "U", "V")
 RADIATION_VARIABLES = ("ASWDIR_S", "ASWDIFD_S")
+EMAGRAM_BUNDLE_VARIABLES = (
+    "p",
+    "t",
+    "qv",
+    "u",
+    "v",
+    "temperature_c",
+    "pressure_hpa",
+    "dewpoint_c",
+    "wind_speed_ms",
+    "wind_dir_deg",
+)
 WIND_WEB_DEFAULT_LEVEL = "800m_AGL"
 WIND_WEB_DEFAULT_GRID_STRIDE = 2
 WIND_WEB_SCALE_FACTOR = 0.25
@@ -106,12 +119,18 @@ def now_iso() -> str:
 
 
 def rel(path: Path) -> str:
-    return path.as_posix()
+    try:
+        local_path = path.relative_to(WEB_DIR)
+    except ValueError:
+        return path.as_posix()
+    if WEB_URL_PREFIX:
+        return (Path(WEB_URL_PREFIX) / local_path).as_posix()
+    return local_path.as_posix()
 
 
 def ensure_clean_web_dir() -> None:
     if WEB_DIR.exists():
-        if WEB_DIR.resolve().name != "web_exports":
+        if WEB_DIR.resolve().name not in {"web_exports", "web_exports_staging"}:
             raise RuntimeError(f"Refusing to delete unexpected export dir: {WEB_DIR}")
         shutil.rmtree(WEB_DIR, onerror=remove_readonly)
     WEB_DIR.mkdir(parents=True, exist_ok=True)
@@ -394,7 +413,7 @@ def export_profiles_from_packed(
     source_path: Path,
 ) -> list[dict[str, Any]]:
     output_dir = WEB_DIR / "emagrams" / model_key / run_tag / location_id
-    exports: list[dict[str, Any]] = []
+    output_dir.mkdir(parents=True, exist_ok=True)
 
     with xr.open_dataset(source_path) as ds:
         ds.load()
@@ -407,37 +426,56 @@ def export_profiles_from_packed(
             else [None] * len(step_labels)
         )
         height_values = np.asarray(ds["height"].values) if "height" in ds else None
+        if height_values is None:
+            raise ValueError(f"packed profile has no height coordinate: {source_path}")
 
+        step_count = len(step_labels)
+        level_count = int(height_values.size)
+        values = np.full(
+            (step_count, len(EMAGRAM_BUNDLE_VARIABLES), level_count),
+            np.nan,
+            dtype="<f4",
+        )
+        exports: list[dict[str, Any]] = []
         for step_index, step_label in enumerate(step_labels):
-            profile: dict[str, Any] = {}
-            if height_values is not None:
-                profile["height"] = array_to_list(height_values, 3)
-
-            for var in PROFILE_VARIABLES:
-                if var == "HEIGHT":
-                    continue
-                if var not in ds:
-                    continue
-                values = np.asarray(ds[var].isel(time=step_index).values)
-                if values.ndim:
-                    profile[var.lower()] = array_to_list(values, 3)
-
-            derived: dict[str, Any] = {}
             t_values = np.asarray(ds["T"].isel(time=step_index).values) if "T" in ds else None
             p_values = np.asarray(ds["P"].isel(time=step_index).values) if "P" in ds else None
             qv_values = np.asarray(ds["QV"].isel(time=step_index).values) if "QV" in ds else None
             u_values = np.asarray(ds["U"].isel(time=step_index).values) if "U" in ds else None
             v_values = np.asarray(ds["V"].isel(time=step_index).values) if "V" in ds else None
 
-            if t_values is not None:
-                derived["temperature_c"] = array_to_list(temperature_to_celsius(t_values), 2)
-            if p_values is not None:
-                derived["pressure_hpa"] = array_to_list(pressure_to_hpa(p_values), 1)
-            if p_values is not None and qv_values is not None:
-                derived["dewpoint_c"] = array_to_list(dewpoint_from_specific_humidity(p_values, qv_values), 2)
-            if u_values is not None and v_values is not None:
-                derived["wind_speed_ms"] = array_to_list(wind_speed(u_values, v_values), 2)
-                derived["wind_dir_deg"] = array_to_list(wind_direction_from(u_values, v_values), 0)
+            variable_arrays = {
+                "p": p_values,
+                "t": t_values,
+                "qv": qv_values,
+                "u": u_values,
+                "v": v_values,
+                "temperature_c": temperature_to_celsius(t_values) if t_values is not None else None,
+                "pressure_hpa": pressure_to_hpa(p_values) if p_values is not None else None,
+                "dewpoint_c": (
+                    dewpoint_from_specific_humidity(p_values, qv_values)
+                    if p_values is not None and qv_values is not None
+                    else None
+                ),
+                "wind_speed_ms": wind_speed(u_values, v_values) if u_values is not None and v_values is not None else None,
+                "wind_dir_deg": (
+                    wind_direction_from(u_values, v_values)
+                    if u_values is not None and v_values is not None
+                    else None
+                ),
+            }
+            for variable_index, variable_name in enumerate(EMAGRAM_BUNDLE_VARIABLES):
+                variable_values = variable_arrays.get(variable_name)
+                if variable_values is None:
+                    continue
+                variable_values = np.asarray(variable_values, dtype=np.float32)
+                if variable_values.shape[0] != level_count:
+                    log(
+                        f"WARN bundle variable {variable_name} length mismatch for "
+                        f"{model_key} {run_tag} {location_id} {step_label}: {variable_values.shape[0]} != {level_count}"
+                    )
+                    continue
+                values[step_index, variable_index, :] = variable_values
 
             surface = {}
             for var, key in (("ASWDIR_S", "aswdir_s_wm2"), ("ASWDIFD_S", "aswdifd_s_wm2")):
@@ -447,49 +485,58 @@ def export_profiles_from_packed(
 
             valid_time = epoch_to_iso(valid_epochs[step_index]) if valid_epochs[step_index] is not None else None
             horizon = clean_number(horizons[step_index]) if horizons[step_index] is not None else None
-            output_path = output_dir / f"{step_label}.json"
-            payload = {
-                "schema_version": SCHEMA_VERSION,
-                "product": "emagram_profile",
-                "model": model_key,
-                "run": run_tag,
-                "step": step_label,
-                "location": location_payload(location_id, location_meta),
-                "ref_time": attrs.get("ref_time"),
-                "valid_time": valid_time,
-                "horizon": horizon,
-                "source": rel(source_path),
-                "units": {
-                    "height": "m",
-                    "p": "Pa",
-                    "t": "K",
-                    "qv": "kg kg-1",
-                    "u": "m s-1",
-                    "v": "m s-1",
-                    "temperature_c": "degC",
-                    "pressure_hpa": "hPa",
-                    "dewpoint_c": "degC",
-                    "wind_speed_ms": "m s-1",
-                    "wind_dir_deg": "degrees_from",
-                    "aswdir_s_wm2": "W m-2",
-                    "aswdifd_s_wm2": "W m-2",
-                },
-                "profile": profile,
-                "derived": derived,
-            }
-            if surface:
-                payload["surface"] = surface
-
-            write_json(output_path, payload)
             exports.append(
                 {
                     "step": step_label,
-                    "url": rel(output_path),
                     "valid_time": valid_time,
                     "horizon": horizon,
+                    "surface": surface or None,
+                    "bundle_step_index": step_index,
                 }
             )
 
+    data_path = output_dir / "profiles.bin"
+    data_path.write_bytes(values.tobytes())
+    bundle_path = output_dir / "bundle.json"
+    payload = {
+        "schema_version": SCHEMA_VERSION,
+        "product": "emagram_bundle",
+        "model": model_key,
+        "run": run_tag,
+        "location": location_payload(location_id, location_meta),
+        "ref_time": attrs.get("ref_time"),
+        "source": rel(source_path),
+        "units": {
+            "height": "m",
+            "p": "Pa",
+            "t": "K",
+            "qv": "kg kg-1",
+            "u": "m s-1",
+            "v": "m s-1",
+            "temperature_c": "degC",
+            "pressure_hpa": "hPa",
+            "dewpoint_c": "degC",
+            "wind_speed_ms": "m s-1",
+            "wind_dir_deg": "degrees_from",
+            "aswdir_s_wm2": "W m-2",
+            "aswdifd_s_wm2": "W m-2",
+        },
+        "encoding": {
+            "format": "float32-le-step-variable-level",
+            "dtype": "float32",
+            "variables": list(EMAGRAM_BUNDLE_VARIABLES),
+            "step_count": step_count,
+            "level_count": level_count,
+            "data": rel(data_path),
+            "byte_length": int(data_path.stat().st_size),
+            "missing_value": "NaN",
+        },
+        "height": array_to_list(height_values, 3),
+        "steps": exports,
+    }
+    write_json(bundle_path, payload)
+    for item in exports:
+        item["bundle_url"] = rel(bundle_path)
     return exports
 
 
@@ -581,7 +628,12 @@ def write_region_forecast(
         "steps": steps,
         "valid_times": valid_times,
         "products": {
-            "emagrams": {item["step"]: item["url"] for item in profile_exports},
+            "emagrams": {
+                item["step"]: item["url"]
+                for item in profile_exports
+                if item.get("url")
+            },
+            "emagram_bundle": next((item["bundle_url"] for item in profile_exports if item.get("bundle_url")), None),
             "thermal_panel": thermal_export["url"] if thermal_export else None,
         },
         "summary": {
@@ -989,6 +1041,7 @@ def export_model(model: dict[str, Any], locations: dict[str, Any]) -> dict[str, 
             seen_locations.add(location_id)
             model_manifest["counts"]["profiles"] += len(profile_exports)
             model_manifest["counts"]["region_forecasts"] += 1
+            bundle_url = next((item["bundle_url"] for item in profile_exports if item.get("bundle_url")), None)
             run_manifest["locations"][location_id] = {
                 "type": location_meta.get("type", "legacy"),
                 "display_name": location_meta.get("display_name", location_id),
@@ -996,7 +1049,12 @@ def export_model(model: dict[str, Any], locations: dict[str, Any]) -> dict[str, 
                 "valid_times": region_forecast["valid_times"],
                 "region_forecast": region_forecast["url"],
                 "thermal_panel": thermal_export["url"] if thermal_export else None,
-                "emagram_template": rel(WEB_DIR / "emagrams" / model_key / run_tag / location_id / "{step}.json"),
+                "emagram_template": (
+                    None
+                    if bundle_url
+                    else rel(WEB_DIR / "emagrams" / model_key / run_tag / location_id / "{step}.json")
+                ),
+                "emagram_bundle": bundle_url,
             }
 
         model_manifest["runs"][run_tag] = run_manifest
@@ -1040,7 +1098,8 @@ def main() -> None:
         },
         "products": {
             "region_forecasts": "web_exports/region_forecasts/{model}/{run}/{location_id}.json",
-            "emagrams": "web_exports/emagrams/{model}/{run}/{location_id}/{step}.json",
+            "emagrams": None,
+            "emagram_bundles": "web_exports/emagrams/{model}/{run}/{location_id}/bundle.json",
             "thermal_panels": "web_exports/thermal_panels/{model}/{run}/{location_id}.json",
             "maps": {
                 "wind": None,
@@ -1062,6 +1121,7 @@ def main() -> None:
         },
         "notes": [
             "Generated from existing NetCDF files; no additional MeteoSwiss downloads are performed.",
+            "Emagram profiles are bundled per location/run as bundle.json plus float32 little-endian profiles.bin.",
             "Wind map exports are split into browser-readable metadata JSON plus lazy-loaded int8 binary u/v slices.",
             "Sunshine map exports are browser-readable metadata JSON plus lazy-loaded uint8 binary sunshine-fraction slices.",
         ],

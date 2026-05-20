@@ -1,5 +1,6 @@
 .test_tmp/
 .test_tmp_manifest/
+.test_tmp_sunshine/
 __pycache__/
 tests/__pycache__/
 *.pyc
