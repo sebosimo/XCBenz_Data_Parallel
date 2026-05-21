@@ -178,6 +178,16 @@ class SunshineMapAccumulator:
             "product": "sunshine_map_surface",
             "model": self.model_key,
             "run": self.run_tag,
+            "domain": {
+                "id": getattr(self.config, "domain_id", "default"),
+                "label": getattr(self.config, "domain_label", "Default"),
+                "bbox": [
+                    self.config.crop["lon_min"],
+                    self.config.crop["lat_min"],
+                    self.config.crop["lon_max"],
+                    self.config.crop["lat_max"],
+                ],
+            },
             "product_name": "surface",
             "ref_time": self.ref_time.isoformat(),
             "grid": {

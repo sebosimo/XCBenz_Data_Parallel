@@ -3,7 +3,15 @@ import unittest
 import numpy as np
 import xarray as xr
 
-from wind_maps import _interpolate_vertical, _single_level_values, is_wind_maps_enabled, load_config, wind_netcdf_encoding
+from generate_web_exports import wind_style_payload
+from wind_maps import (
+    _HorizontalWeights,
+    _interpolate_vertical,
+    _single_level_values,
+    is_wind_maps_enabled,
+    load_config,
+    wind_netcdf_encoding,
+)
 
 
 class WindMapTests(unittest.TestCase):
@@ -29,8 +37,12 @@ class WindMapTests(unittest.TestCase):
             [level.name for level in cfg.enabled_levels],
             ["10m_AGL", "800m_AGL", "1500m_AMSL", "2000m_AMSL", "3000m_AMSL", "4000m_AMSL"],
         )
-        self.assertEqual(cfg.crop["lon_min"], 5.5)
-        self.assertEqual(cfg.crop["lat_max"], 48.2)
+        self.assertEqual(cfg.crop["lon_min"], 4.0)
+        self.assertEqual(cfg.crop["lon_max"], 16.5)
+        self.assertEqual(cfg.crop["lat_min"], 43.0)
+        self.assertEqual(cfg.crop["lat_max"], 48.8)
+        self.assertEqual(cfg.domain_id, "alps")
+        self.assertEqual(cfg.domain_label, "Alps")
         self.assertEqual(cfg.max_seconds, 0)
 
     def test_config_can_limit_levels_for_manual_trials(self):
@@ -55,6 +67,26 @@ class WindMapTests(unittest.TestCase):
         self.assertEqual(encoding["horizon"]["dtype"], "i2")
         self.assertEqual(encoding["valid_time_epoch"]["dtype"], "i8")
 
+    def test_export_style_uses_dataset_crop_attrs(self):
+        lat = np.asarray([[43.0, 43.0], [43.02, 43.02]], dtype=np.float32)
+        lon = np.asarray([[4.0, 4.02], [4.0, 4.02]], dtype=np.float32)
+
+        style = wind_style_payload(
+            lat,
+            lon,
+            {
+                "crop_lon_min": 4.0,
+                "crop_lon_max": 16.5,
+                "crop_lat_min": 43.0,
+                "crop_lat_max": 48.8,
+                "domain_id": "alps",
+                "domain_label": "Alps",
+            },
+        )
+
+        self.assertEqual(style["map_bbox"], [4.0, 43.0, 16.5, 48.8])
+        self.assertEqual(style["domain"]["id"], "alps")
+
     def test_interpolation_below_lowest_model_layer_remains_missing(self):
         heights = np.asarray(
             [
@@ -76,6 +108,19 @@ class WindMapTests(unittest.TestCase):
         result = _interpolate_vertical(heights, values, 10.0)
 
         self.assertTrue(np.all(np.isnan(result)))
+
+    def test_horizontal_weights_do_not_extrapolate_far_outside_domain(self):
+        weights = _HorizontalWeights(
+            np.asarray([0.0, 1.0, 0.0], dtype=np.float32),
+            np.asarray([0.0, 0.0, 1.0], dtype=np.float32),
+            np.asarray([[0.25, 10.0]], dtype=np.float32),
+            np.asarray([[0.25, 10.0]], dtype=np.float32),
+        )
+
+        result = weights.apply(np.asarray([1.0, 2.0, 3.0], dtype=np.float32))
+
+        self.assertTrue(np.isfinite(result[0, 0]))
+        self.assertTrue(np.isnan(result[0, 1]))
 
     def test_single_level_values_extracts_native_10m_wind(self):
         data = xr.DataArray(

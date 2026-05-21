@@ -68,6 +68,7 @@ class SunshineMapTests(unittest.TestCase):
                 metadata = json.load(f)
             self.assertEqual(metadata["encoding"]["components"], ["sunshine_fraction_pct"])
             self.assertEqual(metadata["encoding"]["dtype"], "uint8")
+            self.assertEqual(metadata["domain"]["id"], "default")
             self.assertEqual(metadata["steps"][0]["path"].replace("\\", "/"), step_path.replace("\\", "/"))
 
             values = np.fromfile(step_path, dtype="u1")

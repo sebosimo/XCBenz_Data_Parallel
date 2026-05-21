@@ -1,10 +1,14 @@
 {
   "schema_version": 1,
+  "domain": {
+    "id": "alps",
+    "label": "Alps"
+  },
   "crop": {
-    "lon_min": 5.5,
-    "lon_max": 11.0,
-    "lat_min": 45.5,
-    "lat_max": 48.2
+    "lon_min": 4.0,
+    "lon_max": 16.5,
+    "lat_min": 43.0,
+    "lat_max": 48.8
   },
   "grid_spacing_deg": 0.02,
   "source_padding_deg": 0.2,

@@ -65,7 +65,7 @@ WIND_WEB_FILL_VALUE = -128
 SUNSHINE_WEB_DIR = WEB_DIR / "sunshine_maps"
 WIND_WEB_STYLE = {
     "source": "XCBenz wind-map style v1",
-    "map_bbox": [5.5, 45.5, 11.0, 48.2],
+    "map_bbox": [4.0, 43.0, 16.5, 48.8],
     "speed_units": "km/h",
     "source_speed_units": "kt",
     "bounds_kt": [0, 4, 6, 10, 14, 18, 22, 26, 30, 35, 40, 45, 50, 60, 70, 80, 90, 100],
@@ -675,6 +675,30 @@ def wind_step_summary(u_raw: np.ndarray, v_raw: np.ndarray) -> dict[str, Any]:
     }
 
 
+def wind_map_bbox(lat: np.ndarray, lon: np.ndarray, attrs: dict[str, Any]) -> list[float]:
+    keys = ("crop_lon_min", "crop_lat_min", "crop_lon_max", "crop_lat_max")
+    if all(key in attrs and attrs[key] is not None for key in keys):
+        return [clean_number(attrs[key], 5) for key in keys]
+    return [
+        clean_number(np.nanmin(lon), 5),
+        clean_number(np.nanmin(lat), 5),
+        clean_number(np.nanmax(lon), 5),
+        clean_number(np.nanmax(lat), 5),
+    ]
+
+
+def wind_style_payload(lat: np.ndarray, lon: np.ndarray, attrs: dict[str, Any]) -> dict[str, Any]:
+    style = dict(WIND_WEB_STYLE)
+    style["map_bbox"] = wind_map_bbox(lat, lon, attrs)
+    if attrs.get("domain_id") or attrs.get("domain_label"):
+        style["domain"] = {
+            "id": attrs.get("domain_id") or "default",
+            "label": attrs.get("domain_label") or attrs.get("domain_id") or "Default",
+            "bbox": style["map_bbox"],
+        }
+    return style
+
+
 def export_wind_level(
     model_key: str,
     run_tag: str,
@@ -749,7 +773,7 @@ def export_wind_level(
             "add_offset": 0.0,
             "missing_value": WIND_WEB_FILL_VALUE,
         },
-        "style": WIND_WEB_STYLE,
+        "style": wind_style_payload(lat, lon, attrs),
         "steps": step_exports,
     }
     write_json(metadata_path, payload, pretty=True)

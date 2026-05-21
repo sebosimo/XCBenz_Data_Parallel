@@ -71,6 +71,8 @@ class WindMapConfig:
     source_padding_deg: float
     max_seconds: float
     horizon_stride: int = 1
+    domain_id: str = "default"
+    domain_label: str = "Default"
 
     @property
     def enabled_levels(self):
@@ -119,6 +121,7 @@ def load_config(path=DEFAULT_CONFIG_PATH, env=None, log: Callable[[str, str], No
         raise ValueError("wind-map config crop must define lon_min, lon_max, lat_min, lat_max")
 
     max_seconds = _env_float("WIND_MAP_MAX_SECONDS", float(raw.get("max_seconds", 300)), env=env)
+    domain = raw.get("domain") or {}
     cfg = WindMapConfig(
         levels=tuple(levels),
         crop={key: float(crop[key]) for key in required_crop_keys},
@@ -126,6 +129,8 @@ def load_config(path=DEFAULT_CONFIG_PATH, env=None, log: Callable[[str, str], No
         source_padding_deg=float(raw.get("source_padding_deg", 0.2)),
         max_seconds=max_seconds,
         horizon_stride=max(1, int(raw.get("horizon_stride", 1))),
+        domain_id=_safe_level_name(domain.get("id", "default")),
+        domain_label=str(domain.get("label", "Default")),
     )
     enabled_names = ", ".join(level.name for level in cfg.enabled_levels) or "none"
     logger(f"Wind-map config loaded: {len(cfg.enabled_levels)} enabled level(s): {enabled_names}", "INFO")
@@ -244,7 +249,7 @@ def _single_level_values(data, spatial_dim):
 
 
 class _HorizontalWeights:
-    def __init__(self, source_lon, source_lat, target_lon, target_lat):
+    def __init__(self, source_lon, source_lat, target_lon, target_lat, max_nearest_distance_deg=0.1):
         points = np.column_stack([source_lon, source_lat])
         target_points = np.column_stack([target_lon.ravel(), target_lat.ravel()])
         self.output_shape = target_lon.shape
@@ -264,11 +269,13 @@ class _HorizontalWeights:
             self.vertices = tri.simplices[inside_simplices].astype(np.int32)
 
         outside_target = np.flatnonzero(~self.inside_mask)
-        self.outside_target = outside_target
+        self.outside_target = np.empty(0, dtype=np.int64)
         self.outside_source = np.empty(0, dtype=np.int32)
         if outside_target.size:
-            _, nearest = cKDTree(points).query(target_points[outside_target], k=1)
-            self.outside_source = nearest.astype(np.int32)
+            distances, nearest = cKDTree(points).query(target_points[outside_target], k=1)
+            near = np.isfinite(distances) & (distances <= float(max_nearest_distance_deg))
+            self.outside_target = outside_target[near]
+            self.outside_source = nearest[near].astype(np.int32)
 
     def apply(self, source_values):
         flat = np.full(self.output_shape[0] * self.output_shape[1], np.nan, dtype=np.float32)
@@ -428,6 +435,8 @@ class WindMapAccumulator:
                 "crop_lat_min": self.config.crop["lat_min"],
                 "crop_lat_max": self.config.crop["lat_max"],
                 "grid_spacing_deg": self.config.grid_spacing_deg,
+                "domain_id": self.config.domain_id,
+                "domain_label": self.config.domain_label,
                 "encoding": WIND_ENCODING_NAME,
             },
         )
