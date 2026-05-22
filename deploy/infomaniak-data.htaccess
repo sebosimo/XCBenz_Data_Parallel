@@ -1,0 +1,22 @@
+Options -Indexes
+
+<IfModule mod_headers.c>
+  Header set Access-Control-Allow-Origin "*"
+  Header set Access-Control-Allow-Methods "GET, HEAD, OPTIONS"
+  Header set Access-Control-Allow-Headers "Origin, Range, Accept, Content-Type"
+  Header set X-Content-Type-Options "nosniff"
+</IfModule>
+
+AddType application/json .json
+AddType application/geo+json .geojson
+AddType application/octet-stream .bin
+
+<IfModule mod_headers.c>
+  <FilesMatch "manifest\.json$">
+    Header set Cache-Control "no-cache, must-revalidate"
+  </FilesMatch>
+
+  <FilesMatch "\.(bin|json|geojson)$">
+    Header set Cache-Control "public, max-age=3600"
+  </FilesMatch>
+</IfModule>

@@ -30,11 +30,19 @@ on:
       data_branch:
         description: "Branch used for sandbox data publishing"
         type: string
-        default: "data-test"
+        default: "data-web"
       download_workers:
         description: "Bounded concurrent STAC/download workers per horizon"
         type: string
         default: "6"
+      deploy_data_host:
+        description: "Upload validated web_exports to data.xcbenz.com"
+        type: boolean
+        default: false
+      data_host_base_url:
+        description: "Public base URL for the Infomaniak data host"
+        type: string
+        default: "https://data.xcbenz.com"
   schedule:
     - cron: "17,47 * * * *"
 
@@ -44,9 +52,11 @@ concurrency:
 
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
-  DATA_BRANCH: ${{ github.event.inputs.data_branch || 'data-test' }}
+  DATA_BRANCH: ${{ github.event.inputs.data_branch || 'data-web' }}
   DOWNLOAD_WORKERS: ${{ github.event.inputs.download_workers || '6' }}
-  WEB_EXPORT_DATA_ROOT: https://raw.githubusercontent.com/${{ github.repository }}/${{ github.event.inputs.data_branch || 'data-test' }}
+  DEPLOY_DATA_HOST: ${{ github.event.inputs.deploy_data_host || 'false' }}
+  DATA_HOST_BASE_URL: ${{ github.event.inputs.data_host_base_url || 'https://data.xcbenz.com' }}
+  WEB_EXPORT_DATA_ROOT: ${{ (github.event.inputs.deploy_data_host == 'true' && (github.event.inputs.data_host_base_url || 'https://data.xcbenz.com')) || format('https://raw.githubusercontent.com/{0}/{1}', github.repository, github.event.inputs.data_branch || 'data-web') }}
 
 jobs:
   preflight:
@@ -157,7 +167,7 @@ jobs:
       - name: Install system dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y libeccodes-dev
+          sudo apt-get install -y libeccodes-dev rsync
 
       - name: Install Python dependencies
         run: |
@@ -352,7 +362,7 @@ jobs:
       - name: Install system dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y libeccodes-dev
+          sudo apt-get install -y libeccodes-dev rsync
 
       - name: Install Python dependencies
         run: |
@@ -449,6 +459,23 @@ jobs:
           fi
           git checkout -f main
           git branch -D data-temp
+
+      - name: Deploy web exports to Infomaniak data host
+        if: ${{ env.DEPLOY_DATA_HOST == 'true' }}
+        env:
+          INFOMANIAK_HOST: ${{ secrets.INFOMANIAK_HOST }}
+          INFOMANIAK_PORT: ${{ secrets.INFOMANIAK_PORT }}
+          INFOMANIAK_USER: ${{ secrets.INFOMANIAK_USER }}
+          INFOMANIAK_SSH_KEY: ${{ secrets.INFOMANIAK_SSH_KEY }}
+          INFOMANIAK_DATA_ROOT: ${{ secrets.INFOMANIAK_DATA_ROOT }}
+          DATA_HOST_BASE_URL: ${{ env.DATA_HOST_BASE_URL }}
+        run: bash scripts/deploy_data_infomaniak.sh
+
+      - name: Validate remote data host
+        if: ${{ env.DEPLOY_DATA_HOST == 'true' }}
+        env:
+          DATA_BASE_URL: ${{ env.DATA_HOST_BASE_URL }}
+        run: python scripts/validate_remote_web_exports.py
 
   noop:
     needs: preflight

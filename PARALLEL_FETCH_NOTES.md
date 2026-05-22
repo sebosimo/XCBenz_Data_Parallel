@@ -107,6 +107,43 @@ incomplete run, the CH2 fetch job is skipped entirely, and the publish job
 restores the existing CH2 data from `data-test` before merging the fresh CH1
 artifact.
 
+## Complete-Run Chunk Pinning
+
+Chunked profile and map jobs must all use the same model cycle selected by
+preflight. MeteoSwiss can expose a new run before all horizons are available; if
+chunk jobs independently choose or fall back between runs, publish can receive
+mixed-run artifacts that cannot form one complete bundled run.
+
+The workflow now passes preflight decisions to chunk jobs:
+
+- `CH1_RUN_TAG` for CH1 map/profile jobs
+- `CH2_RUN_TAG` for CH2 map/profile jobs
+- `CH1_REQUIRE_FULL_HORIZON_RUN=true` and
+  `CH2_REQUIRE_FULL_HORIZON_RUN=true` for strict chunk runs
+
+Validated run `26281069968` selected `20260522_0600` for both CH1 and CH2 after
+rejecting incomplete CH1 `20260522_0900` at H+033. CH1 and CH2 chunk logs both
+showed the corresponding pinned run, and publish completed with `0` `.nc` files
+under `web_exports/`.
+
+## Infomaniak Data Host Preparation
+
+The beta2 production-candidate path uses `data-web` as the cleaner generated
+data branch name, leaving `data-test` available for sandbox experiments. The
+`data-web` branch was seeded from validated `data-test` commit `108251b`.
+
+The workflow has a gated manual deploy path for the future static data host:
+
+```text
+deploy_data_host: false
+data_host_base_url: https://data.xcbenz.com
+```
+
+When `deploy_data_host=true`, validated `web_exports/` can be uploaded to
+Infomaniak through `scripts/deploy_data_infomaniak.sh`, then checked with
+`scripts/validate_remote_web_exports.py`. Scheduled runs do not deploy to
+Infomaniak until this flag is explicitly enabled or the schedule is changed.
+
 ## Retention
 
 The parallel workflow applies the same data-branch retention policy as the
