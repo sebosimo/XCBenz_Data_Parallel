@@ -440,6 +440,23 @@ jobs:
           echo "web_exports .nc files: $(find web_exports -name '*.nc' 2>/dev/null | wc -l)"
           du -sh cache_data cache_data_ch2 cache_data_packed cache_data_ch2_packed cache_wind_packed cache_sunshine_maps web_exports 2>/dev/null || true
 
+      - name: Deploy web exports to Infomaniak data host
+        if: ${{ env.DEPLOY_DATA_HOST == 'true' }}
+        env:
+          INFOMANIAK_HOST: ${{ secrets.INFOMANIAK_HOST }}
+          INFOMANIAK_PORT: ${{ secrets.INFOMANIAK_PORT }}
+          INFOMANIAK_USER: ${{ secrets.INFOMANIAK_USER }}
+          INFOMANIAK_SSH_KEY: ${{ secrets.INFOMANIAK_SSH_KEY }}
+          INFOMANIAK_DATA_ROOT: ${{ secrets.INFOMANIAK_DATA_ROOT }}
+          DATA_HOST_BASE_URL: ${{ env.DATA_HOST_BASE_URL }}
+        run: bash scripts/deploy_data_infomaniak.sh
+
+      - name: Validate remote data host
+        if: ${{ env.DEPLOY_DATA_HOST == 'true' }}
+        env:
+          DATA_BASE_URL: ${{ env.DATA_HOST_BASE_URL }}
+        run: python scripts/validate_remote_web_exports.py
+
       - name: Commit and push sandbox data
         run: |
           git config --global user.name "GitHub Action"
@@ -459,23 +476,6 @@ jobs:
           fi
           git checkout -f main
           git branch -D data-temp
-
-      - name: Deploy web exports to Infomaniak data host
-        if: ${{ env.DEPLOY_DATA_HOST == 'true' }}
-        env:
-          INFOMANIAK_HOST: ${{ secrets.INFOMANIAK_HOST }}
-          INFOMANIAK_PORT: ${{ secrets.INFOMANIAK_PORT }}
-          INFOMANIAK_USER: ${{ secrets.INFOMANIAK_USER }}
-          INFOMANIAK_SSH_KEY: ${{ secrets.INFOMANIAK_SSH_KEY }}
-          INFOMANIAK_DATA_ROOT: ${{ secrets.INFOMANIAK_DATA_ROOT }}
-          DATA_HOST_BASE_URL: ${{ env.DATA_HOST_BASE_URL }}
-        run: bash scripts/deploy_data_infomaniak.sh
-
-      - name: Validate remote data host
-        if: ${{ env.DEPLOY_DATA_HOST == 'true' }}
-        env:
-          DATA_BASE_URL: ${{ env.DATA_HOST_BASE_URL }}
-        run: python scripts/validate_remote_web_exports.py
 
   noop:
     needs: preflight
