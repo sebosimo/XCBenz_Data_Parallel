@@ -3,46 +3,14 @@ name: Parallel Sounding Workflow
 on:
   workflow_dispatch:
     inputs:
-      force_refresh:
-        description: "Download fresh data even if the latest runs are already published?"
-        type: boolean
-        default: true
-      enable_wind_maps:
-        description: "Generate packed wind-map files?"
-        type: boolean
-        default: true
-      enable_wind_maps_ch1:
-        description: "Generate CH1 wind maps?"
-        type: boolean
-        default: true
-      enable_wind_maps_ch2:
-        description: "Generate CH2 wind maps?"
-        type: boolean
-        default: true
-      enable_sunshine_maps:
-        description: "Generate browser-ready sunshine-map files?"
-        type: boolean
-        default: true
-      wind_map_max_seconds:
-        description: "Wind-map active-processing budget in seconds (0 disables)"
-        type: string
-        default: "0"
-      data_branch:
-        description: "Branch used for sandbox data publishing"
-        type: string
-        default: "data-web"
-      download_workers:
-        description: "Bounded concurrent STAC/download workers per horizon"
-        type: string
-        default: "6"
-      deploy_data_host:
-        description: "Upload validated web_exports to data.xcbenz.com"
-        type: boolean
-        default: false
-      data_host_base_url:
-        description: "Public base URL for the Infomaniak data host"
-        type: string
-        default: "https://data.xcbenz.com"
+      run_mode:
+        description: "Manual run mode"
+        type: choice
+        default: "force-refresh"
+        options:
+          - "force-refresh"
+          - "standard"
+          - "deploy-data-host"
   schedule:
     - cron: "17,47 * * * *"
 
@@ -52,11 +20,17 @@ concurrency:
 
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
-  DATA_BRANCH: ${{ github.event.inputs.data_branch || 'data-web' }}
-  DOWNLOAD_WORKERS: ${{ github.event.inputs.download_workers || '6' }}
-  DEPLOY_DATA_HOST: ${{ github.event.inputs.deploy_data_host || 'false' }}
-  DATA_HOST_BASE_URL: ${{ github.event.inputs.data_host_base_url || 'https://data.xcbenz.com' }}
-  WEB_EXPORT_DATA_ROOT: ${{ (github.event.inputs.deploy_data_host == 'true' && (github.event.inputs.data_host_base_url || 'https://data.xcbenz.com')) || format('https://raw.githubusercontent.com/{0}/{1}', github.repository, github.event.inputs.data_branch || 'data-web') }}
+  FORCE_REFRESH: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.run_mode != 'standard' && 'true' || 'false' }}
+  DATA_BRANCH: data-web
+  DOWNLOAD_WORKERS: "6"
+  DEPLOY_DATA_HOST: ${{ github.event.inputs.run_mode == 'deploy-data-host' && 'true' || 'false' }}
+  DATA_HOST_BASE_URL: https://data.xcbenz.com
+  WEB_EXPORT_DATA_ROOT: ${{ (github.event.inputs.run_mode == 'deploy-data-host' && 'https://data.xcbenz.com') || format('https://raw.githubusercontent.com/{0}/data-web', github.repository) }}
+  ENABLE_WIND_MAPS: "true"
+  ENABLE_WIND_MAPS_CH1: "true"
+  ENABLE_WIND_MAPS_CH2: "true"
+  ENABLE_SUNSHINE_MAPS: "true"
+  WIND_MAP_MAX_SECONDS: "0"
 
 jobs:
   preflight:
@@ -79,7 +53,7 @@ jobs:
       - name: Check latest available runs
         id: preflight
         env:
-          FORCE_REFRESH: ${{ github.event.inputs.force_refresh || 'false' }}
+          FORCE_REFRESH: ${{ env.FORCE_REFRESH }}
         run: python scripts/preflight_runs.py
 
   fetch-ch1:
@@ -118,13 +92,13 @@ jobs:
 
       - name: Fetch CH1 map data
         env:
-          FORCE_REFRESH: ${{ github.event.inputs.force_refresh || 'false' }}
+          FORCE_REFRESH: ${{ env.FORCE_REFRESH }}
           CH1_RUN_TAG: ${{ needs.preflight.outputs.latest_ch1 }}
           CH1_PROFILE_MODE: none
-          ENABLE_WIND_MAPS: ${{ github.event.inputs.enable_wind_maps || 'true' }}
-          ENABLE_WIND_MAPS_CH1: ${{ github.event.inputs.enable_wind_maps_ch1 || 'true' }}
-          WIND_MAP_MAX_SECONDS: ${{ github.event.inputs.wind_map_max_seconds || '0' }}
-          ENABLE_SUNSHINE_MAPS: ${{ github.event.inputs.enable_sunshine_maps || 'true' }}
+          ENABLE_WIND_MAPS: ${{ env.ENABLE_WIND_MAPS }}
+          ENABLE_WIND_MAPS_CH1: ${{ env.ENABLE_WIND_MAPS_CH1 }}
+          WIND_MAP_MAX_SECONDS: ${{ env.WIND_MAP_MAX_SECONDS }}
+          ENABLE_SUNSHINE_MAPS: ${{ env.ENABLE_SUNSHINE_MAPS }}
         run: uv run python fetch_data.py
 
       - name: Upload CH1 outputs
@@ -176,7 +150,7 @@ jobs:
 
       - name: Fetch CH1 direct profile chunk
         env:
-          FORCE_REFRESH: ${{ github.event.inputs.force_refresh || 'false' }}
+          FORCE_REFRESH: ${{ env.FORCE_REFRESH }}
           CH1_RUN_TAG: ${{ needs.preflight.outputs.latest_ch1 }}
           CH1_PROFILE_MODE: direct-chunk
           CH1_PROFILE_CHUNK_ID: ${{ matrix.chunk.id }}
@@ -242,7 +216,7 @@ jobs:
 
       - name: Fetch CH2 map data
         env:
-          FORCE_REFRESH: ${{ github.event.inputs.force_refresh || 'false' }}
+          FORCE_REFRESH: ${{ env.FORCE_REFRESH }}
           CH2_RUN_TAG: ${{ needs.preflight.outputs.latest_ch2 }}
           CH2_PROFILE_MODE: none
           CH2_HORIZON_START: ${{ matrix.chunk.start }}
@@ -250,10 +224,10 @@ jobs:
           CH2_REQUIRE_FULL_HORIZON_RUN: "true"
           CH2_WIND_MAP_OUT_ROOT: map_chunk_outputs/${{ matrix.chunk.id }}/cache_wind_packed
           CH2_SUNSHINE_MAP_OUT_ROOT: map_chunk_outputs/${{ matrix.chunk.id }}/cache_sunshine_maps
-          ENABLE_WIND_MAPS: ${{ github.event.inputs.enable_wind_maps || 'true' }}
-          ENABLE_WIND_MAPS_CH2: ${{ github.event.inputs.enable_wind_maps_ch2 || 'true' }}
-          WIND_MAP_MAX_SECONDS: ${{ github.event.inputs.wind_map_max_seconds || '0' }}
-          ENABLE_SUNSHINE_MAPS: ${{ github.event.inputs.enable_sunshine_maps || 'true' }}
+          ENABLE_WIND_MAPS: ${{ env.ENABLE_WIND_MAPS }}
+          ENABLE_WIND_MAPS_CH2: ${{ env.ENABLE_WIND_MAPS_CH2 }}
+          WIND_MAP_MAX_SECONDS: ${{ env.WIND_MAP_MAX_SECONDS }}
+          ENABLE_SUNSHINE_MAPS: ${{ env.ENABLE_SUNSHINE_MAPS }}
         run: uv run python fetch_data_ch2.py
 
       - name: Upload CH2 outputs
@@ -310,7 +284,7 @@ jobs:
 
       - name: Fetch CH2 direct profile chunk
         env:
-          FORCE_REFRESH: ${{ github.event.inputs.force_refresh || 'false' }}
+          FORCE_REFRESH: ${{ env.FORCE_REFRESH }}
           CH2_RUN_TAG: ${{ needs.preflight.outputs.latest_ch2 }}
           CH2_PROFILE_MODE: direct-chunk
           CH2_PROFILE_CHUNK_ID: ${{ matrix.chunk.id }}
