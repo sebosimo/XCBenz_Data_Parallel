@@ -11,13 +11,13 @@ import json
 import os
 import sys
 import urllib.error
-import urllib.parse
 import urllib.request
 
 
 COLLECTIONS = {
     "ch1": {
         "url": "https://data.geo.admin.ch/api/stac/v1/collections/ch.meteoschweiz.ogd-forecasting-icon-ch1/items",
+        "collection_id": "ch.meteoschweiz.ogd-forecasting-icon-ch1",
         "slot_hours": 3,
         "lookback_slots": 16,
         "manifest_key": "runs",
@@ -25,6 +25,7 @@ COLLECTIONS = {
     },
     "ch2": {
         "url": "https://data.geo.admin.ch/api/stac/v1/collections/ch.meteoschweiz.ogd-forecasting-icon-ch2/items",
+        "collection_id": "ch.meteoschweiz.ogd-forecasting-icon-ch2",
         "slot_hours": 6,
         "lookback_slots": 20,
         "manifest_key": "runs_ch2",
@@ -43,6 +44,67 @@ def get_json(url: str, timeout: int = 15) -> dict:
         return json.loads(response.read().decode("utf-8"))
 
 
+def post_json(url: str, payload: dict, timeout: int = 15) -> dict:
+    request = urllib.request.Request(
+        url,
+        data=json.dumps(payload).encode("utf-8"),
+        headers={
+            "Accept": "application/json",
+            "Content-Type": "application/json",
+            "User-Agent": "XCBenz_Data_Parallel/1.0",
+        },
+    )
+    with urllib.request.urlopen(request, timeout=timeout) as response:
+        return json.loads(response.read().decode("utf-8"))
+
+
+def iso_horizon(hours: int) -> str:
+    days = int(hours) // 24
+    remainder = int(hours) % 24
+    return f"P{days}DT{remainder}H"
+
+
+def expected_horizon_count(model: str, run_tag: str) -> int:
+    if model == "ch2":
+        return 121
+
+    try:
+        run_hour = int(run_tag.split("_", 1)[1][:2])
+    except Exception:
+        return 34
+    return 46 if run_hour == 3 else 34
+
+
+def has_profile_horizon(model: str, reference_datetime: dt.datetime, horizon: int) -> bool:
+    cfg = COLLECTIONS[model]
+    ref = reference_datetime.strftime("%Y-%m-%dT%H:%M:%SZ")
+    payload = {
+        "collections": [cfg["collection_id"]],
+        "forecast:variable": "T",
+        "forecast:reference_datetime": ref,
+        "forecast:perturbed": False,
+        "forecast:horizon": iso_horizon(horizon),
+        "limit": 1,
+    }
+    try:
+        response = post_json("https://data.geo.admin.ch/api/stac/v1/search", payload, timeout=15)
+    except Exception as exc:  # noqa: BLE001 - preflight should be best effort.
+        log(f"{model} horizon probe failed for {ref} H+{horizon:03d}: {exc}")
+        return False
+
+    for feature in response.get("features") or []:
+        props = feature.get("properties") or {}
+        if (
+            props.get("forecast:reference_datetime") == ref
+            and props.get("forecast:variable") == "T"
+            and props.get("forecast:perturbed") is False
+        ):
+            log(f"{model} horizon probe ok: {ref} H+{horizon:03d}")
+            return True
+    log(f"{model} horizon probe missing: {ref} H+{horizon:03d}")
+    return False
+
+
 def latest_run(model: str) -> str | None:
     cfg = COLLECTIONS[model]
     now = dt.datetime.now(dt.timezone.utc)
@@ -53,16 +115,10 @@ def latest_run(model: str) -> str | None:
     for offset in range(cfg["lookback_slots"]):
         candidate = start - dt.timedelta(hours=offset * slot)
         ref = candidate.strftime("%Y-%m-%dT%H:%M:%SZ")
-        query = urllib.parse.urlencode({"limit": 1, "forecast:reference_datetime": ref})
-        url = f"{cfg['url']}?{query}"
-        try:
-            payload = get_json(url, timeout=10)
-        except Exception as exc:  # noqa: BLE001 - preflight should be best effort.
-            log(f"{model} probe failed for {ref}: {exc}")
-            continue
-        if payload.get("features"):
-            tag = candidate.strftime("%Y%m%d_%H%M")
-            log(f"{model} latest available run: {tag}")
+        tag = candidate.strftime("%Y%m%d_%H%M")
+        required_horizon = expected_horizon_count(model, tag) - 1
+        if has_profile_horizon(model, candidate, required_horizon):
+            log(f"{model} latest profile-complete run: {tag}")
             return tag
     return None
 
@@ -87,17 +143,6 @@ def load_existing_manifest() -> dict:
 
     log(f"No existing manifest on {branch}; running full update.")
     return {}
-
-
-def expected_horizon_count(model: str, run_tag: str) -> int:
-    if model == "ch2":
-        return 121
-
-    try:
-        run_hour = int(run_tag.split("_", 1)[1][:2])
-    except Exception:
-        return 34
-    return 46 if run_hour == 3 else 34
 
 
 def published_step_count(run_payload: dict) -> int:
@@ -145,14 +190,16 @@ def write_output(name: str, value: str) -> None:
 
 def main() -> int:
     force_refresh = os.environ.get("FORCE_REFRESH", "").strip().lower() in {"1", "true", "yes", "on"}
+    latest = {model: latest_run(model) for model in COLLECTIONS}
     if force_refresh:
         write_output("should_run", "true")
         write_output("should_run_ch1", "true")
         write_output("should_run_ch2", "true")
         write_output("reason", "force_refresh")
+        for model, tag in latest.items():
+            write_output(f"latest_{model}", tag or "")
         return 0
 
-    latest = {model: latest_run(model) for model in COLLECTIONS}
     manifest = load_existing_manifest()
     missing = []
     model_should_run = {model: False for model in COLLECTIONS}

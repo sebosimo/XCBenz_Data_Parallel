@@ -336,26 +336,39 @@ def scan_profile_chunks(root: Path, locations: dict[str, Any]) -> dict[str, dict
 
     for run_dir in sorted((p for p in root.iterdir() if p.is_dir()), reverse=True):
         found: dict[str, dict[str, Path]] = {}
+        chunk_names: set[str] = set()
         for chunk_dir in sorted(p for p in run_dir.iterdir() if p.is_dir()):
             for location_id in sorted(locations):
                 chunk_path = chunk_dir / location_id / "chunk.json"
                 if chunk_path.is_file():
                     saw_chunks = True
+                    chunk_names.add(chunk_dir.name)
                     found.setdefault(location_id, {})[chunk_dir.name] = chunk_path
         run_locations: dict[str, list[Path]] = {}
+        incomplete_count = 0
+        missing_summaries: set[str] = set()
         for location_id, chunk_paths in found.items():
             missing_chunks = expected_chunks.difference(chunk_paths)
             if missing_chunks:
-                log(
-                    f"WARN direct profile chunks incomplete for {root.name} {run_dir.name} "
-                    f"{location_id}: missing {sorted(missing_chunks)}"
-                )
+                incomplete_count += 1
+                missing_summaries.add(",".join(sorted(missing_chunks)))
                 continue
             run_locations[location_id] = [chunk_paths[name] for name in sorted(chunk_paths)]
+        if found:
+            log(
+                f"direct profile chunk coverage for {root.name} {run_dir.name}: "
+                f"chunks={sorted(chunk_names)} complete_locations={len(run_locations)} "
+                f"incomplete_locations={incomplete_count}"
+            )
+            if missing_summaries:
+                log(
+                    f"WARN direct profile chunks incomplete for {root.name} {run_dir.name}: "
+                    f"missing chunk sets={sorted(missing_summaries)}"
+                )
         if run_locations:
             runs[run_dir.name] = run_locations
     if saw_chunks and expected_chunks and not runs:
-        raise RuntimeError(f"Found {root.name} direct profile chunks, but no run had all expected chunks")
+        log(f"WARN found {root.name} direct profile chunks, but no run had all expected chunks; falling back")
     return runs
 
 

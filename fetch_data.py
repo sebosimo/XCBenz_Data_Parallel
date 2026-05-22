@@ -139,6 +139,19 @@ def env_choice(name, default, choices):
     value = str(raw).strip().lower()
     return value if value in choices else default
 
+def env_run_tag(name):
+    raw = os.getenv(name)
+    if not raw:
+        return None
+    value = str(raw).strip()
+    for fmt in ("%Y%m%d_%H%M", "%Y-%m-%dT%H:%M:%SZ"):
+        try:
+            return datetime.datetime.strptime(value, fmt).replace(tzinfo=datetime.timezone.utc)
+        except ValueError:
+            continue
+    log(f"Ignoring invalid {name}={value!r}; expected YYYYMMDD_HHMM or ISO UTC.", "WARNING")
+    return None
+
 def step_label(h):
     return f"H{h:02d}"
 
@@ -183,6 +196,22 @@ def fetch_variable_file(collection, variable, reference_datetime, horizon, targe
     except Exception as exc:
         log(f"Fetch setup failed for {variable} {horizon}: {exc}", "WARNING")
         return variable, target_path, False
+
+def has_profile_horizon(reference_datetime, horizon):
+    """Return true when a CH1 run has the required pressure-level horizon."""
+    try:
+        req = ogd_api.Request(
+            collection="ogd-forecasting-icon-ch1",
+            variable="T",
+            reference_datetime=reference_datetime,
+            horizon=get_iso_horizon(horizon),
+            perturbed=False,
+        )
+        return bool(ogd_api.get_asset_urls(req))
+    except Exception as exc:
+        label = reference_datetime.strftime("%Y%m%d_%H%M")
+        log(f"CH1 profile horizon probe failed for {label} H+{horizon:03d}: {exc}", "WARNING")
+        return False
 
 def fetch_variable_files(collection, variables, reference_datetime, horizon, tag, horizon_label, prefix):
     workers = env_int("DOWNLOAD_WORKERS", default=4, minimum=1, maximum=8)
@@ -717,6 +746,8 @@ def main():
     if horizon_end < horizon_start:
         horizon_start, horizon_end = horizon_end, horizon_start
     chunk_id = os.getenv("CH1_PROFILE_CHUNK_ID") or f"H{horizon_start:03d}_H{horizon_end:03d}"
+    pinned_run = env_run_tag("CH1_RUN_TAG") or env_run_tag("CH1_REFERENCE_TIME")
+    require_full_horizon_run = env_flag("CH1_REQUIRE_FULL_HORIZON_RUN", profile_mode == "direct-chunk")
     if force_refresh:
         log("FORCE_REFRESH enabled: existing CH1 run-complete checks will be ignored.", "NOTICE")
     log(
@@ -724,6 +755,8 @@ def main():
         f"chunk_id={chunk_id}",
         "NOTICE",
     )
+    if pinned_run is not None:
+        log(f"CH1 pinned run: {pinned_run.strftime('%Y%m%d_%H%M')}", "NOTICE")
 
     wind_config = None
     wind_enabled = is_wind_maps_enabled("ch1")
@@ -746,7 +779,7 @@ def main():
     if not os.path.exists("locations.json"): return
     with open("locations.json", "r", encoding="utf-8") as f: locations = json.load(f)
 
-    runs = get_latest_available_runs(limit=3)
+    runs = [pinned_run] if pinned_run is not None else get_latest_available_runs(limit=3)
     if not runs: log("No runs found."); return
 
     hhl = load_static_hhl()
@@ -778,6 +811,9 @@ def main():
                 f"H{horizon_start:03d}-H{horizon_end:03d}; trying next run.",
                 "WARNING",
             )
+            continue
+        if require_full_horizon_run and not has_profile_horizon(ref_time, run_horizon_end):
+            log(f"CH1 run {tag} does not expose H{run_horizon_end:03d} yet; trying next available run.")
             continue
 
         log(f"Processing run: {tag} (H{horizon_start:03d}-H{run_horizon_end:03d})")
