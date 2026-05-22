@@ -10,6 +10,32 @@ fail() {
   exit 1
 }
 
+retry() {
+  local label="$1"
+  shift
+
+  local max_attempts="${DEPLOY_RETRIES:-3}"
+  local delay_seconds="${DEPLOY_RETRY_DELAY_SECONDS:-20}"
+  local attempt=1
+  local rc=0
+
+  while true; do
+    if "$@"; then
+      return 0
+    fi
+
+    rc=$?
+    if (( attempt >= max_attempts )); then
+      log "$label failed after $attempt attempt(s)"
+      return "$rc"
+    fi
+
+    log "$label failed on attempt $attempt/$max_attempts with exit $rc; retrying in ${delay_seconds}s"
+    sleep "$delay_seconds"
+    attempt=$((attempt + 1))
+  done
+}
+
 require_env() {
   local name="$1"
   if [[ -z "${!name:-}" ]]; then
@@ -79,18 +105,22 @@ REMOTE_CURRENT="$REMOTE_ROOT/web_exports"
 REMOTE_PREVIOUS="$REMOTE_ROOT/_previous_web_exports"
 
 log "Preparing remote upload directory $REMOTE_TMP"
-ssh "${SSH_OPTS[@]}" "$SSH_TARGET" "mkdir -p '$REMOTE_TMP/web_exports'"
+retry "prepare remote upload directory" \
+  ssh "${SSH_OPTS[@]}" "$SSH_TARGET" "mkdir -p '$REMOTE_TMP/web_exports'"
 
 if [[ -f "deploy/infomaniak-data.htaccess" ]]; then
   log "Uploading data host .htaccess"
-  rsync -az -e "$RSYNC_SSH" "deploy/infomaniak-data.htaccess" "$SSH_TARGET:$REMOTE_ROOT/.htaccess"
+  retry "upload data host .htaccess" \
+    rsync -az -e "$RSYNC_SSH" "deploy/infomaniak-data.htaccess" "$SSH_TARGET:$REMOTE_ROOT/.htaccess"
 fi
 
 log "Uploading $WEB_EXPORT_DIR to $REMOTE_TMP/web_exports"
-rsync -az --delete -e "$RSYNC_SSH" "$WEB_EXPORT_DIR/" "$SSH_TARGET:$REMOTE_TMP/web_exports/"
+retry "upload $WEB_EXPORT_DIR" \
+  rsync -az --delete -e "$RSYNC_SSH" "$WEB_EXPORT_DIR/" "$SSH_TARGET:$REMOTE_TMP/web_exports/"
 
 log "Switching remote web_exports directory"
-ssh "${SSH_OPTS[@]}" "$SSH_TARGET" "
+retry "switch remote web_exports directory" \
+  ssh "${SSH_OPTS[@]}" "$SSH_TARGET" "
   set -e
   mkdir -p '$REMOTE_ROOT'
   rm -rf '$REMOTE_PREVIOUS'
