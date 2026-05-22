@@ -147,6 +147,20 @@ def env_choice(name, default, choices):
     return value if value in choices else default
 
 
+def env_run_tag(name):
+    raw = os.getenv(name)
+    if not raw:
+        return None
+    value = str(raw).strip()
+    for fmt in ("%Y%m%d_%H%M", "%Y-%m-%dT%H:%M:%SZ"):
+        try:
+            return datetime.datetime.strptime(value, fmt).replace(tzinfo=datetime.timezone.utc)
+        except ValueError:
+            continue
+    log(f"Ignoring invalid {name}={value!r}; expected YYYYMMDD_HHMM or ISO UTC.", "WARNING")
+    return None
+
+
 def log(msg, level="INFO"):
     timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     with open("debug_log_ch2.txt", "a") as f:
@@ -730,6 +744,7 @@ def main():
     if horizon_end < horizon_start:
         horizon_start, horizon_end = horizon_end, horizon_start
     chunk_id = os.getenv("CH2_PROFILE_CHUNK_ID") or f"H{horizon_start:03d}_H{horizon_end:03d}"
+    pinned_run = env_run_tag("CH2_RUN_TAG") or env_run_tag("CH2_REFERENCE_TIME")
     if force_refresh:
         log("FORCE_REFRESH enabled: existing CH2 run/horizon-complete checks will be ignored.", "NOTICE")
     log(
@@ -737,6 +752,8 @@ def main():
         f"chunk_id={chunk_id}",
         "NOTICE",
     )
+    if pinned_run is not None:
+        log(f"CH2 pinned run: {pinned_run.strftime('%Y%m%d_%H%M')}", "NOTICE")
 
     wind_config = None
     wind_map_out_root = os.getenv("CH2_WIND_MAP_OUT_ROOT", CACHE_DIR_WIND_PACKED)
@@ -766,7 +783,7 @@ def main():
     with open("locations.json", "r", encoding="utf-8") as f:
         locations = json.load(f)
 
-    runs = get_latest_available_runs(limit=2)
+    runs = [pinned_run] if pinned_run is not None else get_latest_available_runs(limit=2)
     if not runs:
         log("No CH2 runs found.")
         return

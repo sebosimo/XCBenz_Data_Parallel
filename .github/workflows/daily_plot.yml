@@ -233,6 +233,7 @@ jobs:
       - name: Fetch CH2 map data
         env:
           FORCE_REFRESH: ${{ github.event.inputs.force_refresh || 'false' }}
+          CH2_RUN_TAG: ${{ needs.preflight.outputs.latest_ch2 }}
           CH2_PROFILE_MODE: none
           CH2_HORIZON_START: ${{ matrix.chunk.start }}
           CH2_HORIZON_END: ${{ matrix.chunk.end }}
@@ -300,10 +301,12 @@ jobs:
       - name: Fetch CH2 direct profile chunk
         env:
           FORCE_REFRESH: ${{ github.event.inputs.force_refresh || 'false' }}
+          CH2_RUN_TAG: ${{ needs.preflight.outputs.latest_ch2 }}
           CH2_PROFILE_MODE: direct-chunk
           CH2_PROFILE_CHUNK_ID: ${{ matrix.chunk.id }}
           CH2_HORIZON_START: ${{ matrix.chunk.start }}
           CH2_HORIZON_END: ${{ matrix.chunk.end }}
+          CH2_REQUIRE_FULL_HORIZON_RUN: "true"
           ENABLE_WIND_MAPS: "false"
           ENABLE_WIND_MAPS_CH2: "false"
           ENABLE_SUNSHINE_MAPS: "false"
