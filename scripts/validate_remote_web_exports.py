@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 import os
 import sys
+import time
 from dataclasses import dataclass
 from typing import Any
 from urllib.error import HTTPError, URLError
@@ -14,6 +15,8 @@ from urllib.request import Request, urlopen
 
 BASE_URL = os.environ.get("DATA_BASE_URL", "https://data.xcbenz.com").rstrip("/") + "/"
 TIMEOUT = float(os.environ.get("REMOTE_VALIDATE_TIMEOUT", "30"))
+RETRIES = int(os.environ.get("REMOTE_VALIDATE_RETRIES", "3"))
+RETRY_DELAY = float(os.environ.get("REMOTE_VALIDATE_RETRY_DELAY", "10"))
 
 
 class ValidationError(RuntimeError):
@@ -51,14 +54,24 @@ def fetch(url: str, *, max_bytes: int | None = None) -> FetchResult:
     if max_bytes is not None:
         headers["Range"] = f"bytes=0-{max_bytes - 1}"
     request = Request(url, headers=headers)
-    try:
-        with urlopen(request, timeout=TIMEOUT) as response:
-            data = response.read()
-            return FetchResult(url=url, data=data, headers=response.headers)
-    except HTTPError as exc:
-        raise ValidationError(f"{url} returned HTTP {exc.code}") from exc
-    except URLError as exc:
-        raise ValidationError(f"{url} failed: {exc}") from exc
+    last_error: Exception | None = None
+    for attempt in range(1, RETRIES + 1):
+        try:
+            with urlopen(request, timeout=TIMEOUT) as response:
+                data = response.read()
+                return FetchResult(url=url, data=data, headers=response.headers)
+        except HTTPError as exc:
+            if 400 <= exc.code < 500:
+                raise ValidationError(f"{url} returned HTTP {exc.code}") from exc
+            last_error = exc
+        except URLError as exc:
+            last_error = exc
+
+        if attempt < RETRIES:
+            log(f"{url} failed on attempt {attempt}/{RETRIES}: {last_error}; retrying in {RETRY_DELAY:g}s")
+            time.sleep(RETRY_DELAY)
+
+    raise ValidationError(f"{url} failed after {RETRIES} attempt(s): {last_error}") from last_error
 
 
 def fetch_json(path_or_url: str, *, context_url: str | None = None) -> tuple[dict[str, Any], str, Any]:
