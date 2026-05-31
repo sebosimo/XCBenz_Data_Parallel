@@ -11,12 +11,22 @@ AddType application/json .json
 AddType application/geo+json .geojson
 AddType application/octet-stream .bin
 
+<IfModule mod_deflate.c>
+  AddOutputFilterByType DEFLATE application/json application/geo+json
+</IfModule>
+
+<IfModule mod_brotli.c>
+  AddOutputFilterByType BROTLI_COMPRESS application/json application/geo+json
+</IfModule>
+
 <IfModule mod_headers.c>
-  <FilesMatch "manifest\.json$">
-    Header set Cache-Control "no-cache, must-revalidate"
-  </FilesMatch>
+  Header merge Vary Accept-Encoding
 
   <FilesMatch "\.(bin|json|geojson)$">
     Header set Cache-Control "public, max-age=3600"
+  </FilesMatch>
+
+  <FilesMatch "manifest\.json$">
+    Header set Cache-Control "no-cache, must-revalidate"
   </FilesMatch>
 </IfModule>
