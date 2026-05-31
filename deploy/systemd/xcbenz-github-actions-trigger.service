@@ -1,0 +1,20 @@
+[Unit]
+Description=Trigger the XCBenz GitHub Actions data pipeline
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+Type=oneshot
+User=xcbenz
+Group=xcbenz
+EnvironmentFile=/etc/xcbenz/github-actions-trigger.env
+WorkingDirectory=/opt/xcbenz/XCBenz_Data_Parallel
+ExecStart=/usr/bin/python3 /opt/xcbenz/XCBenz_Data_Parallel/deploy/trigger_github_workflow.py
+Nice=10
+IOSchedulingClass=idle
+CPUSchedulingPolicy=idle
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=read-only
+ReadWritePaths=/run/lock
