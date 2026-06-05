@@ -19,6 +19,7 @@ from wind_maps import wind_netcdf_encoding
 CHUNK_ROOT = Path("map_chunks")
 WIND_ROOT = Path("cache_wind_packed")
 SUNSHINE_ROOT = Path("cache_sunshine_maps")
+RAIN_ROOT = Path("cache_rain_maps")
 NETCDF_ENGINE = "netcdf4"
 
 
@@ -100,9 +101,29 @@ def sunshine_sources() -> dict[tuple[str, str, str], list[Path]]:
     return groups
 
 
-def merge_sunshine_group(model: str, run_tag: str, product: str, paths: list[Path]) -> None:
+def split_binary_sources(cache_name: str) -> dict[tuple[str, str, str], list[Path]]:
+    groups: dict[tuple[str, str, str], list[Path]] = {}
+    for path in CHUNK_ROOT.glob(f"**/{cache_name}/*/*/*/metadata.json"):
+        parts = path.parts
+        try:
+            idx = parts.index(cache_name)
+        except ValueError:
+            continue
+        model, run_tag, product = parts[idx + 1], parts[idx + 2], parts[idx + 3]
+        groups.setdefault((model, run_tag, product), []).append(path)
+    return groups
+
+
+def merge_split_binary_group(
+    product_label: str,
+    output_root: Path,
+    model: str,
+    run_tag: str,
+    product: str,
+    paths: list[Path],
+) -> None:
     merged_steps: dict[int, dict[str, Any]] = {}
-    output_dir = SUNSHINE_ROOT / model / run_tag / product
+    output_dir = output_root / model / run_tag / product
     steps_dir = output_dir / "steps"
     base_metadata: dict[str, Any] | None = None
     for metadata_path in sorted(paths):
@@ -116,7 +137,7 @@ def merge_sunshine_group(model: str, run_tag: str, product: str, paths: list[Pat
             if not source_path.is_file():
                 source_path = metadata_path.parent / "steps" / f"{step_name}.bin"
             if not source_path.is_file():
-                raise FileNotFoundError(f"missing sunshine chunk step: {source_path}")
+                raise FileNotFoundError(f"missing {product_label} chunk step: {source_path}")
             target_path = steps_dir / f"{step_name}.bin"
             target_path.parent.mkdir(parents=True, exist_ok=True)
             shutil.copy2(source_path, target_path)
@@ -129,12 +150,21 @@ def merge_sunshine_group(model: str, run_tag: str, product: str, paths: list[Pat
     base_metadata["steps"] = [merged_steps[key] for key in sorted(merged_steps)]
     base_metadata["run"] = run_tag
     write_json(output_dir / "metadata.json", base_metadata)
-    log(f"merged sunshine {model}/{run_tag}/{product}: {len(merged_steps)} step(s)")
+    log(f"merged {product_label} {model}/{run_tag}/{product}: {len(merged_steps)} step(s)")
+
+
+def merge_sunshine_group(model: str, run_tag: str, product: str, paths: list[Path]) -> None:
+    merge_split_binary_group("sunshine", SUNSHINE_ROOT, model, run_tag, product, paths)
 
 
 def merge_sunshine_chunks() -> None:
-    for (model, run_tag, product), paths in sorted(sunshine_sources().items()):
+    for (model, run_tag, product), paths in sorted(split_binary_sources("cache_sunshine_maps").items()):
         merge_sunshine_group(model, run_tag, product, paths)
+
+
+def merge_rain_chunks() -> None:
+    for (model, run_tag, product), paths in sorted(split_binary_sources("cache_rain_maps").items()):
+        merge_split_binary_group("rain", RAIN_ROOT, model, run_tag, product, paths)
 
 
 def main() -> int:
@@ -143,6 +173,7 @@ def main() -> int:
         return 0
     merge_wind_chunks()
     merge_sunshine_chunks()
+    merge_rain_chunks()
     return 0
 
 

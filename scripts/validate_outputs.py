@@ -77,13 +77,16 @@ def validate_bundles() -> tuple[int, int]:
     return len(bundles), total_bytes
 
 
-def validate_map_encodings() -> tuple[int, int]:
+def validate_map_encodings() -> tuple[int, int, int]:
     wind_metadata = list(Path("web_exports/wind_maps").glob("*/*/*/metadata.json"))
     sunshine_metadata = list(Path("web_exports/sunshine_maps").glob("*/*/*/metadata.json"))
+    rain_metadata = list(Path("web_exports/rain_maps").glob("*/*/*/metadata.json"))
     if not wind_metadata:
         raise ValueError("no wind map metadata found")
     if not sunshine_metadata:
         raise ValueError("no sunshine map metadata found")
+    if not rain_metadata:
+        raise ValueError("no rain map metadata found")
 
     for metadata_path in wind_metadata:
         encoding = load_json(metadata_path).get("encoding") or {}
@@ -99,7 +102,26 @@ def validate_map_encodings() -> tuple[int, int]:
             raise ValueError(f"{metadata_path} has unexpected sunshine components")
         if encoding.get("missing_value") != 255:
             raise ValueError(f"{metadata_path} has unexpected sunshine missing value")
-    return len(wind_metadata), len(sunshine_metadata)
+    for metadata_path in rain_metadata:
+        payload = load_json(metadata_path)
+        encoding = payload.get("encoding") or {}
+        if encoding.get("dtype") != "uint8" or encoding.get("format") != "uint8-interleaved-components":
+            raise ValueError(f"{metadata_path} has unexpected rain encoding: {encoding}")
+        if encoding.get("components") != ["precipitation_mm"]:
+            raise ValueError(f"{metadata_path} has unexpected rain components")
+        if encoding.get("units") != ["mm"]:
+            raise ValueError(f"{metadata_path} has unexpected rain units")
+        if encoding.get("missing_value") != 255:
+            raise ValueError(f"{metadata_path} has unexpected rain missing value")
+        for step in payload.get("steps") or []:
+            step_url = step.get("url")
+            if not step_url or not Path(step_url).exists():
+                raise FileNotFoundError(f"{metadata_path} references missing rain step {step_url!r}")
+            actual = Path(step_url).stat().st_size
+            declared = int(step.get("byte_length") or -1)
+            if actual != declared:
+                raise ValueError(f"{metadata_path} rain step byte length mismatch: declared={declared} actual={actual}")
+    return len(wind_metadata), len(sunshine_metadata), len(rain_metadata)
 
 
 def main() -> int:
@@ -143,7 +165,7 @@ def main() -> int:
                     return fail(f"{model_key} {run_tag} {location_id} bundle path missing: {bundle_url}")
 
     map_products = ((web.get("products") or {}).get("maps") or {})
-    for product in ("wind", "sunshine"):
+    for product in ("wind", "sunshine", "rain"):
         path = map_products.get(product)
         if not path:
             return fail(f"web manifest has no {product} map product")
@@ -160,7 +182,7 @@ def main() -> int:
 
     try:
         bundle_count, bundle_bytes = validate_bundles()
-        wind_metadata_count, sunshine_metadata_count = validate_map_encodings()
+        wind_metadata_count, sunshine_metadata_count, rain_metadata_count = validate_map_encodings()
     except Exception as exc:  # noqa: BLE001 - this is a CI guard.
         return fail(str(exc))
 
@@ -176,8 +198,10 @@ def main() -> int:
         f"region_forecasts={counts.get('region_forecasts')}, "
         f"wind_metadata={wind_metadata_count}, "
         f"sunshine_metadata={sunshine_metadata_count}, "
+        f"rain_metadata={rain_metadata_count}, "
         f"wind_steps={counts.get('wind_map_steps')}, "
-        f"sunshine_steps={counts.get('sunshine_map_steps')}",
+        f"sunshine_steps={counts.get('sunshine_map_steps')}, "
+        f"rain_steps={counts.get('rain_map_steps')}",
         flush=True,
     )
     return 0

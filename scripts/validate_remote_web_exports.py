@@ -187,6 +187,7 @@ def main() -> int:
         validate_bundle(manifest, model_key, run_key, location_id)
         validate_map_product(manifest, "wind")
         validate_map_product(manifest, "sunshine")
+        validate_map_product(manifest, "rain")
     except Exception as exc:  # noqa: BLE001 - CI smoke guard.
         return fail(str(exc))
 
