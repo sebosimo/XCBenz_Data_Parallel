@@ -30,7 +30,7 @@
   "jura_1_haut_chaine": {
     "lat": 46.263597,
     "lon": 6.010324,
-    "display_name": "1. Kette Jura - Gex",
+    "display_name": "1. Kette: Haut Chaine du Jura - Gex",
     "type": "region",
     "region_name": "1. Kette: Haut Chaine du Jura"
   },
@@ -41,17 +41,17 @@
     "type": "region",
     "region_name": "Les Aravis"
   },
-  "bornes_faucigny": {
+  "bornes_faucigny_bonneville": {
     "lat": 46.236243,
     "lon": 6.653982,
-    "display_name": "Bornes/Faucigny - Bonneville",
+    "display_name": "Bornes/Faucigny - Bonneville - Bonneville",
     "type": "region",
     "region_name": "Bornes/Faucigny - Bonneville"
   },
   "chablais_abondance": {
     "lat": 46.090603,
     "lon": 6.24512,
-    "display_name": "Chablais - Abondance",
+    "display_name": "Chablais - Abondance - Abondance",
     "type": "region",
     "region_name": "Chablais - Abondance"
   },
@@ -65,105 +65,105 @@
   "jura_1_montricher": {
     "lat": 46.550307,
     "lon": 6.34119,
-    "display_name": "1. Kette Jura - Montricher",
+    "display_name": "1. Kette Montricher - Montricher",
     "type": "region",
     "region_name": "1. Kette Montricher"
   },
   "jura_2_saint_claude": {
     "lat": 46.483473,
     "lon": 6.063702,
-    "display_name": "2. Kette Jura - Saint-Claude",
+    "display_name": "2. Kette Saint CLAUDE - Saint-Claude",
     "type": "region",
     "region_name": "2. Kette Saint CLAUDE"
   },
   "jura_3_dombief": {
     "lat": 46.725932,
     "lon": 6.086313,
-    "display_name": "3. Kette Jura - Saint-Laurent-en-Grandvaux",
+    "display_name": "3. Kette: Dombief - Saint-Laurent-en-Grandvaux",
     "type": "region",
     "region_name": "3. Kette: Dombief"
   },
   "jura_3_west": {
     "lat": 46.351434,
     "lon": 5.555447,
-    "display_name": "3. Kette Jura - Oyonnax",
+    "display_name": "3. Kette: West Jura - Oyonnax",
     "type": "region",
     "region_name": "3. Kette: West Jura"
   },
-  "champagnole": {
+  "champagnol": {
     "lat": 46.749828,
     "lon": 5.904028,
-    "display_name": "Jura - Champagnole",
+    "display_name": "Champagnol - Champagnole",
     "type": "region",
     "region_name": "Champagnol"
   },
   "jura_3_maiche": {
     "lat": 47.230008,
     "lon": 6.568341,
-    "display_name": "3. Kette Jura - Maîche",
+    "display_name": "3. Kette: Maiche - Maîche",
     "type": "region",
     "region_name": "3. Kette: Maiche"
   },
   "jura_1_mauborget": {
     "lat": 46.817795,
     "lon": 6.57929,
-    "display_name": "1. Kette Jura - Sainte-Croix",
+    "display_name": "1 Kette: Mauborget - Sainte-Croix",
     "type": "region",
     "region_name": "1 Kette: Mauborget"
   },
   "jura_2_la_chaux_de_fonds": {
     "lat": 47.098047,
     "lon": 6.824706,
-    "display_name": "2. Kette Jura - La Chaux-de-Fonds",
+    "display_name": "2. Kette: La Chaux-de-Fonds - La Chaux-de-Fonds",
     "type": "region",
     "region_name": "2. Kette: La Chaux-de-Fonds"
   },
   "jura_1_chasseral": {
     "lat": 47.101285,
     "lon": 7.082915,
-    "display_name": "1. Kette Jura - Chasseral",
+    "display_name": "1. Kette Chasseral - Chasseral",
     "type": "region",
     "region_name": "1. Kette Chasseral"
   },
   "jura_1_solothurner": {
     "lat": 47.229041,
     "lon": 7.507106,
-    "display_name": "1. Kette Jura - Solothurn",
+    "display_name": "1. Kette: Solothurner Jura - Solothurn",
     "type": "region",
     "region_name": "1. Kette: Solothurner Jura"
   },
   "jura_2_moutier": {
     "lat": 47.282423,
     "lon": 7.421369,
-    "display_name": "2. Kette Jura - Moutier",
+    "display_name": "2. Kette: Moutier Jura - Moutier",
     "type": "region",
     "region_name": "2. Kette: Moutier Jura"
   },
   "jura_3_delemont": {
     "lat": 47.363996,
     "lon": 7.358978,
-    "display_name": "3. Kette Jura - Delémont",
+    "display_name": "3. Kette: Delemont - Delémont",
     "type": "region",
     "region_name": "3. Kette: Delemont"
   },
-  "jura_1_egerkingen": {
+  "jura_1_egerkinger": {
     "lat": 47.322939,
     "lon": 7.809776,
-    "display_name": "1. Kette Jura - Egerkingen",
+    "display_name": "1. Kette: Egerkinger Jura - Egerkingen",
     "type": "region",
     "region_name": "1. Kette: Egerkinger Jura"
   },
   "jura_1_kuettiger": {
     "lat": 47.415167,
     "lon": 8.050706,
-    "display_name": "1. Kette Jura - Aarau/Kuettigen",
+    "display_name": "1. Kette: Kuettiger Jura - Aarau/Kuettigen",
     "type": "region",
     "region_name": "1. Kette: Kuettiger Jura"
   },
   "jura_2_kuettiger": {
     "lat": 47.41782,
     "lon": 7.945963,
-    "display_name": "2. Kette Jura - Aarau/Kuettigen",
+    "display_name": "2. Kette: Kuettiger Jura - Aarau/Kuettigen",
     "type": "region",
     "region_name": "2. Kette: Kuettiger Jura"
   },
@@ -175,9 +175,9 @@
     "region_name": "Liestal"
   },
   "fricktal": {
-    "lat": 47.514264,
-    "lon": 8.027718,
-    "display_name": "Fricktal - Frick",
+    "lat": 47.559468,
+    "lon": 8.06528,
+    "display_name": "Fricktal - Laufenburg",
     "type": "region",
     "region_name": "Fricktal"
   },
@@ -216,10 +216,10 @@
     "type": "region",
     "region_name": "Ostschweizer Plateau"
   },
-  "aargauer_mittelland": {
+  "aargauer_mitteland": {
     "lat": 47.296063,
     "lon": 8.324368,
-    "display_name": "Aargauer Mittelland - Muri AG",
+    "display_name": "Aargauer Mitteland - Muri AG",
     "type": "region",
     "region_name": "Aargauer Mitteland"
   },
@@ -244,10 +244,10 @@
     "type": "region",
     "region_name": "Zentrales Buendnerland"
   },
-  "praettigau": {
+  "praetigau": {
     "lat": 46.967966,
     "lon": 9.691773,
-    "display_name": "Prättigau - Schiers",
+    "display_name": "Prätigau - Schiers",
     "type": "region",
     "region_name": "Prätigau"
   },
@@ -307,17 +307,17 @@
     "type": "region",
     "region_name": "Stubai/Brenner"
   },
-  "plateau_vaudois": {
+  "plateau_vaudoise": {
     "lat": 46.810653,
     "lon": 6.935658,
-    "display_name": "Plateau vaudois - Payerne",
+    "display_name": "Plateau vaudoise - Payerne",
     "type": "region",
     "region_name": "Plateau vaudoise"
   },
-  "solothurner_mittelland": {
+  "solothurner_mitteland": {
     "lat": 47.095445,
     "lon": 7.456972,
-    "display_name": "Solothurner Mittelland - Fraubrunnen",
+    "display_name": "Solothurner Mitteland - Fraubrunnen",
     "type": "region",
     "region_name": "Solothurner Mitteland"
   },
@@ -419,10 +419,10 @@
     "type": "region",
     "region_name": "Walliser Hochalpen"
   },
-  "chablais_alpes_vaudoises": {
+  "chablais_valaisanne_alps_vaudoise": {
     "lat": 46.326041,
     "lon": 6.935626,
-    "display_name": "Chablais/Alpes Vaudoises - Aigle",
+    "display_name": "Chablais Valaisanne/Alps Vaudoise - Aigle",
     "type": "region",
     "region_name": "Chablais Valaisanne/Alps Vaudoise"
   },
@@ -438,7 +438,7 @@
     "lon": 8.963897,
     "display_name": "Zentrale Tessiner Alpen - Biasca",
     "type": "region",
-    "region_name": "Zentrale Tessiner Alpen "
+    "region_name": "Zentrale Tessiner Alpen"
   },
   "bellinzona": {
     "lat": 46.188384,
@@ -457,7 +457,7 @@
   "tessiner_voralpen": {
     "lat": 45.87968,
     "lon": 8.879535,
-    "display_name": "Tessiner Voralpen - Varese",
+    "display_name": "Tessiner Voralpen - Bisuschino",
     "type": "region",
     "region_name": "Tessiner Voralpen"
   },
@@ -478,7 +478,7 @@
   "val_d_ossola": {
     "lat": 46.00952,
     "lon": 8.279752,
-    "display_name": "Val d'Ossola - Vogogna",
+    "display_name": "Val d'ossola - Vogogna",
     "type": "region",
     "region_name": "Val d'ossola"
   },
@@ -496,12 +496,460 @@
     "type": "region",
     "region_name": "Haut Plateau Vaudois"
   },
-  "heidelberg": {
-    "lat": 49.41,
-    "lon": 8.67,
-    "display_name": "Heidelberg",
-    "type": "legacy",
-    "region_name": null
+  "val_aosta": {
+    "lat": 45.757091,
+    "lon": 7.036456,
+    "display_name": "Val Aosta - Morgex",
+    "type": "region",
+    "region_name": "Val Aosta"
+  },
+  "oberes_val_sesia": {
+    "lat": 45.8583,
+    "lon": 8.063525,
+    "display_name": "Oberes Val Sesia - Rimasco",
+    "type": "region",
+    "region_name": "Oberes Val Sesia"
+  },
+  "alpe_biellesi": {
+    "lat": 45.760264,
+    "lon": 8.268967,
+    "display_name": "Alpe Biellesi - Quarona",
+    "type": "region",
+    "region_name": "Alpe Biellesi"
+  },
+  "combe_de_savoi": {
+    "lat": 45.665234,
+    "lon": 6.380558,
+    "display_name": "Combe de Savoi - Albertville",
+    "type": "region",
+    "region_name": "Combe de Savoi"
+  },
+  "chartreuse": {
+    "lat": 45.350407,
+    "lon": 5.819118,
+    "display_name": "Chartreuse - La Coche",
+    "type": "region",
+    "region_name": "Chartreuse"
+  },
+  "pontcharra": {
+    "lat": 45.279253,
+    "lon": 5.925252,
+    "display_name": "Pontcharra - Froges",
+    "type": "region",
+    "region_name": "Pontcharra"
+  },
+  "haute_maurienne": {
+    "lat": 45.317392,
+    "lon": 6.996231,
+    "display_name": "Haute Maurienne - Bessans",
+    "type": "region",
+    "region_name": "Haute Maurienne"
+  },
+  "tarentaise": {
+    "lat": 45.441432,
+    "lon": 6.648008,
+    "display_name": "Tarentaise - Bozel",
+    "type": "region",
+    "region_name": "Tarentaise"
+  },
+  "vercors": {
+    "lat": 44.899921,
+    "lon": 5.568071,
+    "display_name": "Vercors - Gresse-en-Vercors",
+    "type": "region",
+    "region_name": "Vercors"
+  },
+  "oisans": {
+    "lat": 45.127096,
+    "lon": 6.039719,
+    "display_name": "Oisans - Allemond",
+    "type": "region",
+    "region_name": "Oisans"
+  },
+  "ecrins": {
+    "lat": 44.932551,
+    "lon": 6.292419,
+    "display_name": "Écrins - La Chapelle-en-Valgaudémar",
+    "type": "region",
+    "region_name": "Écrins"
+  },
+  "cerces_galibier": {
+    "lat": 45.019144,
+    "lon": 6.630334,
+    "display_name": "Cerces-Galibier - Valloire",
+    "type": "region",
+    "region_name": "Cerces-Galibier"
+  },
+  "queyras": {
+    "lat": 44.77932,
+    "lon": 6.867546,
+    "display_name": "Queyras - Aiguilles",
+    "type": "region",
+    "region_name": "Queyras"
+  },
+  "brianconnais": {
+    "lat": 44.701381,
+    "lon": 6.599917,
+    "display_name": "Briançonnais - Saint-Crépin",
+    "type": "region",
+    "region_name": "Briançonnais"
+  },
+  "matheysine": {
+    "lat": 44.90323,
+    "lon": 5.787914,
+    "display_name": "Matheysine - La Mure",
+    "type": "region",
+    "region_name": "Matheysine"
+  },
+  "champsaur": {
+    "lat": 44.671886,
+    "lon": 6.074074,
+    "display_name": "Champsaur - La Fare-en-Champsaur",
+    "type": "region",
+    "region_name": "Champsaur"
+  },
+  "ubaye": {
+    "lat": 44.384878,
+    "lon": 6.655081,
+    "display_name": "Ubaye - Barcelonnette",
+    "type": "region",
+    "region_name": "Ubaye"
+  },
+  "serre_poncon": {
+    "lat": 44.464155,
+    "lon": 6.233869,
+    "display_name": "Serre-Ponçon - Espinasses",
+    "type": "region",
+    "region_name": "Serre-Ponçon"
+  },
+  "lechtal": {
+    "lat": 47.289476,
+    "lon": 10.444221,
+    "display_name": "Lechtal - Elbigenalp",
+    "type": "region",
+    "region_name": "Lechtal"
+  },
+  "alta_valtellina": {
+    "lat": 46.466137,
+    "lon": 10.368037,
+    "display_name": "Alta Valtellina - Bormio",
+    "type": "region",
+    "region_name": "Alta Valtellina"
+  },
+  "vinschgau": {
+    "lat": 46.617846,
+    "lon": 10.702057,
+    "display_name": "Vinschgau - Laas",
+    "type": "region",
+    "region_name": "Vinschgau"
+  },
+  "suedschwarzwald": {
+    "lat": 47.830249,
+    "lon": 7.945421,
+    "display_name": "Südschwarzwald - Todtnau",
+    "type": "region",
+    "region_name": "Südschwarzwald"
+  },
+  "mittlerer_schwarzwald": {
+    "lat": 48.050136,
+    "lon": 8.208262,
+    "display_name": "Mittlerer Schwarzwald - Furtwangen",
+    "type": "region",
+    "region_name": "Mittlerer Schwarzwald"
+  },
+  "nordschwarzwald": {
+    "lat": 48.471862,
+    "lon": 8.162666,
+    "display_name": "Nordschwarzwald - Oppenau",
+    "type": "region",
+    "region_name": "Nordschwarzwald"
+  },
+  "schwaebische_alb": {
+    "lat": 48.071541,
+    "lon": 8.739624,
+    "display_name": "Schwäbische Alb - Spaichingen",
+    "type": "region",
+    "region_name": "Schwäbische Alb"
+  },
+  "oberschwaben": {
+    "lat": 47.831398,
+    "lon": 9.461157,
+    "display_name": "Oberschwaben - Hasenweiler",
+    "type": "region",
+    "region_name": "Oberschwaben"
+  },
+  "st_galler_rheintal": {
+    "lat": 47.385682,
+    "lon": 9.653721,
+    "display_name": "St. Galler Rheintal - Diepoldsau",
+    "type": "region",
+    "region_name": "St. Galler Rheintal"
+  },
+  "allgaeuer_alpen": {
+    "lat": 47.4098,
+    "lon": 10.283844,
+    "display_name": "Allgäuer Alpen - Oberstdorf",
+    "type": "region",
+    "region_name": "Allgäuer Alpen"
+  },
+  "bregenzerwald": {
+    "lat": 47.414945,
+    "lon": 9.853215,
+    "display_name": "Bregenzerwald - Schwarzenberg",
+    "type": "region",
+    "region_name": "Bregenzerwald"
+  },
+  "westallgaeu": {
+    "lat": 47.63856,
+    "lon": 10.095234,
+    "display_name": "Westallgäu - Seltmans",
+    "type": "region",
+    "region_name": "Westallgäu"
+  },
+  "valle_vigezzo": {
+    "lat": 46.133932,
+    "lon": 8.47784,
+    "display_name": "Valle Vigezzo - Santa Maria Maggiore",
+    "type": "region",
+    "region_name": "Valle Vigezzo"
+  },
+  "alto_lario": {
+    "lat": 46.041902,
+    "lon": 8.92828,
+    "display_name": "Alto Lario - Gravedona",
+    "type": "region",
+    "region_name": "Alto Lario"
+  },
+  "val_brembana": {
+    "lat": 45.944943,
+    "lon": 9.674492,
+    "display_name": "Val Brembana - Piazza Brembana",
+    "type": "region",
+    "region_name": "Val Brembana"
+  },
+  "val_di_sole": {
+    "lat": 46.308284,
+    "lon": 10.739136,
+    "display_name": "Val di Sole - Ossana",
+    "type": "region",
+    "region_name": "Val di Sole"
+  },
+  "valli_di_lanzo": {
+    "lat": 45.362428,
+    "lon": 7.342401,
+    "display_name": "Valli di Lanzo - Chialamberto",
+    "type": "region",
+    "region_name": "Valli di Lanzo"
+  },
+  "canavese": {
+    "lat": 45.389771,
+    "lon": 7.652664,
+    "display_name": "Canavese - Cuorgnè",
+    "type": "region",
+    "region_name": "Canavese"
+  },
+  "val_seriana": {
+    "lat": 45.745965,
+    "lon": 9.773712,
+    "display_name": "Val Seriana - Nembro",
+    "type": "region",
+    "region_name": "Val Seriana"
+  },
+  "val_trompia": {
+    "lat": 45.647869,
+    "lon": 10.265549,
+    "display_name": "Val Trompia - Lumezzane",
+    "type": "region",
+    "region_name": "Val Trompia"
+  },
+  "giudicarie": {
+    "lat": 45.938258,
+    "lon": 10.638199,
+    "display_name": "Giudicarie - Creto",
+    "type": "region",
+    "region_name": "Giudicarie"
+  },
+  "wipptal": {
+    "lat": 46.891298,
+    "lon": 11.433913,
+    "display_name": "Wipptal - Sterzing",
+    "type": "region",
+    "region_name": "Wipptal"
+  },
+  "ausserfern": {
+    "lat": 47.394166,
+    "lon": 10.897751,
+    "display_name": "Außerfern - Lermoos",
+    "type": "region",
+    "region_name": "Außerfern"
+  },
+  "ostallgaeu": {
+    "lat": 47.569537,
+    "lon": 10.719073,
+    "display_name": "Ostallgäu - Füssen",
+    "type": "region",
+    "region_name": "Ostallgäu"
+  },
+  "karwendel": {
+    "lat": 47.48241,
+    "lon": 11.462869,
+    "display_name": "Karwendel - Brandau",
+    "type": "region",
+    "region_name": "Karwendel"
+  },
+  "chiemgau": {
+    "lat": 47.507452,
+    "lon": 11.897017,
+    "display_name": "Chiemgau - Aschau",
+    "type": "region",
+    "region_name": "Chiemgau"
+  },
+  "isarwinkel": {
+    "lat": 47.67797,
+    "lon": 11.574798,
+    "display_name": "Isarwinkel - Lenggries",
+    "type": "region",
+    "region_name": "Isarwinkel"
+  },
+  "innsbruck_stubai": {
+    "lat": 47.259063,
+    "lon": 11.415663,
+    "display_name": "Innsbruck-Stubai - Fulpmes",
+    "type": "region",
+    "region_name": "Innsbruck-Stubai"
+  },
+  "zillertal": {
+    "lat": 47.166784,
+    "lon": 11.864712,
+    "display_name": "Zillertal - Mayrhofen",
+    "type": "region",
+    "region_name": "Zillertal"
+  },
+  "defereggen_osttirol": {
+    "lat": 46.915262,
+    "lon": 12.336277,
+    "display_name": "Defereggen-Osttirol - St. Jakob",
+    "type": "region",
+    "region_name": "Defereggen-Osttirol"
+  },
+  "sarntaler_alpen": {
+    "lat": 46.49546,
+    "lon": 11.350768,
+    "display_name": "Sarntaler Alpen - Bozen",
+    "type": "region",
+    "region_name": "Sarntaler Alpen"
+  },
+  "ueberetsch_unterland": {
+    "lat": 46.346125,
+    "lon": 11.288422,
+    "display_name": "Überetsch-Unterland - Auer",
+    "type": "region",
+    "region_name": "Überetsch-Unterland"
+  },
+  "lessinia": {
+    "lat": 45.518857,
+    "lon": 11.019974,
+    "display_name": "Lessinia - Grezzana",
+    "type": "region",
+    "region_name": "Lessinia"
+  },
+  "vallagarina": {
+    "lat": 45.887519,
+    "lon": 11.025404,
+    "display_name": "Vallagarina - Rovereto",
+    "type": "region",
+    "region_name": "Vallagarina"
+  },
+  "vosges_centrales": {
+    "lat": 48.281297,
+    "lon": 6.941759,
+    "display_name": "Vosges Centrales - Saint-Dié-des-Vosges",
+    "type": "region",
+    "region_name": "Vosges Centrales"
+  },
+  "hautes_vosges": {
+    "lat": 47.946865,
+    "lon": 6.778745,
+    "display_name": "Hautes Vosges - Saulxures-sur-Moselotte",
+    "type": "region",
+    "region_name": "Hautes Vosges"
+  },
+  "trouee_de_belfort": {
+    "lat": 47.574358,
+    "lon": 6.759555,
+    "display_name": "Trouée de Belfort - Héricourt",
+    "type": "region",
+    "region_name": "Trouée de Belfort"
+  },
+  "ortenau": {
+    "lat": 48.40433,
+    "lon": 8.01441,
+    "display_name": "Ortenau - Gengenbach",
+    "type": "region",
+    "region_name": "Ortenau"
+  },
+  "breisgau": {
+    "lat": 48.070669,
+    "lon": 7.907032,
+    "display_name": "Breisgau - Denzlingen",
+    "type": "region",
+    "region_name": "Breisgau"
+  },
+  "sundgau": {
+    "lat": 47.755664,
+    "lon": 7.407141,
+    "display_name": "Sundgau - Mulhouse",
+    "type": "region",
+    "region_name": "Sundgau"
+  },
+  "alsace_centrale": {
+    "lat": 48.236222,
+    "lon": 7.541771,
+    "display_name": "Alsace Centrale - Baldenheim",
+    "type": "region",
+    "region_name": "Alsace Centrale"
+  },
+  "besancon": {
+    "lat": 47.319276,
+    "lon": 5.967636,
+    "display_name": "Besançon - Geneuille",
+    "type": "region",
+    "region_name": "Besançon"
+  },
+  "pustertal": {
+    "lat": 46.791177,
+    "lon": 11.939136,
+    "display_name": "Pustertal - Bruneck",
+    "type": "region",
+    "region_name": "Pustertal"
+  },
+  "ampezzaner_dolomiten": {
+    "lat": 46.541946,
+    "lon": 12.138338,
+    "display_name": "Ampezzaner Dolomiten - Cortina d'Ampezzo",
+    "type": "region",
+    "region_name": "Ampezzaner Dolomiten"
+  },
+  "primiero": {
+    "lat": 46.257746,
+    "lon": 11.80378,
+    "display_name": "Primiero - San Martino di Castrozza",
+    "type": "region",
+    "region_name": "Primiero"
+  },
+  "valbelluna": {
+    "lat": 46.012688,
+    "lon": 11.906357,
+    "display_name": "Valbelluna - Feltre",
+    "type": "region",
+    "region_name": "Valbelluna"
+  },
+  "monte_grappa": {
+    "lat": 45.807482,
+    "lon": 11.775877,
+    "display_name": "Monte Grappa - Semonzo del Grappa",
+    "type": "region",
+    "region_name": "Monte Grappa"
   },
   "regensburg": {
     "lat": 49.02,
@@ -521,6 +969,13 @@
     "lat": 47.32,
     "lon": 5.04,
     "display_name": "Dijon",
+    "type": "legacy",
+    "region_name": null
+  },
+  "heidelberg": {
+    "lat": 49.421258,
+    "lon": 8.66208,
+    "display_name": "Heidelberg",
     "type": "legacy",
     "region_name": null
   }
