@@ -64,6 +64,7 @@ WIND_WEB_SCALE_FACTOR = 0.25
 WIND_WEB_FILL_VALUE = -128
 SUNSHINE_WEB_DIR = WEB_DIR / "sunshine_maps"
 RAIN_WEB_DIR = WEB_DIR / "rain_maps"
+SUNRAIN_WEB_DIR = WEB_DIR / "sunrain_maps"
 WIND_WEB_STYLE = {
     "source": "XCBenz wind-map style v1",
     "map_bbox": [4.0, 43.0, 16.5, 48.8],
@@ -1084,6 +1085,112 @@ def export_rain_maps(source_manifest: dict[str, Any]) -> dict[str, Any] | None:
     return rain_manifest
 
 
+def sunrain_model_key(source_key: str) -> str:
+    return "icon-ch1" if source_key == "ch1" else "icon-ch2"
+
+
+def export_sunrain_surface(
+    model_key: str,
+    run_tag: str,
+    source_metadata_path: Path,
+) -> dict[str, Any]:
+    with source_metadata_path.open("r", encoding="utf-8") as f:
+        source_metadata = json.load(f)
+
+    output_dir = SUNRAIN_WEB_DIR / model_key / run_tag / "surface"
+    steps_dir = output_dir / "steps"
+    output_steps: list[dict[str, Any]] = []
+
+    for source_step in source_metadata.get("steps") or []:
+        source_path = Path(str(source_step.get("path", "")))
+        if not source_path.exists():
+            raise FileNotFoundError(f"Sun+Rain step missing: {source_path}")
+        step_label = str(source_step["step"])
+        step_path = steps_dir / f"{step_label}.bin"
+        step_path.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copyfile(source_path, step_path)
+        output_step = dict(source_step)
+        output_step.pop("path", None)
+        output_step["url"] = rel(step_path)
+        output_step["byte_length"] = int(step_path.stat().st_size)
+        output_steps.append(output_step)
+
+    metadata_path = output_dir / "metadata.json"
+    metadata = dict(source_metadata)
+    metadata["model"] = model_key
+    metadata["run"] = run_tag
+    metadata["source"] = rel(source_metadata_path)
+    metadata["steps"] = output_steps
+    write_json(metadata_path, metadata, pretty=True)
+
+    return {
+        "metadata": rel(metadata_path),
+        "source": rel(source_metadata_path),
+        "components": metadata.get("encoding", {}).get("components", []),
+        "grid": {
+            "width": metadata.get("grid", {}).get("width"),
+            "height": metadata.get("grid", {}).get("height"),
+        },
+        "steps": output_steps,
+        "step_count": len(output_steps),
+        "bytes": sum(step["byte_length"] for step in output_steps),
+    }
+
+
+def export_sunrain_maps(source_manifest: dict[str, Any]) -> dict[str, Any] | None:
+    source_sunrain = source_manifest.get("sunrain_maps") or {}
+    if not source_sunrain:
+        return None
+
+    sunrain_manifest: dict[str, Any] = {
+        "schema_version": SCHEMA_VERSION,
+        "product": "sunrain_maps",
+        "default_product": "surface",
+        "models": {},
+        "counts": {
+            "runs": 0,
+            "products": 0,
+            "steps": 0,
+            "bytes": 0,
+        },
+    }
+
+    for source_key, source_runs in source_sunrain.items():
+        model_key = sunrain_model_key(source_key)
+        model_manifest = {"runs": {}}
+        for run_tag, run_entry in source_runs.items():
+            run_manifest = {"layout": "split_binary_by_step", "products": {}}
+            for product_name, product_entry in (run_entry.get("products") or {}).items():
+                source_metadata_path = Path(product_entry.get("metadata", ""))
+                if not source_metadata_path.exists():
+                    log(f"WARN Sun+Rain source metadata missing for {model_key} {run_tag}: {source_metadata_path}")
+                    continue
+                try:
+                    exported_product = export_sunrain_surface(model_key, run_tag, source_metadata_path)
+                except Exception as exc:
+                    log(f"WARN Sun+Rain export failed for {source_metadata_path}: {exc}")
+                    continue
+                run_manifest["products"][product_name] = exported_product
+                sunrain_manifest["counts"]["products"] += 1
+                sunrain_manifest["counts"]["steps"] += exported_product["step_count"]
+                sunrain_manifest["counts"]["bytes"] += exported_product["bytes"]
+
+            if run_manifest["products"]:
+                model_manifest["runs"][run_tag] = run_manifest
+                sunrain_manifest["counts"]["runs"] += 1
+
+        if model_manifest["runs"]:
+            sunrain_manifest["models"][model_key] = model_manifest
+
+    if not sunrain_manifest["models"]:
+        return None
+
+    manifest_path = SUNRAIN_WEB_DIR / "manifest.json"
+    write_json(manifest_path, sunrain_manifest, pretty=True)
+    sunrain_manifest["url"] = rel(manifest_path)
+    return sunrain_manifest
+
+
 def export_model(model: dict[str, Any], locations: dict[str, Any]) -> dict[str, Any]:
     model_key = model["key"]
     cache_dir = model["cache_dir"]
@@ -1264,6 +1371,7 @@ def main() -> None:
                 "wind": None,
                 "sunshine": None,
                 "rain": None,
+                "sunrain": None,
             },
         },
         "models": {},
@@ -1280,6 +1388,8 @@ def main() -> None:
             "sunshine_map_steps": 0,
             "rain_map_products": 0,
             "rain_map_steps": 0,
+            "sunrain_map_products": 0,
+            "sunrain_map_steps": 0,
         },
         "notes": [
             "Generated from existing NetCDF files; no additional MeteoSwiss downloads are performed.",
@@ -1287,6 +1397,7 @@ def main() -> None:
             "Wind map exports are split into browser-readable metadata JSON plus lazy-loaded int8 binary u/v slices.",
             "Sunshine map exports are browser-readable metadata JSON plus lazy-loaded uint8 binary sunshine-fraction slices.",
             "Rain map exports are browser-readable metadata JSON plus lazy-loaded uint8 binary precipitation slices.",
+            "Sun+Rain map exports are browser-readable metadata JSON plus lazy-loaded uint8 semantic sunshine/rain slices.",
         ],
     }
 
@@ -1321,6 +1432,14 @@ def main() -> None:
     else:
         manifest["products"]["maps"]["rain"] = None
 
+    sunrain_manifest = export_sunrain_maps(source_manifest)
+    if sunrain_manifest:
+        manifest["products"]["maps"]["sunrain"] = sunrain_manifest["url"]
+        manifest["counts"]["sunrain_map_products"] = sunrain_manifest["counts"]["products"]
+        manifest["counts"]["sunrain_map_steps"] = sunrain_manifest["counts"]["steps"]
+    else:
+        manifest["products"]["maps"]["sunrain"] = None
+
     write_json(WEB_DIR / "manifest.json", manifest, pretty=True)
     validate_manifest(manifest)
     log(
@@ -1330,7 +1449,8 @@ def main() -> None:
         f"{manifest['counts']['region_forecasts']} region forecasts, "
         f"{manifest['counts']['wind_map_steps']} wind map steps, "
         f"{manifest['counts']['sunshine_map_steps']} sunshine map steps, "
-        f"{manifest['counts']['rain_map_steps']} rain map steps"
+        f"{manifest['counts']['rain_map_steps']} rain map steps, "
+        f"{manifest['counts']['sunrain_map_steps']} Sun+Rain map steps"
     )
 
 

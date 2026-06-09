@@ -12,11 +12,11 @@ AddType application/geo+json .geojson
 AddType application/octet-stream .bin
 
 <IfModule mod_deflate.c>
-  AddOutputFilterByType DEFLATE application/json application/geo+json
+  AddOutputFilterByType DEFLATE application/json application/geo+json application/octet-stream
 </IfModule>
 
 <IfModule mod_brotli.c>
-  AddOutputFilterByType BROTLI_COMPRESS application/json application/geo+json
+  AddOutputFilterByType BROTLI_COMPRESS application/json application/geo+json application/octet-stream
 </IfModule>
 
 <IfModule mod_headers.c>

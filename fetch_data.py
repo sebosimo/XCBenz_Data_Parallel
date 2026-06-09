@@ -38,6 +38,12 @@ from sunshine_maps import (
     is_sunshine_maps_enabled,
     is_sunshine_run_complete,
 )
+from sunrain_maps import (
+    SunRainMapAccumulator,
+    cleanup_old_sunrain_runs,
+    is_sunrain_maps_enabled,
+    is_sunrain_run_complete,
+)
 from wind_maps import (
     CACHE_DIR_WIND_PACKED,
     WindMapAccumulator,
@@ -800,7 +806,8 @@ def main():
     wind_enabled = is_wind_maps_enabled("ch1")
     sunshine_enabled = is_sunshine_maps_enabled("ch1")
     rain_enabled = is_rain_maps_enabled("ch1")
-    if wind_enabled or sunshine_enabled or rain_enabled:
+    sunrain_enabled = is_sunrain_maps_enabled("ch1")
+    if wind_enabled or sunshine_enabled or rain_enabled or sunrain_enabled:
         try:
             wind_config = load_wind_map_config(log=log)
             if wind_enabled:
@@ -809,13 +816,16 @@ def main():
                 log("CH1 sunshine-map generation enabled for this run.", "NOTICE")
             if rain_enabled:
                 log("CH1 rain-map generation enabled for this run.", "NOTICE")
+            if sunrain_enabled:
+                log("CH1 Sun+Rain map generation enabled for this run.", "NOTICE")
         except Exception as e:
             wind_enabled = False
             sunshine_enabled = False
             rain_enabled = False
+            sunrain_enabled = False
             log(f"CH1 map generation disabled: {e}", "WARNING")
     else:
-        log("CH1 wind/sunshine/rain map generation disabled by flags.")
+        log("CH1 wind/sunshine/rain/sunrain map generation disabled by flags.")
 
     download_static_files()
     if not os.path.exists("locations.json"): return
@@ -842,12 +852,14 @@ def main():
         max_h = 45 if ref_time.hour == 3 else 33
         sunshine_missing = sunshine_enabled and not is_sunshine_run_complete("ch1", tag)
         rain_missing = rain_enabled and not is_rain_run_complete("ch1", tag)
+        sunrain_missing = sunrain_enabled and not is_sunrain_run_complete("ch1", tag)
         if (
             profile_mode == "netcdf"
             and not force_refresh
             and is_run_complete_locally(tag, locations, max_h)
             and not sunshine_missing
             and not rain_missing
+            and not sunrain_missing
         ):
             if not is_packed_run_complete_locally(tag, locations):
                 write_packed_run_files(tag, locations)
@@ -883,6 +895,11 @@ def main():
             if rain_enabled and wind_config is not None
             else None
         )
+        sunrain_accumulator = (
+            SunRainMapAccumulator("ch1", tag, ref_time, wind_config, log=log)
+            if sunrain_enabled and wind_config is not None
+            else None
+        )
         # Cache previous raw radiation values for de-accumulation (running mean → hourly mean)
         # Formula: hourly_mean[n→n+1h] = (n+1)*raw[n+1h] - n*raw[nh]
         prev_rad_raw = seed_previous_radiation(
@@ -891,9 +908,12 @@ def main():
             tag,
             horizon_start,
         )
-        if rain_accumulator is not None:
+        if rain_accumulator is not None or sunrain_accumulator is not None:
             rain_seed = seed_previous_rain("ogd-forecasting-icon-ch1", ref_time, tag, horizon_start)
-            rain_accumulator.seed_previous_raw(rain_seed.get("TOT_PREC"))
+            if rain_accumulator is not None:
+                rain_accumulator.seed_previous_raw(rain_seed.get("TOT_PREC"))
+            if sunrain_accumulator is not None:
+                sunrain_accumulator.seed_previous_raw(rain_seed.get("TOT_PREC"))
 
         for h in range(horizon_start, run_horizon_end + 1):
             iso_h = get_iso_horizon(h)
@@ -933,7 +953,7 @@ def main():
             sample_field = next((v for v in fields.values() if v is not None and hasattr(v, 'dims')), None)
             rain_scalars = {}
             rain_sample_field = None
-            if rain_accumulator is not None:
+            if rain_accumulator is not None or sunrain_accumulator is not None:
                 downloaded_rain = fetch_variable_files(
                     "ogd-forecasting-icon-ch1",
                     VARS_RAIN_ACCUM,
@@ -1042,6 +1062,13 @@ def main():
                     sunshine_accumulator.append(sample_field, rad_scalars, h, ref_time)
                 if rain_accumulator is not None and rain_scalars and rain_sample_field is not None:
                     rain_accumulator.append(rain_sample_field, rain_scalars, h, ref_time)
+                if (
+                    sunrain_accumulator is not None
+                    and rad_scalars
+                    and rain_scalars
+                    and sample_field is not None
+                ):
+                    sunrain_accumulator.append(sample_field, rad_scalars, rain_scalars, h, ref_time)
                 if wind_accumulator is not None:
                     wind_accumulator.append(fields, h, ref_time)
                 log(f"H+{h:02d} done")
@@ -1055,6 +1082,8 @@ def main():
                 sunshine_accumulator.finalize()
             if rain_accumulator is not None:
                 rain_accumulator.finalize()
+            if sunrain_accumulator is not None:
+                sunrain_accumulator.finalize()
             if profile_mode == "direct-chunk" and profile_buffers is not None:
                 finalize_profile_chunk(profile_buffers, locations, tag, chunk_id, ref_time)
             if profile_mode == "netcdf":
@@ -1083,6 +1112,7 @@ def main():
     cleanup_old_wind_runs("ch1", anchor_hour=3, log=log)
     cleanup_old_sunshine_runs("ch1", anchor_hour=3, log=log)
     cleanup_old_rain_runs("ch1", anchor_hour=3, log=log)
+    cleanup_old_sunrain_runs("ch1", anchor_hour=3, log=log)
     # Manifest is now written by generate_combined_manifest.py (CI step after CH2 fetch)
     log("--- Data Fetcher Complete ---", "NOTICE")
 

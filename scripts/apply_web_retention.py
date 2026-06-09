@@ -111,6 +111,7 @@ def collect_model_runs(model_key: str) -> set[str]:
         WEB_DIR / "wind_maps" / model_key,
         WEB_DIR / "sunshine_maps" / model_key,
         WEB_DIR / "rain_maps" / model_key,
+        WEB_DIR / "sunrain_maps" / model_key,
     ):
         if not root.exists():
             continue
@@ -127,6 +128,7 @@ def prune_model_runs(model_key: str, keep: set[str]) -> None:
         WEB_DIR / "wind_maps" / model_key,
         WEB_DIR / "sunshine_maps" / model_key,
         WEB_DIR / "rain_maps" / model_key,
+        WEB_DIR / "sunrain_maps" / model_key,
     ):
         if not root.exists():
             continue
@@ -355,11 +357,64 @@ def rebuild_rain_manifest() -> dict[str, Any] | None:
     return manifest
 
 
+def rebuild_sunrain_manifest() -> dict[str, Any] | None:
+    root = WEB_DIR / "sunrain_maps"
+    if not root.exists():
+        return None
+
+    manifest: dict[str, Any] = {
+        "schema_version": 1,
+        "product": "sunrain_maps",
+        "default_product": "surface",
+        "models": {},
+        "counts": {"runs": 0, "products": 0, "steps": 0, "bytes": 0},
+    }
+
+    for model_dir in sorted(path for path in root.iterdir() if path.is_dir()):
+        model_manifest = {"runs": {}}
+        for run_dir in sorted((path for path in model_dir.iterdir() if path.is_dir()), reverse=True):
+            run_manifest = {"layout": "split_binary_by_step", "products": {}}
+            for product_dir in sorted(path for path in run_dir.iterdir() if path.is_dir()):
+                metadata_path = product_dir / "metadata.json"
+                if not metadata_path.exists():
+                    continue
+                metadata = load_json(metadata_path)
+                steps = metadata.get("steps") or []
+                byte_count = sum(int(step.get("byte_length") or 0) for step in steps)
+                grid = metadata.get("grid") or {}
+                run_manifest["products"][product_dir.name] = {
+                    "metadata": web_path(metadata_path),
+                    "source": metadata.get("source"),
+                    "components": (metadata.get("encoding") or {}).get("components", []),
+                    "grid": {
+                        "width": grid.get("width"),
+                        "height": grid.get("height"),
+                    },
+                    "steps": steps,
+                    "step_count": len(steps),
+                    "bytes": byte_count,
+                }
+                manifest["counts"]["products"] += 1
+                manifest["counts"]["steps"] += len(steps)
+                manifest["counts"]["bytes"] += byte_count
+            if run_manifest["products"]:
+                model_manifest["runs"][run_dir.name] = run_manifest
+                manifest["counts"]["runs"] += 1
+        if model_manifest["runs"]:
+            manifest["models"][model_dir.name] = model_manifest
+
+    if not manifest["models"]:
+        return None
+    write_json(root / "manifest.json", manifest)
+    return manifest
+
+
 def rebuild_main_manifest(
     bundle_count: int,
     wind_manifest: dict[str, Any] | None,
     sunshine_manifest: dict[str, Any] | None,
     rain_manifest: dict[str, Any] | None,
+    sunrain_manifest: dict[str, Any] | None,
 ) -> None:
     locations_path = WEB_DIR / "locations.json"
     if not locations_path.exists():
@@ -391,6 +446,7 @@ def rebuild_main_manifest(
                 "wind": "web_exports/wind_maps/manifest.json" if wind_manifest else None,
                 "sunshine": "web_exports/sunshine_maps/manifest.json" if sunshine_manifest else None,
                 "rain": "web_exports/rain_maps/manifest.json" if rain_manifest else None,
+                "sunrain": "web_exports/sunrain_maps/manifest.json" if sunrain_manifest else None,
             },
         },
         "models": {},
@@ -408,6 +464,8 @@ def rebuild_main_manifest(
             "sunshine_map_steps": (sunshine_manifest or {}).get("counts", {}).get("steps", 0),
             "rain_map_products": (rain_manifest or {}).get("counts", {}).get("products", 0),
             "rain_map_steps": (rain_manifest or {}).get("counts", {}).get("steps", 0),
+            "sunrain_map_products": (sunrain_manifest or {}).get("counts", {}).get("products", 0),
+            "sunrain_map_steps": (sunrain_manifest or {}).get("counts", {}).get("steps", 0),
         },
         "notes": [
             "Generated from retained browser-ready web_exports.",
@@ -415,6 +473,7 @@ def rebuild_main_manifest(
             "Wind map exports are split into browser-readable metadata JSON plus lazy-loaded int8 binary u/v slices.",
             "Sunshine map exports are browser-readable metadata JSON plus lazy-loaded uint8 binary sunshine-fraction slices.",
             "Rain map exports are browser-readable metadata JSON plus lazy-loaded uint8 binary precipitation slices.",
+            "Sun+Rain map exports are browser-readable metadata JSON plus lazy-loaded uint8 semantic sunshine/rain slices.",
         ],
     }
 
@@ -491,7 +550,8 @@ def rebuild_main_manifest(
         f"region_forecasts={manifest['counts']['region_forecasts']}, "
         f"wind_steps={manifest['counts']['wind_map_steps']}, "
         f"sunshine_steps={manifest['counts']['sunshine_map_steps']}, "
-        f"rain_steps={manifest['counts']['rain_map_steps']}"
+        f"rain_steps={manifest['counts']['rain_map_steps']}, "
+        f"sunrain_steps={manifest['counts']['sunrain_map_steps']}"
     )
 
 
@@ -502,7 +562,8 @@ def main() -> None:
     wind_manifest = rebuild_wind_manifest()
     sunshine_manifest = rebuild_sunshine_manifest()
     rain_manifest = rebuild_rain_manifest()
-    rebuild_main_manifest(bundle_count, wind_manifest, sunshine_manifest, rain_manifest)
+    sunrain_manifest = rebuild_sunrain_manifest()
+    rebuild_main_manifest(bundle_count, wind_manifest, sunshine_manifest, rain_manifest, sunrain_manifest)
 
 
 if __name__ == "__main__":

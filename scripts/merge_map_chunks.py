@@ -20,6 +20,7 @@ CHUNK_ROOT = Path("map_chunks")
 WIND_ROOT = Path("cache_wind_packed")
 SUNSHINE_ROOT = Path("cache_sunshine_maps")
 RAIN_ROOT = Path("cache_rain_maps")
+SUNRAIN_ROOT = Path("cache_sunrain_maps")
 NETCDF_ENGINE = "netcdf4"
 
 
@@ -167,6 +168,11 @@ def merge_rain_chunks() -> None:
         merge_split_binary_group("rain", RAIN_ROOT, model, run_tag, product, paths)
 
 
+def merge_sunrain_chunks() -> None:
+    for (model, run_tag, product), paths in sorted(split_binary_sources("cache_sunrain_maps").items()):
+        merge_split_binary_group("Sun+Rain", SUNRAIN_ROOT, model, run_tag, product, paths)
+
+
 def main() -> int:
     if not CHUNK_ROOT.exists():
         log("no map chunk root found; nothing to merge")
@@ -174,6 +180,7 @@ def main() -> int:
     merge_wind_chunks()
     merge_sunshine_chunks()
     merge_rain_chunks()
+    merge_sunrain_chunks()
     return 0
 
 

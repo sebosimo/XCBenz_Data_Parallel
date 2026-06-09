@@ -38,6 +38,13 @@ from sunshine_maps import (
     is_sunshine_maps_enabled,
     is_sunshine_run_complete,
 )
+from sunrain_maps import (
+    CACHE_DIR_SUNRAIN_MAPS,
+    SunRainMapAccumulator,
+    cleanup_old_sunrain_runs,
+    is_sunrain_maps_enabled,
+    is_sunrain_run_complete,
+)
 from wind_maps import (
     CACHE_DIR_WIND_PACKED,
     WindMapAccumulator,
@@ -797,11 +804,13 @@ def main():
     wind_map_out_root = os.getenv("CH2_WIND_MAP_OUT_ROOT", CACHE_DIR_WIND_PACKED)
     sunshine_map_out_root = os.getenv("CH2_SUNSHINE_MAP_OUT_ROOT", CACHE_DIR_SUNSHINE_MAPS)
     rain_map_out_root = os.getenv("CH2_RAIN_MAP_OUT_ROOT", CACHE_DIR_RAIN_MAPS)
+    sunrain_map_out_root = os.getenv("CH2_SUNRAIN_MAP_OUT_ROOT", CACHE_DIR_SUNRAIN_MAPS)
     require_full_horizon_run = env_flag("CH2_REQUIRE_FULL_HORIZON_RUN", profile_mode == "direct-chunk")
     wind_enabled = is_wind_maps_enabled("ch2")
     sunshine_enabled = is_sunshine_maps_enabled("ch2")
     rain_enabled = is_rain_maps_enabled("ch2")
-    if wind_enabled or sunshine_enabled or rain_enabled:
+    sunrain_enabled = is_sunrain_maps_enabled("ch2")
+    if wind_enabled or sunshine_enabled or rain_enabled or sunrain_enabled:
         try:
             wind_config = load_wind_map_config(log=log)
             if wind_enabled:
@@ -810,13 +819,16 @@ def main():
                 log("CH2 sunshine-map generation enabled for this run.", "NOTICE")
             if rain_enabled:
                 log("CH2 rain-map generation enabled for this run.", "NOTICE")
+            if sunrain_enabled:
+                log("CH2 Sun+Rain map generation enabled for this run.", "NOTICE")
         except Exception as e:
             wind_enabled = False
             sunshine_enabled = False
             rain_enabled = False
+            sunrain_enabled = False
             log(f"CH2 map generation disabled: {e}", "WARNING")
     else:
-        log("CH2 wind/sunshine/rain map generation disabled by flags.")
+        log("CH2 wind/sunshine/rain/sunrain map generation disabled by flags.")
 
     download_static_files()
 
@@ -848,6 +860,7 @@ def main():
         tag = ref_time.strftime('%Y%m%d_%H%M')
         sunshine_missing = sunshine_enabled and not is_sunshine_run_complete("ch2", tag, root=sunshine_map_out_root)
         rain_missing = rain_enabled and not is_rain_run_complete("ch2", tag, root=rain_map_out_root)
+        sunrain_missing = sunrain_enabled and not is_sunrain_run_complete("ch2", tag, root=sunrain_map_out_root)
         if require_full_horizon_run and not has_profile_horizon(ref_time, MAX_HORIZON):
             log(f"CH2 run {tag} does not expose H{MAX_HORIZON:03d} yet; trying next available run.")
             continue
@@ -857,6 +870,7 @@ def main():
             and is_run_complete_locally(tag, locations, MAX_HORIZON)
             and not sunshine_missing
             and not rain_missing
+            and not sunrain_missing
         ):
             if not is_packed_run_complete_locally(tag, locations):
                 write_packed_run_files(tag, locations)
@@ -881,11 +895,19 @@ def main():
             if rain_enabled and wind_config is not None
             else None
         )
+        sunrain_accumulator = (
+            SunRainMapAccumulator("ch2", tag, ref_time, wind_config, log=log, out_root=sunrain_map_out_root)
+            if sunrain_enabled and wind_config is not None
+            else None
+        )
         # Cache previous raw radiation values for de-accumulation (running mean → hourly mean)
         prev_rad_raw = seed_previous_radiation(COLLECTION_CH2, ref_time, tag, horizon_start)
-        if rain_accumulator is not None:
+        if rain_accumulator is not None or sunrain_accumulator is not None:
             rain_seed = seed_previous_rain(COLLECTION_CH2, ref_time, tag, horizon_start)
-            rain_accumulator.seed_previous_raw(rain_seed.get("TOT_PREC"))
+            if rain_accumulator is not None:
+                rain_accumulator.seed_previous_raw(rain_seed.get("TOT_PREC"))
+            if sunrain_accumulator is not None:
+                sunrain_accumulator.seed_previous_raw(rain_seed.get("TOT_PREC"))
 
         for h in range(horizon_start, horizon_end + 1):
             # Skip horizons where all location .nc files are already on disk
@@ -894,6 +916,7 @@ def main():
                 and not force_refresh
                 and not sunshine_missing
                 and not rain_missing
+                and not sunrain_missing
                 and is_horizon_complete_locally(tag, locations, h)
             ):
                 any_success = True   # count existing horizons toward run completion
@@ -1038,6 +1061,13 @@ def main():
                     sunshine_accumulator.append(sample_field, rad_scalars, h, ref_time)
                 if rain_accumulator is not None and rain_scalars and rain_sample_field is not None:
                     rain_accumulator.append(rain_sample_field, rain_scalars, h, ref_time)
+                if (
+                    sunrain_accumulator is not None
+                    and rad_scalars
+                    and rain_scalars
+                    and sample_field is not None
+                ):
+                    sunrain_accumulator.append(sample_field, rad_scalars, rain_scalars, h, ref_time)
                 if wind_accumulator is not None:
                     wind_accumulator.append(fields, h, ref_time)
                 log(f"CH2 H+{h:03d} done")
@@ -1051,6 +1081,8 @@ def main():
                 sunshine_accumulator.finalize()
             if rain_accumulator is not None:
                 rain_accumulator.finalize()
+            if sunrain_accumulator is not None:
+                sunrain_accumulator.finalize()
             if profile_mode == "direct-chunk" and profile_buffers is not None:
                 finalize_profile_chunk(profile_buffers, locations, tag, chunk_id, ref_time)
             if profile_mode == "netcdf":
@@ -1079,6 +1111,7 @@ def main():
     cleanup_old_wind_runs("ch2", anchor_hour=0, log=log)
     cleanup_old_sunshine_runs("ch2", anchor_hour=0, log=log)
     cleanup_old_rain_runs("ch2", anchor_hour=0, log=log)
+    cleanup_old_sunrain_runs("ch2", anchor_hour=0, log=log)
     log("=== CH2 Data Fetcher Complete ===", "NOTICE")
 
 
