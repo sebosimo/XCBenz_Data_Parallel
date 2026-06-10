@@ -149,11 +149,17 @@ jobs:
       fail-fast: false
       matrix:
         chunk:
-          - id: H000_H016
+          - id: H000_H011
             start: "0"
-            end: "16"
-          - id: H017_H045
-            start: "17"
+            end: "11"
+          - id: H012_H022
+            start: "12"
+            end: "22"
+          - id: H023_H033
+            start: "23"
+            end: "33"
+          - id: H034_H045
+            start: "34"
             end: "45"
     steps:
       - name: Checkout repository
