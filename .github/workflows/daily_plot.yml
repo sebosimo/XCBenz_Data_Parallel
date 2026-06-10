@@ -495,7 +495,7 @@ jobs:
           else
             echo "No data to push to $DATA_BRANCH"
           fi
-          git checkout -f main
+          git checkout -f "$GITHUB_SHA"
           git branch -D data-temp
 
   noop:
