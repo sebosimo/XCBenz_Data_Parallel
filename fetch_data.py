@@ -39,6 +39,7 @@ from sunshine_maps import (
     is_sunshine_run_complete,
 )
 from sunrain_maps import (
+    CACHE_DIR_SUNRAIN_MAPS,
     SunRainMapAccumulator,
     cleanup_old_sunrain_runs,
     is_sunrain_maps_enabled,
@@ -803,6 +804,10 @@ def main():
         log(f"CH1 pinned run: {pinned_run.strftime('%Y%m%d_%H%M')}", "NOTICE")
 
     wind_config = None
+    wind_map_out_root = os.getenv("CH1_WIND_MAP_OUT_ROOT", CACHE_DIR_WIND_PACKED)
+    sunshine_map_out_root = os.getenv("CH1_SUNSHINE_MAP_OUT_ROOT", CACHE_DIR_SUNSHINE_MAPS)
+    rain_map_out_root = os.getenv("CH1_RAIN_MAP_OUT_ROOT", CACHE_DIR_RAIN_MAPS)
+    sunrain_map_out_root = os.getenv("CH1_SUNRAIN_MAP_OUT_ROOT", CACHE_DIR_SUNRAIN_MAPS)
     wind_enabled = is_wind_maps_enabled("ch1")
     sunshine_enabled = is_sunshine_maps_enabled("ch1")
     rain_enabled = is_rain_maps_enabled("ch1")
@@ -850,9 +855,9 @@ def main():
     for ref_time in runs:
         tag = ref_time.strftime('%Y%m%d_%H%M')
         max_h = 45 if ref_time.hour == 3 else 33
-        sunshine_missing = sunshine_enabled and not is_sunshine_run_complete("ch1", tag)
-        rain_missing = rain_enabled and not is_rain_run_complete("ch1", tag)
-        sunrain_missing = sunrain_enabled and not is_sunrain_run_complete("ch1", tag)
+        sunshine_missing = sunshine_enabled and not is_sunshine_run_complete("ch1", tag, root=sunshine_map_out_root)
+        rain_missing = rain_enabled and not is_rain_run_complete("ch1", tag, root=rain_map_out_root)
+        sunrain_missing = sunrain_enabled and not is_sunrain_run_complete("ch1", tag, root=sunrain_map_out_root)
         if (
             profile_mode == "netcdf"
             and not force_refresh
@@ -881,22 +886,22 @@ def main():
         any_success = False
         profile_buffers = {} if profile_mode == "direct-chunk" else None
         wind_accumulator = (
-            WindMapAccumulator("ch1", tag, ref_time, wind_config, log=log)
+            WindMapAccumulator("ch1", tag, ref_time, wind_config, log=log, out_root=wind_map_out_root)
             if wind_enabled and wind_config is not None
             else None
         )
         sunshine_accumulator = (
-            SunshineMapAccumulator("ch1", tag, ref_time, wind_config, log=log)
+            SunshineMapAccumulator("ch1", tag, ref_time, wind_config, log=log, out_root=sunshine_map_out_root)
             if sunshine_enabled and wind_config is not None
             else None
         )
         rain_accumulator = (
-            RainMapAccumulator("ch1", tag, ref_time, wind_config, log=log)
+            RainMapAccumulator("ch1", tag, ref_time, wind_config, log=log, out_root=rain_map_out_root)
             if rain_enabled and wind_config is not None
             else None
         )
         sunrain_accumulator = (
-            SunRainMapAccumulator("ch1", tag, ref_time, wind_config, log=log)
+            SunRainMapAccumulator("ch1", tag, ref_time, wind_config, log=log, out_root=sunrain_map_out_root)
             if sunrain_enabled and wind_config is not None
             else None
         )

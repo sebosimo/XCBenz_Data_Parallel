@@ -71,6 +71,22 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
+    strategy:
+      fail-fast: false
+      matrix:
+        chunk:
+          - id: H000_H011
+            start: "0"
+            end: "11"
+          - id: H012_H022
+            start: "12"
+            end: "22"
+          - id: H023_H033
+            start: "23"
+            end: "33"
+          - id: H034_H045
+            start: "34"
+            end: "45"
     steps:
       - name: Checkout repository
         uses: actions/checkout@v6
@@ -92,18 +108,18 @@ jobs:
           uv venv
           uv pip install -r requirements.txt
 
-      - name: Restore CH1 cache from sandbox data branch
-        run: |
-          git fetch --depth=1 origin "$DATA_BRANCH" 2>/dev/null || echo "$DATA_BRANCH branch not found yet - starting fresh"
-          git checkout FETCH_HEAD -- cache_wind_packed/ch1/ cache_sunshine_maps/ch1/ cache_rain_maps/ch1/ cache_sunrain_maps/ch1/ 2>/dev/null || true
-          git reset HEAD -- cache_wind_packed/ cache_sunshine_maps/ cache_rain_maps/ cache_sunrain_maps/ manifest.json 2>/dev/null || true
-          echo "Packed CH1 wind-map .nc files: $(find cache_wind_packed/ch1 -name '*.nc' 2>/dev/null | wc -l)"
-
       - name: Fetch CH1 map data
         env:
           FORCE_REFRESH: ${{ env.FORCE_REFRESH }}
           CH1_RUN_TAG: ${{ needs.preflight.outputs.latest_ch1 }}
           CH1_PROFILE_MODE: none
+          CH1_HORIZON_START: ${{ matrix.chunk.start }}
+          CH1_HORIZON_END: ${{ matrix.chunk.end }}
+          CH1_REQUIRE_FULL_HORIZON_RUN: "true"
+          CH1_WIND_MAP_OUT_ROOT: map_chunk_outputs/${{ matrix.chunk.id }}/cache_wind_packed
+          CH1_SUNSHINE_MAP_OUT_ROOT: map_chunk_outputs/${{ matrix.chunk.id }}/cache_sunshine_maps
+          CH1_RAIN_MAP_OUT_ROOT: map_chunk_outputs/${{ matrix.chunk.id }}/cache_rain_maps
+          CH1_SUNRAIN_MAP_OUT_ROOT: map_chunk_outputs/${{ matrix.chunk.id }}/cache_sunrain_maps
           ENABLE_WIND_MAPS: ${{ env.ENABLE_WIND_MAPS }}
           ENABLE_WIND_MAPS_CH1: ${{ env.ENABLE_WIND_MAPS_CH1 }}
           WIND_MAP_MAX_SECONDS: ${{ env.WIND_MAP_MAX_SECONDS }}
@@ -117,14 +133,11 @@ jobs:
       - name: Upload CH1 outputs
         uses: actions/upload-artifact@v4
         with:
-          name: ch1-output
+          name: ch1-map-${{ matrix.chunk.id }}
           if-no-files-found: ignore
           retention-days: 1
           path: |
-            cache_wind_packed/ch1/
-            cache_sunshine_maps/ch1/
-            cache_rain_maps/ch1/
-            cache_sunrain_maps/ch1/
+            map_chunk_outputs/${{ matrix.chunk.id }}/
 
   fetch-ch1-profiles:
     needs: preflight
@@ -377,8 +390,9 @@ jobs:
       - name: Download CH1 outputs
         uses: actions/download-artifact@v4
         with:
-          name: ch1-output
-          path: .
+          pattern: ch1-map-*
+          merge-multiple: false
+          path: map_chunks/ch1
 
       - name: Download CH1 profile chunks
         uses: actions/download-artifact@v4
@@ -401,7 +415,7 @@ jobs:
           merge-multiple: true
           path: web_profile_chunks
 
-      - name: Merge CH2 map chunks
+      - name: Merge map chunks
         run: uv run python scripts/merge_map_chunks.py
 
       - name: Apply data retention
