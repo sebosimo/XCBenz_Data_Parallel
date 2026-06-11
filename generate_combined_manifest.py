@@ -19,6 +19,7 @@ CACHE_DIR_WIND_PACKED = "cache_wind_packed"
 CACHE_DIR_SUNSHINE_MAPS = "cache_sunshine_maps"
 CACHE_DIR_RAIN_MAPS = "cache_rain_maps"
 CACHE_DIR_SUNRAIN_MAPS = "cache_sunrain_maps"
+CACHE_DIR_CLOUD_MAPS = "cache_cloud_maps"
 
 
 def log(msg):
@@ -293,6 +294,61 @@ def scan_sunrain_maps(cache_dir=CACHE_DIR_SUNRAIN_MAPS):
     return sunrain_maps
 
 
+def scan_cloud_maps(cache_dir=CACHE_DIR_CLOUD_MAPS):
+    """
+    Scan browser-ready cloud-map files.
+
+    Layout:
+      cache_cloud_maps/{model}/{run}/{layer}/metadata.json
+      cache_cloud_maps/{model}/{run}/{layer}/steps/{step}.bin
+    """
+    cloud_maps = {}
+    if not os.path.exists(cache_dir):
+        return cloud_maps
+
+    for model in ("ch1", "ch2"):
+        model_dir = os.path.join(cache_dir, model)
+        if not os.path.isdir(model_dir):
+            continue
+        model_runs = {}
+        for run in sorted(os.listdir(model_dir), reverse=True):
+            run_path = os.path.join(model_dir, run)
+            if not os.path.isdir(run_path):
+                continue
+            products = {}
+            for product in ("total", "low", "mid", "high"):
+                metadata_path = os.path.join(run_path, product, "metadata.json")
+                if not os.path.exists(metadata_path):
+                    continue
+                rel_metadata = os.path.relpath(metadata_path, ".").replace(os.sep, "/")
+                try:
+                    with open(metadata_path, "r", encoding="utf-8") as f:
+                        metadata = json.load(f)
+                    steps = metadata.get("steps") or []
+                    if not steps:
+                        continue
+                    if not all(os.path.exists((step.get("path") or "").replace("/", os.sep)) for step in steps):
+                        continue
+                    products[product] = {
+                        "metadata": rel_metadata,
+                        "components": metadata.get("encoding", {}).get("components", []),
+                        "steps": steps,
+                        "step_count": len(steps),
+                        "bytes": sum(int(step.get("byte_length") or 0) for step in steps),
+                    }
+                except Exception as exc:
+                    log(f"Skipping invalid cloud-map metadata {rel_metadata}: {exc}")
+            if products:
+                model_runs[run] = {
+                    "layout": "browser_ready_split_binary_by_step",
+                    "products": products,
+                }
+        if model_runs:
+            cloud_maps[model] = model_runs
+
+    return cloud_maps
+
+
 def main():
     runs_ch1 = scan_runs(CACHE_DIR_CH1, pad=2)
     runs_ch2 = scan_runs(CACHE_DIR_CH2, pad=3)
@@ -302,6 +358,7 @@ def main():
     sunshine_maps = scan_sunshine_maps()
     rain_maps = scan_rain_maps()
     sunrain_maps = scan_sunrain_maps()
+    cloud_maps = scan_cloud_maps()
 
     # generated_at: use the newest CH1 run (the "current" model reference)
     generated_at = max(runs_ch1.keys()) if runs_ch1 else (
@@ -319,6 +376,7 @@ def main():
         "sunshine_maps": sunshine_maps,
         "rain_maps": rain_maps,
         "sunrain_maps": sunrain_maps,
+        "cloud_maps": cloud_maps,
     }
 
     with open("manifest.json", "w") as f:
@@ -330,7 +388,8 @@ def main():
         f"{sum(len(runs) for runs in wind_maps.values())} wind-map run(s), "
         f"{sum(len(runs) for runs in sunshine_maps.values())} sunshine-map run(s), "
         f"{sum(len(runs) for runs in rain_maps.values())} rain-map run(s), "
-        f"{sum(len(runs) for runs in sunrain_maps.values())} Sun+Rain map run(s)"
+        f"{sum(len(runs) for runs in sunrain_maps.values())} Sun+Rain map run(s), "
+        f"{sum(len(runs) for runs in cloud_maps.values())} cloud-map run(s)"
     )
 
 

@@ -67,6 +67,7 @@ def main() -> None:
     prune_run_dir(Path("cache_sunshine_maps/ch1"), anchor_hour=3)
     prune_run_dir(Path("cache_rain_maps/ch1"), anchor_hour=3)
     prune_run_dir(Path("cache_sunrain_maps/ch1"), anchor_hour=3)
+    prune_run_dir(Path("cache_cloud_maps/ch1"), anchor_hour=3)
 
     # CH2 production policy: keep top-2 latest + 00Z anchor from today/yesterday.
     for root in (Path("cache_data_ch2"), Path("cache_data_ch2_packed")):
@@ -75,6 +76,7 @@ def main() -> None:
     prune_run_dir(Path("cache_sunshine_maps/ch2"), anchor_hour=0)
     prune_run_dir(Path("cache_rain_maps/ch2"), anchor_hour=0)
     prune_run_dir(Path("cache_sunrain_maps/ch2"), anchor_hour=0)
+    prune_run_dir(Path("cache_cloud_maps/ch2"), anchor_hour=0)
 
 
 if __name__ == "__main__":

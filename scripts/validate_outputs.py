@@ -77,11 +77,12 @@ def validate_bundles() -> tuple[int, int]:
     return len(bundles), total_bytes
 
 
-def validate_map_encodings() -> tuple[int, int, int, int]:
+def validate_map_encodings() -> tuple[int, int, int, int, int]:
     wind_metadata = list(Path("web_exports/wind_maps").glob("*/*/*/metadata.json"))
     sunshine_metadata = list(Path("web_exports/sunshine_maps").glob("*/*/*/metadata.json"))
     rain_metadata = list(Path("web_exports/rain_maps").glob("*/*/*/metadata.json"))
     sunrain_metadata = list(Path("web_exports/sunrain_maps").glob("*/*/*/metadata.json"))
+    cloud_metadata = list(Path("web_exports/cloud_maps").glob("*/*/*/metadata.json"))
     if not wind_metadata:
         raise ValueError("no wind map metadata found")
     if not sunshine_metadata:
@@ -90,6 +91,8 @@ def validate_map_encodings() -> tuple[int, int, int, int]:
         raise ValueError("no rain map metadata found")
     if not sunrain_metadata:
         raise ValueError("no Sun+Rain map metadata found")
+    if not cloud_metadata:
+        raise ValueError("no cloud map metadata found")
 
     for metadata_path in wind_metadata:
         encoding = load_json(metadata_path).get("encoding") or {}
@@ -156,7 +159,50 @@ def validate_map_encodings() -> tuple[int, int, int, int]:
                 )
             if any(byte >= 251 for byte in data):
                 raise ValueError(f"{metadata_path} Sun+Rain step uses reserved values")
-    return len(wind_metadata), len(sunshine_metadata), len(rain_metadata), len(sunrain_metadata)
+    for metadata_path in cloud_metadata:
+        payload = load_json(metadata_path)
+        encoding = payload.get("encoding") or {}
+        if encoding.get("dtype") != "uint8" or encoding.get("format") != "packed-uint4-cloud-cover":
+            raise ValueError(f"{metadata_path} has unexpected cloud encoding: {encoding}")
+        if encoding.get("components") != ["cloud_cover_pct"]:
+            raise ValueError(f"{metadata_path} has unexpected cloud components")
+        if encoding.get("units") != ["%"]:
+            raise ValueError(f"{metadata_path} has unexpected cloud units")
+        if encoding.get("bits_per_value") != 4:
+            raise ValueError(f"{metadata_path} has unexpected cloud bits_per_value")
+        if encoding.get("quantization_step_pct") != 10:
+            raise ValueError(f"{metadata_path} has unexpected cloud quantization step")
+        if encoding.get("missing_code") != 15:
+            raise ValueError(f"{metadata_path} has unexpected cloud missing code")
+        grid = payload.get("grid") or {}
+        cell_count = int(grid.get("width") or 0) * int(grid.get("height") or 0)
+        if cell_count <= 0:
+            raise ValueError(f"{metadata_path} has invalid cloud grid dimensions")
+        expected_length = (cell_count + 1) // 2
+        for step in payload.get("steps") or []:
+            step_url = step.get("url")
+            if not step_url or not Path(step_url).exists():
+                raise FileNotFoundError(f"{metadata_path} references missing cloud step {step_url!r}")
+            step_path = Path(step_url)
+            data = step_path.read_bytes()
+            declared = int(step.get("byte_length") or -1)
+            actual = len(data)
+            if actual != declared or actual != expected_length:
+                raise ValueError(
+                    f"{metadata_path} cloud step byte length mismatch: "
+                    f"expected={expected_length} declared={declared} actual={actual}"
+                )
+            low = [byte & 0x0F for byte in data]
+            high = [byte >> 4 for byte in data]
+            codes = []
+            for idx in range(cell_count):
+                codes.append(low[idx // 2] if idx % 2 == 0 else high[idx // 2])
+            invalid = [code for code in codes if not (0 <= code <= 10 or code == 15)]
+            if invalid:
+                raise ValueError(f"{metadata_path} cloud step uses reserved code {invalid[0]}")
+            if cell_count % 2 == 1 and high[-1] != 15:
+                raise ValueError(f"{metadata_path} cloud odd-cell padding nibble is not missing code 15")
+    return len(wind_metadata), len(sunshine_metadata), len(rain_metadata), len(sunrain_metadata), len(cloud_metadata)
 
 
 def main() -> int:
@@ -200,7 +246,7 @@ def main() -> int:
                     return fail(f"{model_key} {run_tag} {location_id} bundle path missing: {bundle_url}")
 
     map_products = ((web.get("products") or {}).get("maps") or {})
-    for product in ("wind", "sunshine", "rain", "sunrain"):
+    for product in ("wind", "sunshine", "rain", "sunrain", "cloud"):
         path = map_products.get(product)
         if not path:
             return fail(f"web manifest has no {product} map product")
@@ -217,7 +263,13 @@ def main() -> int:
 
     try:
         bundle_count, bundle_bytes = validate_bundles()
-        wind_metadata_count, sunshine_metadata_count, rain_metadata_count, sunrain_metadata_count = validate_map_encodings()
+        (
+            wind_metadata_count,
+            sunshine_metadata_count,
+            rain_metadata_count,
+            sunrain_metadata_count,
+            cloud_metadata_count,
+        ) = validate_map_encodings()
     except Exception as exc:  # noqa: BLE001 - this is a CI guard.
         return fail(str(exc))
 
@@ -235,10 +287,12 @@ def main() -> int:
         f"sunshine_metadata={sunshine_metadata_count}, "
         f"rain_metadata={rain_metadata_count}, "
         f"sunrain_metadata={sunrain_metadata_count}, "
+        f"cloud_metadata={cloud_metadata_count}, "
         f"wind_steps={counts.get('wind_map_steps')}, "
         f"sunshine_steps={counts.get('sunshine_map_steps')}, "
         f"rain_steps={counts.get('rain_map_steps')}, "
-        f"sunrain_steps={counts.get('sunrain_map_steps')}",
+        f"sunrain_steps={counts.get('sunrain_map_steps')}, "
+        f"cloud_steps={counts.get('cloud_map_steps')}",
         flush=True,
     )
     return 0

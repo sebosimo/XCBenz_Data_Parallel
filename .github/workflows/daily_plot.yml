@@ -39,6 +39,9 @@ env:
   ENABLE_SUNRAIN_MAPS: "true"
   ENABLE_SUNRAIN_MAPS_CH1: "true"
   ENABLE_SUNRAIN_MAPS_CH2: "true"
+  ENABLE_CLOUD_MAPS: "true"
+  ENABLE_CLOUD_MAPS_CH1: "true"
+  ENABLE_CLOUD_MAPS_CH2: "true"
   WIND_MAP_MAX_SECONDS: "0"
 
 jobs:
@@ -95,9 +98,10 @@ jobs:
       - name: Restore CH1 cache from sandbox data branch
         run: |
           git fetch --depth=1 origin "$DATA_BRANCH" 2>/dev/null || echo "$DATA_BRANCH branch not found yet - starting fresh"
-          git checkout FETCH_HEAD -- cache_wind_packed/ch1/ cache_sunshine_maps/ch1/ cache_rain_maps/ch1/ cache_sunrain_maps/ch1/ 2>/dev/null || true
-          git reset HEAD -- cache_wind_packed/ cache_sunshine_maps/ cache_rain_maps/ cache_sunrain_maps/ manifest.json 2>/dev/null || true
+          git checkout FETCH_HEAD -- cache_wind_packed/ch1/ cache_sunshine_maps/ch1/ cache_rain_maps/ch1/ cache_sunrain_maps/ch1/ cache_cloud_maps/ch1/ 2>/dev/null || true
+          git reset HEAD -- cache_wind_packed/ cache_sunshine_maps/ cache_rain_maps/ cache_sunrain_maps/ cache_cloud_maps/ manifest.json 2>/dev/null || true
           echo "Packed CH1 wind-map .nc files: $(find cache_wind_packed/ch1 -name '*.nc' 2>/dev/null | wc -l)"
+          echo "CH1 cloud map step binaries: $(find cache_cloud_maps/ch1 -name '*.bin' 2>/dev/null | wc -l)"
 
       - name: Fetch CH1 map data
         env:
@@ -112,6 +116,8 @@ jobs:
           ENABLE_RAIN_MAPS_CH1: ${{ env.ENABLE_RAIN_MAPS_CH1 }}
           ENABLE_SUNRAIN_MAPS: ${{ env.ENABLE_SUNRAIN_MAPS }}
           ENABLE_SUNRAIN_MAPS_CH1: ${{ env.ENABLE_SUNRAIN_MAPS_CH1 }}
+          ENABLE_CLOUD_MAPS: ${{ env.ENABLE_CLOUD_MAPS }}
+          ENABLE_CLOUD_MAPS_CH1: ${{ env.ENABLE_CLOUD_MAPS_CH1 }}
         run: uv run python fetch_data.py
 
       - name: Upload CH1 outputs
@@ -125,6 +131,7 @@ jobs:
             cache_sunshine_maps/ch1/
             cache_rain_maps/ch1/
             cache_sunrain_maps/ch1/
+            cache_cloud_maps/ch1/
 
   fetch-ch1-profiles:
     needs: preflight
@@ -177,6 +184,8 @@ jobs:
           ENABLE_SUNSHINE_MAPS: "false"
           ENABLE_RAIN_MAPS: "false"
           ENABLE_SUNRAIN_MAPS: "false"
+          ENABLE_CLOUD_MAPS: "false"
+          ENABLE_CLOUD_MAPS_CH1: "false"
         run: uv run python fetch_data.py
 
       - name: Upload CH1 profile chunk
@@ -243,6 +252,7 @@ jobs:
           CH2_SUNSHINE_MAP_OUT_ROOT: map_chunk_outputs/${{ matrix.chunk.id }}/cache_sunshine_maps
           CH2_RAIN_MAP_OUT_ROOT: map_chunk_outputs/${{ matrix.chunk.id }}/cache_rain_maps
           CH2_SUNRAIN_MAP_OUT_ROOT: map_chunk_outputs/${{ matrix.chunk.id }}/cache_sunrain_maps
+          CH2_CLOUD_MAP_OUT_ROOT: map_chunk_outputs/${{ matrix.chunk.id }}/cache_cloud_maps
           ENABLE_WIND_MAPS: ${{ env.ENABLE_WIND_MAPS }}
           ENABLE_WIND_MAPS_CH2: ${{ env.ENABLE_WIND_MAPS_CH2 }}
           WIND_MAP_MAX_SECONDS: ${{ env.WIND_MAP_MAX_SECONDS }}
@@ -251,6 +261,8 @@ jobs:
           ENABLE_RAIN_MAPS_CH2: ${{ env.ENABLE_RAIN_MAPS_CH2 }}
           ENABLE_SUNRAIN_MAPS: ${{ env.ENABLE_SUNRAIN_MAPS }}
           ENABLE_SUNRAIN_MAPS_CH2: ${{ env.ENABLE_SUNRAIN_MAPS_CH2 }}
+          ENABLE_CLOUD_MAPS: ${{ env.ENABLE_CLOUD_MAPS }}
+          ENABLE_CLOUD_MAPS_CH2: ${{ env.ENABLE_CLOUD_MAPS_CH2 }}
         run: uv run python fetch_data_ch2.py
 
       - name: Upload CH2 outputs
@@ -319,6 +331,8 @@ jobs:
           ENABLE_SUNSHINE_MAPS: "false"
           ENABLE_RAIN_MAPS: "false"
           ENABLE_SUNRAIN_MAPS: "false"
+          ENABLE_CLOUD_MAPS: "false"
+          ENABLE_CLOUD_MAPS_CH2: "false"
         run: uv run python fetch_data_ch2.py
 
       - name: Upload CH2 profile chunk
@@ -437,9 +451,10 @@ jobs:
           echo "Sunshine map step binaries: $(find cache_sunshine_maps -name '*.bin' 2>/dev/null | wc -l)"
           echo "Rain map step binaries: $(find cache_rain_maps -name '*.bin' 2>/dev/null | wc -l)"
           echo "Sun+Rain map step binaries: $(find cache_sunrain_maps -name '*.bin' 2>/dev/null | wc -l)"
+          echo "Cloud map step binaries: $(find cache_cloud_maps -name '*.bin' 2>/dev/null | wc -l)"
           echo "web_exports files: $(find web_exports -type f 2>/dev/null | wc -l)"
           echo "web_exports .nc files: $(find web_exports -name '*.nc' 2>/dev/null | wc -l)"
-          du -sh cache_data cache_data_ch2 cache_data_packed cache_data_ch2_packed cache_wind_packed cache_sunshine_maps cache_rain_maps cache_sunrain_maps web_exports 2>/dev/null || true
+          du -sh cache_data cache_data_ch2 cache_data_packed cache_data_ch2_packed cache_wind_packed cache_sunshine_maps cache_rain_maps cache_sunrain_maps cache_cloud_maps web_exports 2>/dev/null || true
 
       - name: Deploy web exports to Infomaniak data host
         if: ${{ env.DEPLOY_DATA_HOST == 'true' }}

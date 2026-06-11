@@ -24,6 +24,13 @@ if defs_to_use:
     os.environ["ECCODES_DEFINITION_PATH"] = final_def_path
 
 from meteodatalab import ogd_api
+from cloud_maps import (
+    CACHE_DIR_CLOUD_MAPS,
+    CloudMapAccumulator,
+    cleanup_old_cloud_runs,
+    is_cloud_maps_enabled,
+    is_cloud_run_complete,
+)
 from rain_maps import (
     CACHE_DIR_RAIN_MAPS,
     RainMapAccumulator,
@@ -77,6 +84,7 @@ VARS_RADIATION_AVERAGE = ["ASWDIR_S", "ASWDIFD_S"]   # surface SW radiation (run
 VARS_SUNSHINE_ACCUM = ["DURSUN", "DURSUN_M"]          # sunshine duration / possible max (running sums)
 VARS_SUNSHINE_MAPS = [*VARS_RADIATION_AVERAGE, *VARS_SUNSHINE_ACCUM]
 VARS_RAIN_ACCUM = ["TOT_PREC"]
+VARS_CLOUD_MAPS = ["CLCT", "CLCL", "CLCM", "CLCH"]
 VARS_RADIATION = VARS_RADIATION_AVERAGE
 SURFACE_SCALAR_UNITS = {
     "ASWDIR_S": "W m-2",
@@ -93,6 +101,7 @@ os.makedirs(CACHE_DIR_PACKED, exist_ok=True)
 os.makedirs(CACHE_DIR_MAPS_PACKED, exist_ok=True)
 os.makedirs(CACHE_DIR_SUNSHINE_MAPS, exist_ok=True)
 os.makedirs(CACHE_DIR_RAIN_MAPS, exist_ok=True)
+os.makedirs(CACHE_DIR_CLOUD_MAPS, exist_ok=True)
 os.makedirs(PROFILE_CHUNK_DIR, exist_ok=True)
 os.makedirs(STATIC_DIR, exist_ok=True)
 
@@ -805,12 +814,14 @@ def main():
     sunshine_map_out_root = os.getenv("CH2_SUNSHINE_MAP_OUT_ROOT", CACHE_DIR_SUNSHINE_MAPS)
     rain_map_out_root = os.getenv("CH2_RAIN_MAP_OUT_ROOT", CACHE_DIR_RAIN_MAPS)
     sunrain_map_out_root = os.getenv("CH2_SUNRAIN_MAP_OUT_ROOT", CACHE_DIR_SUNRAIN_MAPS)
+    cloud_map_out_root = os.getenv("CH2_CLOUD_MAP_OUT_ROOT", CACHE_DIR_CLOUD_MAPS)
     require_full_horizon_run = env_flag("CH2_REQUIRE_FULL_HORIZON_RUN", profile_mode == "direct-chunk")
     wind_enabled = is_wind_maps_enabled("ch2")
     sunshine_enabled = is_sunshine_maps_enabled("ch2")
     rain_enabled = is_rain_maps_enabled("ch2")
     sunrain_enabled = is_sunrain_maps_enabled("ch2")
-    if wind_enabled or sunshine_enabled or rain_enabled or sunrain_enabled:
+    cloud_enabled = is_cloud_maps_enabled("ch2")
+    if wind_enabled or sunshine_enabled or rain_enabled or sunrain_enabled or cloud_enabled:
         try:
             wind_config = load_wind_map_config(log=log)
             if wind_enabled:
@@ -821,14 +832,17 @@ def main():
                 log("CH2 rain-map generation enabled for this run.", "NOTICE")
             if sunrain_enabled:
                 log("CH2 Sun+Rain map generation enabled for this run.", "NOTICE")
+            if cloud_enabled:
+                log("CH2 cloud-map generation enabled for this run.", "NOTICE")
         except Exception as e:
             wind_enabled = False
             sunshine_enabled = False
             rain_enabled = False
             sunrain_enabled = False
+            cloud_enabled = False
             log(f"CH2 map generation disabled: {e}", "WARNING")
     else:
-        log("CH2 wind/sunshine/rain/sunrain map generation disabled by flags.")
+        log("CH2 wind/sunshine/rain/sunrain/cloud map generation disabled by flags.")
 
     download_static_files()
 
@@ -861,6 +875,7 @@ def main():
         sunshine_missing = sunshine_enabled and not is_sunshine_run_complete("ch2", tag, root=sunshine_map_out_root)
         rain_missing = rain_enabled and not is_rain_run_complete("ch2", tag, root=rain_map_out_root)
         sunrain_missing = sunrain_enabled and not is_sunrain_run_complete("ch2", tag, root=sunrain_map_out_root)
+        cloud_missing = cloud_enabled and not is_cloud_run_complete("ch2", tag, root=cloud_map_out_root)
         if require_full_horizon_run and not has_profile_horizon(ref_time, MAX_HORIZON):
             log(f"CH2 run {tag} does not expose H{MAX_HORIZON:03d} yet; trying next available run.")
             continue
@@ -871,6 +886,7 @@ def main():
             and not sunshine_missing
             and not rain_missing
             and not sunrain_missing
+            and not cloud_missing
         ):
             if not is_packed_run_complete_locally(tag, locations):
                 write_packed_run_files(tag, locations)
@@ -900,6 +916,11 @@ def main():
             if sunrain_enabled and wind_config is not None
             else None
         )
+        cloud_accumulator = (
+            CloudMapAccumulator("ch2", tag, ref_time, wind_config, log=log, out_root=cloud_map_out_root)
+            if cloud_enabled and wind_config is not None
+            else None
+        )
         # Cache previous raw radiation values for de-accumulation (running mean → hourly mean)
         prev_rad_raw = seed_previous_radiation(COLLECTION_CH2, ref_time, tag, horizon_start)
         if rain_accumulator is not None or sunrain_accumulator is not None:
@@ -917,6 +938,7 @@ def main():
                 and not sunshine_missing
                 and not rain_missing
                 and not sunrain_missing
+                and not cloud_missing
                 and is_horizon_complete_locally(tag, locations, h)
             ):
                 any_success = True   # count existing horizons toward run completion
@@ -966,7 +988,7 @@ def main():
                                   if v is not None and hasattr(v, 'dims')), None)
             rain_scalars = {}
             rain_sample_field = None
-            if rain_accumulator is not None:
+            if rain_accumulator is not None or sunrain_accumulator is not None:
                 downloaded_rain = fetch_variable_files(
                     COLLECTION_CH2,
                     VARS_RAIN_ACCUM,
@@ -998,7 +1020,48 @@ def main():
                         if os.path.exists(tmp):
                             os.remove(tmp)
 
-            if h > 0 and sample_field is not None:
+            cloud_scalars = {}
+            cloud_sample_field = None
+            if cloud_accumulator is not None:
+                downloaded_cloud = fetch_variable_files(
+                    COLLECTION_CH2,
+                    VARS_CLOUD_MAPS,
+                    ref_time,
+                    iso_h,
+                    tag,
+                    f"{h:03d}",
+                    "temp_ch2_cloud",
+                )
+                for var, tmp in downloaded_cloud.items():
+                    try:
+                        ds_cloud = xr.open_dataset(tmp, engine='cfgrib',
+                                                   backend_kwargs={'indexpath': ''})
+                        cloud_data = ds_cloud[next(iter(ds_cloud.data_vars))].load()
+                        if grid:
+                            m_dim = next(d for d in cloud_data.dims
+                                         if cloud_data.sizes[d] == grid['lat'].size)
+                            cloud_data = cloud_data.assign_coords({
+                                "latitude": (m_dim, grid['lat'].values),
+                                "longitude": (m_dim, grid['lon'].values),
+                            })
+                        cloud_scalars[var] = cloud_data.values.ravel()
+                        cloud_sample_field = cloud_data
+                        if sample_field is None:
+                            sample_field = cloud_sample_field
+                        ds_cloud.close()
+                        has_new_data = True
+                    except Exception as e:
+                        log(f"CH2 cloud decode failed for {var} H+{h:03d}: {e}", "WARNING")
+                    finally:
+                        if os.path.exists(tmp):
+                            os.remove(tmp)
+
+            radiation_needed = (
+                profile_mode in {"netcdf", "direct-chunk"}
+                or sunshine_accumulator is not None
+                or sunrain_accumulator is not None
+            )
+            if h > 0 and radiation_needed and sample_field is not None:
                 lat_n = 'latitude' if 'latitude' in sample_field.coords else 'lat'
                 lon_n = 'longitude' if 'longitude' in sample_field.coords else 'lon'
                 lats_f = sample_field[lat_n].values
@@ -1068,6 +1131,8 @@ def main():
                     and sample_field is not None
                 ):
                     sunrain_accumulator.append(sample_field, rad_scalars, rain_scalars, h, ref_time)
+                if cloud_accumulator is not None and cloud_scalars and cloud_sample_field is not None:
+                    cloud_accumulator.append(cloud_sample_field, cloud_scalars, h, ref_time)
                 if wind_accumulator is not None:
                     wind_accumulator.append(fields, h, ref_time)
                 log(f"CH2 H+{h:03d} done")
@@ -1083,6 +1148,8 @@ def main():
                 rain_accumulator.finalize()
             if sunrain_accumulator is not None:
                 sunrain_accumulator.finalize()
+            if cloud_accumulator is not None:
+                cloud_accumulator.finalize()
             if profile_mode == "direct-chunk" and profile_buffers is not None:
                 finalize_profile_chunk(profile_buffers, locations, tag, chunk_id, ref_time)
             if profile_mode == "netcdf":
@@ -1112,6 +1179,7 @@ def main():
     cleanup_old_sunshine_runs("ch2", anchor_hour=0, log=log)
     cleanup_old_rain_runs("ch2", anchor_hour=0, log=log)
     cleanup_old_sunrain_runs("ch2", anchor_hour=0, log=log)
+    cleanup_old_cloud_runs("ch2", anchor_hour=0, log=log)
     log("=== CH2 Data Fetcher Complete ===", "NOTICE")
 
 
