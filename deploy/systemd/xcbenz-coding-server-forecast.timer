@@ -1,0 +1,12 @@
+[Unit]
+Description=Run the XCBenz coding-server forecast pipeline every 30 minutes
+
+[Timer]
+OnCalendar=*:00,30:00
+AccuracySec=30s
+RandomizedDelaySec=20s
+Persistent=false
+Unit=xcbenz-coding-server-forecast.service
+
+[Install]
+WantedBy=timers.target

@@ -1,0 +1,20 @@
+[Unit]
+Description=Run the XCBenz forecast pipeline on the coding server
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+Type=oneshot
+User=xcbenz
+Group=xcbenz
+EnvironmentFile=/etc/xcbenz/coding-server-forecast.env
+WorkingDirectory=/opt/xcbenz/XCBenz_Data_Parallel
+ExecStart=/usr/bin/bash -lc 'exec ${XCBENZ_PYTHON_CMD:-uv run python} scripts/run_coding_server_pipeline.py --run-mode "${XCBENZ_RUN_MODE:-standard-deploy-data-host}"'
+Nice=10
+IOSchedulingClass=idle
+CPUSchedulingPolicy=idle
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=read-only
+ReadWritePaths=/opt/xcbenz/XCBenz_Data_Parallel /run/lock /tmp
