@@ -61,6 +61,7 @@ fi
 
 KEY_FILE=""
 cleanup_key=false
+lock_acquired=false
 if [[ -n "${INFOMANIAK_SSH_KEY_PATH:-}" ]]; then
   KEY_FILE="$INFOMANIAK_SSH_KEY_PATH"
 elif [[ -n "${INFOMANIAK_SSH_KEY:-}" ]]; then
@@ -75,13 +76,6 @@ fi
 if [[ ! -f "$KEY_FILE" ]]; then
   fail "SSH key file not found: $KEY_FILE"
 fi
-
-cleanup() {
-  if [[ "$cleanup_key" == "true" ]]; then
-    rm -f "$KEY_FILE"
-  fi
-}
-trap cleanup EXIT
 
 mkdir -p "$HOME/.ssh"
 chmod 700 "$HOME/.ssh"
@@ -103,6 +97,51 @@ REMOTE_ROOT="${INFOMANIAK_DATA_ROOT%/}"
 REMOTE_TMP="$REMOTE_ROOT/_upload_tmp_$RELEASE_ID"
 REMOTE_CURRENT="$REMOTE_ROOT/web_exports"
 REMOTE_PREVIOUS="$REMOTE_ROOT/_previous_web_exports"
+REMOTE_LOCK="$REMOTE_ROOT/.xcbenz_web_exports_publish.lock"
+LOCK_ID="${LOCK_ID:-forecast-$RELEASE_ID}"
+DEPLOY_LOCK_WAIT_SECONDS="${DEPLOY_LOCK_WAIT_SECONDS:-300}"
+DEPLOY_LOCK_POLL_SECONDS="${DEPLOY_LOCK_POLL_SECONDS:-5}"
+
+acquire_remote_lock() {
+  log "Acquiring remote publish lock $REMOTE_LOCK"
+  retry "acquire remote publish lock" \
+    ssh "${SSH_OPTS[@]}" "$SSH_TARGET" "
+    set -e
+    mkdir -p '$REMOTE_ROOT'
+    deadline=\$((\$(date +%s) + $DEPLOY_LOCK_WAIT_SECONDS))
+    while ! mkdir '$REMOTE_LOCK' 2>/dev/null; do
+      now=\$(date +%s)
+      if [ \"\$now\" -ge \"\$deadline\" ]; then
+        echo 'Timed out waiting for $REMOTE_LOCK' >&2
+        exit 42
+      fi
+      sleep '$DEPLOY_LOCK_POLL_SECONDS'
+    done
+    printf '%s\n' '$LOCK_ID' > '$REMOTE_LOCK/owner'
+  "
+  lock_acquired=true
+}
+
+release_remote_lock() {
+  if [[ "$lock_acquired" != "true" ]]; then
+    return
+  fi
+
+  ssh "${SSH_OPTS[@]}" "$SSH_TARGET" "
+    if [ -d '$REMOTE_LOCK' ] && [ \"\$(cat '$REMOTE_LOCK/owner' 2>/dev/null || true)\" = '$LOCK_ID' ]; then
+      rm -rf '$REMOTE_LOCK'
+    fi
+  " >/dev/null 2>&1 || true
+  lock_acquired=false
+}
+
+cleanup() {
+  release_remote_lock
+  if [[ "$cleanup_key" == "true" ]]; then
+    rm -f "$KEY_FILE"
+  fi
+}
+trap cleanup EXIT
 
 log "Preparing remote upload directory $REMOTE_TMP"
 retry "prepare remote upload directory" \
@@ -118,6 +157,23 @@ log "Uploading $WEB_EXPORT_DIR to $REMOTE_TMP/web_exports"
 retry "upload $WEB_EXPORT_DIR" \
   rsync -az --delete -e "$RSYNC_SSH" "$WEB_EXPORT_DIR/" "$SSH_TARGET:$REMOTE_TMP/web_exports/"
 
+acquire_remote_lock
+
+log "Preserving live-owned folders in forecast upload"
+retry "preserve live-owned folders" \
+  ssh "${SSH_OPTS[@]}" "$SSH_TARGET" "
+  set -e
+  current='$REMOTE_CURRENT'
+  target='$REMOTE_TMP/web_exports'
+  mkdir -p \"\$target\"
+  for subtree in live_stations webcams radar_maps; do
+    if [ -d \"\$current/\$subtree\" ]; then
+      rm -rf \"\$target/\$subtree\"
+      cp -a \"\$current/\$subtree\" \"\$target/\$subtree\"
+    fi
+  done
+"
+
 log "Switching remote web_exports directory"
 retry "switch remote web_exports directory" \
   ssh "${SSH_OPTS[@]}" "$SSH_TARGET" "
@@ -132,5 +188,6 @@ retry "switch remote web_exports directory" \
   find '$REMOTE_CURRENT' -name '*.nc' -type f -print -quit | grep -q . && exit 20 || true
   find '$REMOTE_CURRENT' -maxdepth 2 -type f | wc -l
 "
+release_remote_lock
 
 log "Published $WEB_EXPORT_DIR to $DATA_HOST_BASE_URL/web_exports/"

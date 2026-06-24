@@ -11,6 +11,10 @@ AddType application/json .json
 AddType application/geo+json .geojson
 AddType application/octet-stream .bin
 
+<IfModule mod_setenvif.c>
+  SetEnvIf Request_URI "^/web_exports/(live_stations/(latest|manifest)\.json|webcams/(latest|catalog)\.json|webcams/thumbs/[^/]+\.jpg)$" xcbenz_live_no_cache=1
+</IfModule>
+
 <IfModule mod_deflate.c>
   AddOutputFilterByType DEFLATE application/json application/geo+json application/octet-stream
 </IfModule>
@@ -29,4 +33,6 @@ AddType application/octet-stream .bin
   <FilesMatch "manifest\.json$">
     Header set Cache-Control "no-cache, must-revalidate"
   </FilesMatch>
+
+  Header set Cache-Control "no-cache, must-revalidate" env=xcbenz_live_no_cache
 </IfModule>
