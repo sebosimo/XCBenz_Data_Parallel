@@ -602,6 +602,13 @@ def restore_web_exports(args: argparse.Namespace, env: dict[str, str], log_dir: 
         log_dir=log_dir,
         allow_failure=True,
     )
+    run_checked(
+        "restore-web-exports-reset-index",
+        ["git", "reset", "HEAD", "--", "web_exports/"],
+        env=env,
+        log_dir=log_dir,
+        allow_failure=True,
+    )
 
 
 def load_asset_index(url: str) -> Any:
