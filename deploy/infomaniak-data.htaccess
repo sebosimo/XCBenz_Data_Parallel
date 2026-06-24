@@ -12,7 +12,7 @@ AddType application/geo+json .geojson
 AddType application/octet-stream .bin
 
 <IfModule mod_setenvif.c>
-  SetEnvIf Request_URI "^/web_exports/(live_stations/(latest|manifest)\.json|webcams/(latest|catalog)\.json|webcams/thumbs/[^/]+\.jpg)$" xcbenz_live_no_cache=1
+  SetEnvIf Request_URI "^/web_exports/(live_stations/(latest|manifest)\.json|webcams/(latest|catalog)\.json|webcams/history/index\.json|webcams/thumbs/[^/]+\.jpg)$" xcbenz_live_no_cache=1
 </IfModule>
 
 <IfModule mod_deflate.c>
