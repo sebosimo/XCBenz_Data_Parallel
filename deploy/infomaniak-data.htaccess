@@ -27,7 +27,7 @@ AddType application/octet-stream .bin
   Header merge Vary Accept-Encoding
 
   <FilesMatch "\.(bin|json|geojson)$">
-    Header set Cache-Control "public, max-age=3600"
+    Header set Cache-Control "public, max-age=3600" env=!xcbenz_live_no_cache
   </FilesMatch>
 
   <FilesMatch "manifest\.json$">
