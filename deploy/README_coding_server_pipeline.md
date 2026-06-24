@@ -49,6 +49,145 @@ uv run python scripts/run_coding_server_pipeline.py \
 
 Logs are written under `.local_pipeline/runs/<timestamp>/logs/`.
 
+## Benchmark Notes
+
+### 2026-06-24 Max-Jobs 7 Dry Run
+
+Command shape:
+
+```bash
+cd /home/sebas/projects/XCBenz_Data_Parallel
+.venv/bin/python scripts/run_coding_server_pipeline.py \
+  --run-mode force-refresh \
+  --skip-deploy \
+  --no-push-data-branch \
+  --python-cmd .venv/bin/python \
+  --run-dir .local_pipeline/runs/manual-coding-server-test-20260624T2040Z
+```
+
+Result:
+
+- branch: `codex/coding-server-pipeline-prototype`
+- commit: `2c18f89`
+- server: `codex-cx43-nbg1`, 8 CPU, 15 GiB RAM
+- run window: `2026-06-24T20:40:19Z` to `2026-06-24T20:49:32Z`
+- total runtime: about 9m13s
+- fetch phase runtime: about 6m32s, from first fetch start to last fetch done
+- selected runs: CH1 `20260624_1800`, CH2 `20260624_1200`
+- top-level fetch jobs planned: 12
+- top-level fetch jobs active at peak: 7
+- deploy: skipped
+- `data-web` push: skipped
+- validation: passed
+
+Validation summary:
+
+```text
+profiles=90160
+bundles=1120
+region_forecasts=1120
+wind_steps=3864
+sunshine_steps=636
+rain_steps=644
+sunrain_steps=636
+cloud_steps=2576
+```
+
+Output sizes:
+
+```text
+web_exports:        1.2G
+map_chunks:         332M
+web_profile_chunks: 78M
+run logs:           2.3M
+```
+
+Resource observations:
+
+- sampled CPU peaked around 84%
+- sampled load1 peaked at 7.71
+- sampled available RAM stayed above the configured 4096 MB floor
+- lowest sampled available RAM was about 4931 MB
+- public SSH timed out once during peak load, then recovered
+
+Interpretation:
+
+`XCBENZ_LOCAL_MAX_JOBS=7` is viable for throughput, but it is aggressive for an
+interactive coding server. Use `4` or `5` as the safer starting point if Codex
+or SSH responsiveness matters while the pipeline is running.
+
+### 2026-06-24 Max-Jobs 4 Dry Run
+
+Command shape:
+
+```bash
+cd /home/sebas/projects/XCBenz_Data_Parallel_max4_pinned_20260624T2104Z
+/home/sebas/projects/XCBenz_Data_Parallel/.venv/bin/python \
+  scripts/run_coding_server_pipeline.py \
+  --run-mode force-refresh \
+  --skip-deploy \
+  --no-push-data-branch \
+  --python-cmd /home/sebas/projects/XCBenz_Data_Parallel/.venv/bin/python \
+  --max-jobs 4 \
+  --ch1-run-tag 20260624_1800 \
+  --ch2-run-tag 20260624_1200 \
+  --run-dir .local_pipeline/runs/manual-coding-server-test-20260624T2104Z-max4-pinned
+```
+
+Result:
+
+- branch: `codex/coding-server-pipeline-prototype`
+- commit: `2c18f89`
+- server: `codex-cx43-nbg1`, 8 CPU, 15 GiB RAM
+- run window: `2026-06-24T21:04:27Z` to `2026-06-24T21:14:28Z`
+- total runtime: about 10m01s
+- fetch phase runtime: about 8m20s, from first fetch start to last fetch done
+- selected runs: CH1 `20260624_1800`, CH2 `20260624_1200`
+- top-level fetch jobs planned: 12
+- top-level fetch jobs active at peak: 4
+- deploy: skipped
+- `data-web` push: skipped
+- validation: passed
+
+Validation summary matched the max-jobs 7 dry run:
+
+```text
+profiles=90160
+bundles=1120
+region_forecasts=1120
+wind_steps=3864
+sunshine_steps=636
+rain_steps=644
+sunrain_steps=636
+cloud_steps=2576
+```
+
+Output sizes also matched the max-jobs 7 dry run:
+
+```text
+web_exports:        1.2G
+map_chunks:         332M
+web_profile_chunks: 78M
+run logs:           2.5M
+```
+
+Resource observations:
+
+- sampled CPU peaked around 56%
+- sampled load1 peaked at 3.79
+- sampled available RAM stayed above the configured 4096 MB floor
+- lowest sampled available RAM was about 5909 MB
+- no SSH timeout was observed during this run
+
+Interpretation:
+
+`XCBENZ_LOCAL_MAX_JOBS=4` keeps the coding server much more responsive while
+still running the fetch phase in parallel. Compared with max-jobs 7, the fetch
+phase took about 1m48s longer, but sampled peak CPU, load, and RAM pressure were
+all materially lower. Total runtime was only about 48s longer in this pair of
+tests, but fetch phase runtime is the cleaner comparison because post-fetch
+network/cache timing differed between runs.
+
 ## Server Setup
 
 Assuming the repo is checked out at `/opt/xcbenz/XCBenz_Data_Parallel` and the
