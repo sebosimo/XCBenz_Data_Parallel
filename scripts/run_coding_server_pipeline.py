@@ -449,6 +449,44 @@ def build_jobs(
 ) -> list[Job]:
     jobs: list[Job] = []
 
+    if args.job_layout == "combined":
+        for start, end in ch1_map_chunks(latest_ch1):
+            cid = chunk_id(start, end)
+            name = f"ch1-combined-{cid}"
+            env = job_env(base, run_dir, name)
+            env.update(
+                {
+                    "CH1_RUN_TAG": latest_ch1,
+                    "CH1_PROFILE_MODE": "direct-chunk",
+                    "CH1_PROFILE_CHUNK_ID": cid,
+                    "CH1_HORIZON_START": str(start),
+                    "CH1_HORIZON_END": str(end),
+                    "CH1_REQUIRE_FULL_HORIZON_RUN": "true",
+                    **map_output_roots("ch1", cid),
+                }
+            )
+            jobs.append(Job(name, [*py, "fetch_data.py"], env))
+
+        ch2_chunks = [(0, 30), (31, 60), (61, 90), (91, 120)]
+        for start, end in ch2_chunks:
+            cid = chunk_id(start, end)
+            name = f"ch2-combined-{cid}"
+            env = job_env(base, run_dir, name)
+            env.update(
+                {
+                    "CH2_RUN_TAG": latest_ch2,
+                    "CH2_PROFILE_MODE": "direct-chunk",
+                    "CH2_PROFILE_CHUNK_ID": cid,
+                    "CH2_HORIZON_START": str(start),
+                    "CH2_HORIZON_END": str(end),
+                    "CH2_REQUIRE_FULL_HORIZON_RUN": "true",
+                    **map_output_roots("ch2", cid),
+                }
+            )
+            jobs.append(Job(name, [*py, "fetch_data_ch2.py"], env))
+
+        return jobs
+
     for start, end in ch1_map_chunks(latest_ch1):
         cid = chunk_id(start, end)
         name = f"ch1-map-{cid}"
@@ -770,6 +808,12 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--python-cmd", default=os.getenv("XCBENZ_PYTHON_CMD", "uv run python"))
     parser.add_argument("--download-workers", type=int, default=parse_int_env("DOWNLOAD_WORKERS", 6))
     parser.add_argument("--max-jobs", type=int, default=parse_int_env("XCBENZ_LOCAL_MAX_JOBS", 0))
+    parser.add_argument(
+        "--job-layout",
+        choices=("split", "combined"),
+        default=os.getenv("XCBENZ_JOB_LAYOUT", "split"),
+        help="Use split map/profile workers or combined workers that write both products per horizon chunk.",
+    )
     parser.add_argument("--max-cpu-percent", type=float, default=parse_float_env("XCBENZ_LOCAL_MAX_CPU_PERCENT", 88.0))
     parser.add_argument("--max-load-percent", type=float, default=parse_float_env("XCBENZ_LOCAL_MAX_LOAD_PERCENT", 110.0))
     parser.add_argument("--min-available-mb", type=float, default=parse_float_env("XCBENZ_LOCAL_MIN_AVAILABLE_MB", 4096.0))
@@ -825,7 +869,7 @@ def run_pipeline(args: argparse.Namespace) -> int:
     )
     max_jobs = args.max_jobs if args.max_jobs > 0 else auto_max_jobs(len(jobs))
     log(
-        f"job plan: {len(jobs)} fetch jobs, max_jobs={max_jobs}, "
+        f"job plan: {len(jobs)} fetch jobs, max_jobs={max_jobs}, layout={args.job_layout}, "
         f"latest_ch1={latest_ch1}, latest_ch2={latest_ch2}, deploy={deploy}, "
         f"push_data_branch={args.push_data_branch}"
     )
