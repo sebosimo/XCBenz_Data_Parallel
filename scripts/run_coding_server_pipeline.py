@@ -369,12 +369,6 @@ def run_hour(run_tag: str) -> int:
         raise SystemExit(f"Invalid run tag {run_tag!r}; expected YYYYMMDD_HHMM") from exc
 
 
-def ch1_map_chunks(run_tag: str) -> list[tuple[int, int]]:
-    if run_hour(run_tag) == 3:
-        return [(0, 16), (17, 33), (34, 45)]
-    return [(0, 16), (17, 33)]
-
-
 def horizon_chunks(end: int, chunk_size: int) -> list[tuple[int, int]]:
     size = max(1, chunk_size)
     chunks = []
@@ -389,6 +383,15 @@ def horizon_chunks(end: int, chunk_size: int) -> list[tuple[int, int]]:
             prev_start, _prev_end = chunks[-2]
             chunks[-2:] = [(prev_start, last_end)]
     return chunks
+
+
+def ch1_chunks(run_tag: str, chunk_size: int) -> list[tuple[int, int]]:
+    end = 45 if run_hour(run_tag) == 3 else 33
+    if chunk_size <= 0:
+        if end == 45:
+            return [(0, 16), (17, 33), (34, 45)]
+        return [(0, 16), (17, 33)]
+    return horizon_chunks(end, chunk_size)
 
 
 def ch2_chunks(chunk_size: int) -> list[tuple[int, int]]:
@@ -481,7 +484,7 @@ def build_jobs(
     if args.job_layout == "combined":
         ch1_jobs: list[Job] = []
         ch2_jobs: list[Job] = []
-        for start, end in ch1_map_chunks(latest_ch1):
+        for start, end in ch1_chunks(latest_ch1, args.ch1_chunk_size):
             cid = chunk_id(start, end)
             name = f"ch1-combined-{cid}"
             env = job_env(base, run_dir, name)
@@ -517,7 +520,7 @@ def build_jobs(
 
         return order_combined_jobs(ch1_jobs, ch2_jobs, args.combined_job_order)
 
-    for start, end in ch1_map_chunks(latest_ch1):
+    for start, end in ch1_chunks(latest_ch1, args.ch1_chunk_size):
         cid = chunk_id(start, end)
         name = f"ch1-map-{cid}"
         env = job_env(base, run_dir, name)
@@ -839,6 +842,12 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--download-workers", type=int, default=parse_int_env("DOWNLOAD_WORKERS", 6))
     parser.add_argument("--max-jobs", type=int, default=parse_int_env("XCBENZ_LOCAL_MAX_JOBS", 0))
     parser.add_argument(
+        "--ch1-chunk-size",
+        type=int,
+        default=parse_int_env("XCBENZ_CH1_CHUNK_SIZE", 0),
+        help="Experimental CH1 horizon chunk size; 0 keeps the legacy CH1 chunks.",
+    )
+    parser.add_argument(
         "--ch2-chunk-size",
         type=int,
         default=parse_int_env("XCBENZ_CH2_CHUNK_SIZE", 0),
@@ -912,6 +921,7 @@ def run_pipeline(args: argparse.Namespace) -> int:
     max_jobs = args.max_jobs if args.max_jobs > 0 else auto_max_jobs(len(jobs))
     log(
         f"job plan: {len(jobs)} fetch jobs, max_jobs={max_jobs}, layout={args.job_layout}, "
+        f"ch1_chunk_size={args.ch1_chunk_size}, ch2_chunk_size={args.ch2_chunk_size}, "
         f"latest_ch1={latest_ch1}, latest_ch2={latest_ch2}, deploy={deploy}, "
         f"push_data_branch={args.push_data_branch}"
     )
