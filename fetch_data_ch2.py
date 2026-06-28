@@ -619,12 +619,22 @@ def _height_profile(fields, lat_name, idx, fallback_level_count):
     return ((h_vals[:-1] + h_vals[1:]) / 2.0).astype(np.float32)
 
 
-def append_profile_chunk(buffers, fields, locations, tag, h, ref, loc_rad_map=None):
+def append_profile_chunk(
+    buffers,
+    fields,
+    locations,
+    tag,
+    h,
+    ref,
+    loc_rad_map=None,
+    location_indices=None,
+    height_cache=None,
+):
     sample = _sample_field(fields)
     if sample is None:
         return False
     lat_name, _lon_name = _field_lat_lon_names(sample)
-    indices = _location_indices(sample, locations)
+    indices = location_indices if location_indices is not None else _location_indices(sample, locations)
     valid_time = ref + datetime.timedelta(hours=h)
 
     for name, idx in indices.items():
@@ -639,7 +649,12 @@ def append_profile_chunk(buffers, fields, locations, tag, h, ref, loc_rad_map=No
         if level_source is None:
             continue
         level_count = int(level_source.shape[0])
-        height = _height_profile(fields, lat_name, idx, level_count)
+        if height_cache is not None and name in height_cache:
+            height = height_cache[name]
+        else:
+            height = _height_profile(fields, lat_name, idx, level_count)
+            if height_cache is not None:
+                height_cache[name] = height
         if height.shape[0] != level_count:
             log(
                 f"CH2 direct profile height length mismatch for {name} H+{h:03d}: "
@@ -901,6 +916,8 @@ def main():
         log(f"Processing CH2 run: {tag} (H{horizon_start:03d}-H{horizon_end:03d})")
         any_success = False
         profile_buffers = {} if profile_mode == "direct-chunk" else None
+        location_indices_cache = None
+        height_cache = {} if profile_mode == "direct-chunk" else None
         wind_accumulator = (
             WindMapAccumulator("ch2", tag, ref_time, wind_config, log=log, out_root=wind_map_out_root)
             if wind_enabled and wind_config is not None
@@ -1105,13 +1122,13 @@ def main():
                             os.remove(tmp)
 
             if has_new_data:
+                if sample_field is not None and location_indices_cache is None:
+                    location_indices_cache = _location_indices(sample_field, locations)
                 loc_rad_map = {}
                 if rad_scalars and sample_field is not None:
                     # Build per-location radiation scalars
-                    for name, coords in locations.items():
-                        idx_loc = int(np.argmin(
-                            (lats_f - coords['lat'])**2 + (lons_f - coords['lon'])**2
-                        ))
+                    indices_for_radiation = location_indices_cache or _location_indices(sample_field, locations)
+                    for name, idx_loc in indices_for_radiation.items():
                         loc_rad_map[name] = {
                             v: float(arr.ravel()[idx_loc])
                             for v, arr in rad_scalars.items()
@@ -1124,7 +1141,17 @@ def main():
                 elif profile_mode == "netcdf":
                     process_traces(fields, locations, tag, h, ref_time)
                 elif profile_mode == "direct-chunk" and profile_buffers is not None:
-                    append_profile_chunk(profile_buffers, fields, locations, tag, h, ref_time, loc_rad_map)
+                    append_profile_chunk(
+                        profile_buffers,
+                        fields,
+                        locations,
+                        tag,
+                        h,
+                        ref_time,
+                        loc_rad_map,
+                        location_indices=location_indices_cache,
+                        height_cache=height_cache,
+                    )
                 if sunshine_accumulator is not None and rad_scalars and sample_field is not None:
                     sunshine_accumulator.append(sample_field, rad_scalars, h, ref_time)
                 if rain_accumulator is not None and rain_scalars and rain_sample_field is not None:
