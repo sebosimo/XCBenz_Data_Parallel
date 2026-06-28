@@ -61,6 +61,10 @@ The default `0` preserves the legacy chunk plans. Positive values split each
 model into fixed-size horizon chunks, merging a tiny final remainder into the
 previous chunk.
 
+`--prefetch-next-horizon` is also experimental. It keeps final outputs the same
+but lets each fetch worker download horizon `h+1` while decoding and writing
+horizon `h`.
+
 ## Benchmark Notes
 
 ### 2026-06-24 Max-Jobs 7 Dry Run
@@ -838,6 +842,68 @@ started the remaining CH1 chunks before the first CH1 chunks completed. The
 option is still useful for controlled experiments, but this result reinforces
 that the next speed gain likely needs to reduce per-horizon download/decode work
 rather than split CH1 more aggressively under the current scheduler.
+
+### 2026-06-28 Next-Horizon Prefetch Dry Run
+
+Commit `c8dd3fb` adds optional `--prefetch-next-horizon`. This benchmark used
+the previous best max-jobs 4 geometry and enabled one-horizon-ahead prefetching:
+
+```bash
+/home/sebas/projects/XCBenz_Data_Parallel/.venv/bin/python \
+  scripts/run_coding_server_pipeline.py \
+  --run-mode force-refresh \
+  --skip-deploy \
+  --no-push-data-branch \
+  --python-cmd /home/sebas/projects/XCBenz_Data_Parallel/.venv/bin/python \
+  --job-layout combined \
+  --combined-job-order interleave \
+  --max-jobs 4 \
+  --download-workers 8 \
+  --ch2-chunk-size 15 \
+  --prefetch-next-horizon \
+  --ch1-run-tag 20260628_0300 \
+  --ch2-run-tag 20260628_0000 \
+  --run-dir .local_pipeline/runs/manual-coding-server-test-20260628T095000Z-prefetch-ch2c15-dw8-pinned03-max4
+```
+
+Result:
+
+- branch: `codex/coding-server-pipeline-prototype`
+- commit: `c8dd3fb`
+- fetch jobs planned: 11
+- fetch jobs active at peak: 4
+- run window: `2026-06-28T09:49:41Z` to `2026-06-28T09:56:29Z`
+- total runtime: about 6m48s
+- fetch phase runtime: about 5m24s, from first fetch start to last fetch done
+- validation: passed
+- sampled CPU peaked around 72%
+- sampled load1 peaked at 6.23
+- lowest sampled available RAM was about 3847 MB
+- one scheduler pause occurred because available RAM dipped below the 4096 MB floor
+- no SSH timeout was observed
+
+Validation summary matched the pinned 03Z runs:
+
+```text
+profiles=68460
+bundles=840
+region_forecasts=840
+wind_steps=2934
+sunshine_steps=483
+rain_steps=489
+sunrain_steps=483
+cloud_steps=1956
+```
+
+Interpretation:
+
+Prefetch is the best measured max-jobs 4 runtime improvement so far, reducing
+the pinned 03Z fetch phase by about 51s versus interleaved CH2 chunk size 15
+without prefetch. It is still not a candidate for the stated resource target:
+CPU, load, and RAM all moved in the wrong direction. The next useful prefetch
+tests are lower-pressure combinations, for example max-jobs 3 or lower
+download-workers, to see whether part of the speed gain can be retained while
+keeping the coding server responsive.
 
 ## Server Setup
 
