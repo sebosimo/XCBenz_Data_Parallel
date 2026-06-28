@@ -375,6 +375,28 @@ def ch1_map_chunks(run_tag: str) -> list[tuple[int, int]]:
     return [(0, 16), (17, 33)]
 
 
+def horizon_chunks(end: int, chunk_size: int) -> list[tuple[int, int]]:
+    size = max(1, chunk_size)
+    chunks = []
+    start = 0
+    while start <= end:
+        chunk_end = min(end, start + size - 1)
+        chunks.append((start, chunk_end))
+        start = chunk_end + 1
+    if len(chunks) > 1:
+        last_start, last_end = chunks[-1]
+        if last_end - last_start + 1 < max(2, size // 2):
+            prev_start, _prev_end = chunks[-2]
+            chunks[-2:] = [(prev_start, last_end)]
+    return chunks
+
+
+def ch2_chunks(chunk_size: int) -> list[tuple[int, int]]:
+    if chunk_size <= 0:
+        return [(0, 30), (31, 60), (61, 90), (91, 120)]
+    return horizon_chunks(120, chunk_size)
+
+
 def map_output_roots(model: str, cid: str) -> dict[str, str]:
     root = Path("map_chunks") / model / cid
     prefix = "CH1" if model == "ch1" else "CH2"
@@ -468,8 +490,7 @@ def build_jobs(
             )
             jobs.append(Job(name, [*py, "fetch_data.py"], env))
 
-        ch2_chunks = [(0, 30), (31, 60), (61, 90), (91, 120)]
-        for start, end in ch2_chunks:
+        for start, end in ch2_chunks(args.ch2_chunk_size):
             cid = chunk_id(start, end)
             name = f"ch2-combined-{cid}"
             env = job_env(base, run_dir, name)
@@ -521,8 +542,8 @@ def build_jobs(
         disable_maps(env, "CH1")
         jobs.append(Job(name, [*py, "fetch_data.py"], env))
 
-    ch2_chunks = [(0, 30), (31, 60), (61, 90), (91, 120)]
-    for start, end in ch2_chunks:
+    ch2_ranges = ch2_chunks(args.ch2_chunk_size)
+    for start, end in ch2_ranges:
         cid = chunk_id(start, end)
         name = f"ch2-map-{cid}"
         env = job_env(base, run_dir, name)
@@ -538,7 +559,7 @@ def build_jobs(
         )
         jobs.append(Job(name, [*py, "fetch_data_ch2.py"], env))
 
-    for start, end in ch2_chunks:
+    for start, end in ch2_ranges:
         cid = chunk_id(start, end)
         name = f"ch2-profile-{cid}"
         env = job_env(base, run_dir, name)
@@ -809,6 +830,12 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--python-cmd", default=os.getenv("XCBENZ_PYTHON_CMD", "uv run python"))
     parser.add_argument("--download-workers", type=int, default=parse_int_env("DOWNLOAD_WORKERS", 6))
     parser.add_argument("--max-jobs", type=int, default=parse_int_env("XCBENZ_LOCAL_MAX_JOBS", 0))
+    parser.add_argument(
+        "--ch2-chunk-size",
+        type=int,
+        default=parse_int_env("XCBENZ_CH2_CHUNK_SIZE", 0),
+        help="Experimental CH2 horizon chunk size; 0 keeps the legacy four CH2 chunks.",
+    )
     parser.add_argument(
         "--job-layout",
         choices=("split", "combined"),
