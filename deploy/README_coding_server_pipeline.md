@@ -905,6 +905,46 @@ tests are lower-pressure combinations, for example max-jobs 3 or lower
 download-workers, to see whether part of the speed gain can be retained while
 keeping the coding server responsive.
 
+A lower-pressure max-jobs 3 comparison used the same command shape but changed
+only `--max-jobs`:
+
+```bash
+/home/sebas/projects/XCBenz_Data_Parallel/.venv/bin/python \
+  scripts/run_coding_server_pipeline.py \
+  --run-mode force-refresh \
+  --skip-deploy \
+  --no-push-data-branch \
+  --python-cmd /home/sebas/projects/XCBenz_Data_Parallel/.venv/bin/python \
+  --job-layout combined \
+  --combined-job-order interleave \
+  --max-jobs 3 \
+  --download-workers 8 \
+  --ch2-chunk-size 15 \
+  --prefetch-next-horizon \
+  --ch1-run-tag 20260628_0300 \
+  --ch2-run-tag 20260628_0000 \
+  --run-dir .local_pipeline/runs/manual-coding-server-test-20260628T100000Z-prefetch-ch2c15-dw8-pinned03-max3
+```
+
+Max-jobs 3 result:
+
+- branch: `codex/coding-server-pipeline-prototype`
+- commit: `c8dd3fb`
+- fetch jobs planned: 11
+- fetch jobs active at peak: 3
+- run window: `2026-06-28T09:58:32Z` to `2026-06-28T10:06:42Z`
+- total runtime: about 8m10s
+- fetch phase runtime: about 6m48s, from first fetch start to last fetch done
+- validation: passed
+- sampled CPU peaked around 55%
+- sampled load1 peaked at 4.49
+- lowest sampled available RAM was about 6609 MB
+- no scheduler pause or SSH timeout was observed
+
+Max-jobs 3 is closer to the resource target and keeps the preferred 6 GB RAM
+headroom, but it gives up too much runtime. It is useful as a resource floor,
+not as a candidate for the sub-5-minute goal.
+
 ## Server Setup
 
 Assuming the repo is checked out at `/opt/xcbenz/XCBenz_Data_Parallel` and the
