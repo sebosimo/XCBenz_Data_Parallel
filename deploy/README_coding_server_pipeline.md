@@ -516,6 +516,60 @@ max-jobs 4, likely within normal MeteoSwiss/network variation. The dominant
 runtime remains broader per-horizon download/decode/write work and the CH2 tail,
 not the per-location profile selection loop by itself.
 
+### 2026-06-28 Download-Workers 8 Dry Run
+
+This run kept the vectorized code at commit `d84222c` and changed only
+`--download-workers 8`, leaving the process-level scheduler at
+`--job-layout combined --max-jobs 4`. The intent was to test whether higher
+intra-worker request concurrency helps without starting more top-level workers.
+
+The benchmark used the same current source runs as the previous 2026-06-28
+tests:
+
+- CH1 `20260628_0300`
+- CH2 `20260628_0000`
+
+Command shape:
+
+```bash
+/home/sebas/projects/XCBenz_Data_Parallel/.venv/bin/python \
+  scripts/run_coding_server_pipeline.py \
+  --run-mode force-refresh \
+  --skip-deploy \
+  --no-push-data-branch \
+  --python-cmd /home/sebas/projects/XCBenz_Data_Parallel/.venv/bin/python \
+  --job-layout combined \
+  --max-jobs 4 \
+  --download-workers 8 \
+  --run-dir .local_pipeline/runs/manual-coding-server-test-20260628T073655Z-dw8-current-max4
+```
+
+Result:
+
+- branch: `codex/coding-server-pipeline-prototype`
+- commit: `d84222c`
+- fetch jobs planned: 7 because this was a 03Z CH1 run
+- fetch jobs active at peak: 4
+- run window: `2026-06-28T07:36:57Z` to `2026-06-28T07:45:02Z`
+- total runtime: about 8m05s
+- fetch phase runtime: about 6m38s, from first fetch start to last fetch done
+- validation: passed
+- sampled CPU peaked around 69%
+- sampled load1 peaked at 4.70
+- lowest sampled available RAM was about 4488 MB
+- no SSH timeout was observed
+
+Validation summary and output sizes matched the earlier current runs.
+
+Interpretation:
+
+Raising `DOWNLOAD_WORKERS` from 6 to 8 is the fastest measured max-jobs 4
+configuration so far, improving fetch phase runtime by about 16s versus the
+vectorized max-jobs 4 run and about 18s versus the first batched max-jobs 4
+run. It still misses the sub-5-minute target and does not meet the preferred
+resource envelope, so it is useful as a measured upper setting but not enough by
+itself to justify calling the coding-server migration complete.
+
 ## Server Setup
 
 Assuming the repo is checked out at `/opt/xcbenz/XCBenz_Data_Parallel` and the
