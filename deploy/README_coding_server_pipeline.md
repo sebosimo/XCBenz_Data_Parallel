@@ -68,6 +68,10 @@ horizon `h`.
 `--max-ch1-jobs` is an experimental scheduler cap for active CH1 workers. The
 default `0` leaves the normal FIFO scheduler unchanged.
 
+`--release-profile-only-fields` is an experimental memory-reduction switch for
+direct profile chunks. After a horizon's profile bundle values are extracted, it
+frees pressure-only fields before map accumulators continue.
+
 ## Benchmark Notes
 
 ### 2026-06-24 Max-Jobs 7 Dry Run
@@ -993,6 +997,59 @@ Download-workers 6 result:
 Download-workers 6 did not solve the resource problem and was slightly slower
 than download-workers 8. The pressure is not only per-horizon download fanout;
 it is the combination of active decode/write work and overlapping CH1 chunks.
+
+### 2026-06-28 Profile-Only Field Release Dry Run
+
+Commit `946b2ba` adds optional `--release-profile-only-fields`. This benchmark
+used the previous fastest max-jobs 4 prefetch shape and enabled early release of
+profile-only fields:
+
+```bash
+/home/sebas/projects/XCBenz_Data_Parallel/.venv/bin/python \
+  scripts/run_coding_server_pipeline.py \
+  --run-mode force-refresh \
+  --skip-deploy \
+  --no-push-data-branch \
+  --python-cmd /home/sebas/projects/XCBenz_Data_Parallel/.venv/bin/python \
+  --job-layout combined \
+  --combined-job-order interleave \
+  --max-jobs 4 \
+  --download-workers 8 \
+  --ch2-chunk-size 15 \
+  --prefetch-next-horizon \
+  --release-profile-only-fields \
+  --ch1-run-tag 20260628_0300 \
+  --ch2-run-tag 20260628_0000 \
+  --run-dir .local_pipeline/runs/manual-coding-server-test-20260628T112600Z-prefetch-releasefields-ch2c15-dw8-pinned03-max4
+```
+
+Result:
+
+- branch: `codex/coding-server-pipeline-prototype`
+- commit: `946b2ba`
+- fetch jobs planned: 11
+- fetch jobs active at peak: 4
+- run window: `2026-06-28T11:25:38Z` to `2026-06-28T11:32:26Z`
+- total runtime: about 6m48s
+- fetch phase runtime: about 5m18s, from first fetch start to last fetch done
+- validation: passed
+- sampled CPU peaked around 71%
+- sampled load1 peaked at 6.81
+- lowest sampled available RAM was about 6174 MB
+- no scheduler pause or SSH timeout was observed
+
+The aggregate validation counts were higher than earlier pinned runs because
+the restored `web_exports` baseline retained additional current runs:
+
+- CH1: `20260627_0300`, `20260628_0300`, `20260628_0600`, `20260628_0900`
+- CH2: `20260627_0000`, `20260628_0000`, `20260628_0600`
+
+Interpretation:
+
+Early field release is a useful improvement. It produced the best pinned 03Z
+fetch time so far while keeping the preferred 6 GB RAM headroom. It still does
+not meet the CPU/load goal; the remaining bottleneck is compute pressure during
+decode/map/profile work, not just retained field memory.
 
 ## Server Setup
 
