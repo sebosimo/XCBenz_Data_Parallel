@@ -65,6 +65,9 @@ previous chunk.
 but lets each fetch worker download horizon `h+1` while decoding and writing
 horizon `h`.
 
+`--max-ch1-jobs` is an experimental scheduler cap for active CH1 workers. The
+default `0` leaves the normal FIFO scheduler unchanged.
+
 ## Benchmark Notes
 
 ### 2026-06-24 Max-Jobs 7 Dry Run
@@ -944,6 +947,52 @@ Max-jobs 3 result:
 Max-jobs 3 is closer to the resource target and keeps the preferred 6 GB RAM
 headroom, but it gives up too much runtime. It is useful as a resource floor,
 not as a candidate for the sub-5-minute goal.
+
+Commit `65ea895` adds `--max-ch1-jobs` to test whether max-jobs 4 can stay busy
+on CH2 while avoiding the RAM spike from three overlapping CH1 workers. The
+comparison used `--max-jobs 4 --max-ch1-jobs 2` with prefetch enabled.
+
+CH1 cap result:
+
+- branch: `codex/coding-server-pipeline-prototype`
+- commit: `65ea895`
+- fetch jobs planned: 11
+- fetch jobs active at peak: 4
+- run window: `2026-06-28T10:12:44Z` to `2026-06-28T10:20:36Z`
+- total runtime: about 7m52s
+- fetch phase runtime: about 6m28s, from first fetch start to last fetch done
+- validation: passed
+- sampled CPU peaked around 70%
+- sampled load1 peaked at 5.57
+- lowest sampled available RAM was about 5967 MB
+- no SSH timeout was observed
+
+The CH1 cap improved RAM versus uncapped max-jobs 4 prefetch, but it missed the
+6 GB headroom target by a small amount and gave up too much time. The long tail
+was the final CH1 chunk running alone after CH2 drained, so this is also not a
+candidate.
+
+A download-workers 6 comparison used the uncapped max-jobs 4 prefetch shape and
+changed only `--download-workers` from 8 to 6.
+
+Download-workers 6 result:
+
+- branch: `codex/coding-server-pipeline-prototype`
+- commit: `65ea895`
+- fetch jobs planned: 11
+- fetch jobs active at peak: 4
+- run window: `2026-06-28T11:09:37Z` to `2026-06-28T11:16:28Z`
+- total runtime: about 6m51s
+- fetch phase runtime: about 5m28s, from first fetch start to last fetch done
+- validation: passed
+- sampled CPU peaked around 71%
+- sampled load1 peaked at 5.80
+- lowest sampled available RAM was about 5472 MB
+- no SSH timeout was observed
+
+Download-workers 6 did not solve the resource problem and was slightly slower
+than download-workers 8. The pressure is not only per-horizon download fanout;
+it is the combination of active decode/write work and overlapping CH1 chunks.
 
 ## Server Setup
 
