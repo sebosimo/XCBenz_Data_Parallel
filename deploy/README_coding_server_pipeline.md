@@ -628,6 +628,150 @@ The likely next scheduler lever is job ordering: the current combined layout
 starts all CH1 chunks before most CH2 chunks, which keeps the first-wave RAM
 pressure high and still leaves CH2 work after CH1 drains.
 
+### 2026-06-28 Interleaved Job Order Dry Runs
+
+Commit `695c818` adds an experimental `--combined-job-order interleave` option.
+The default remains `ch1-first`. Interleaving starts two CH1 combined workers
+and two CH2 combined workers first, then starts remaining CH1/CH2 jobs in the
+planned order. This is intended to reduce the first-wave CH1 memory spike and
+pull CH2 work earlier without increasing `--max-jobs`.
+
+The first interleaved run used latest available runs after MeteoSwiss rolled CH1
+forward:
+
+- CH1 `20260628_0600`
+- CH2 `20260628_0000`
+
+Command shape:
+
+```bash
+/home/sebas/projects/XCBenz_Data_Parallel/.venv/bin/python \
+  scripts/run_coding_server_pipeline.py \
+  --run-mode force-refresh \
+  --skip-deploy \
+  --no-push-data-branch \
+  --python-cmd /home/sebas/projects/XCBenz_Data_Parallel/.venv/bin/python \
+  --job-layout combined \
+  --combined-job-order interleave \
+  --max-jobs 4 \
+  --download-workers 8 \
+  --ch2-chunk-size 15 \
+  --run-dir .local_pipeline/runs/manual-coding-server-test-20260628T080659Z-interleave-ch2c15-dw8-current-max4
+```
+
+Latest-run result:
+
+- branch: `codex/coding-server-pipeline-prototype`
+- commit: `695c818`
+- fetch jobs planned: 10 because CH1 06Z only needs two CH1 chunks
+- fetch jobs active at peak: 4
+- run window: `2026-06-28T08:07:01Z` to `2026-06-28T08:13:52Z`
+- total runtime: about 6m51s
+- fetch phase runtime: about 5m30s, from first fetch start to last fetch done
+- validation: passed
+- sampled CPU peaked around 61%
+- sampled load1 peaked at 4.38
+- lowest sampled available RAM was about 6760 MB
+- no SSH timeout was observed
+
+This run is not directly comparable to the earlier 03Z benchmarks because CH1
+06Z has fewer CH1 chunks, but it is the first measured run that stayed above
+the preferred 6 GB RAM headroom while using four workers.
+
+A second run pinned CH1 back to the same 03Z source used by the previous
+2026-06-28 comparisons:
+
+- CH1 `20260628_0300`
+- CH2 `20260628_0000`
+
+Pinned 03Z command shape:
+
+```bash
+/home/sebas/projects/XCBenz_Data_Parallel/.venv/bin/python \
+  scripts/run_coding_server_pipeline.py \
+  --run-mode force-refresh \
+  --skip-deploy \
+  --no-push-data-branch \
+  --python-cmd /home/sebas/projects/XCBenz_Data_Parallel/.venv/bin/python \
+  --job-layout combined \
+  --combined-job-order interleave \
+  --max-jobs 4 \
+  --download-workers 8 \
+  --ch2-chunk-size 15 \
+  --ch1-run-tag 20260628_0300 \
+  --ch2-run-tag 20260628_0000 \
+  --run-dir .local_pipeline/runs/manual-coding-server-test-20260628T081456Z-interleave-ch2c15-dw8-pinned03-max4
+```
+
+Pinned 03Z result:
+
+- branch: `codex/coding-server-pipeline-prototype`
+- commit: `695c818`
+- fetch jobs planned: 11 because CH1 03Z needs three CH1 chunks
+- fetch jobs active at peak: 4
+- run window: `2026-06-28T08:14:57Z` to `2026-06-28T08:22:38Z`
+- total runtime: about 7m41s
+- fetch phase runtime: about 6m15s, from first fetch start to last fetch done
+- validation: passed
+- sampled CPU peaked around 60%
+- sampled load1 peaked at 4.71
+- lowest sampled available RAM was about 4501 MB
+- no SSH timeout was observed
+
+Validation summary and final output sizes matched the earlier pinned 03Z current
+runs.
+
+Interpretation:
+
+Interleaving is the best measured max-jobs 4 scheduler so far for the pinned
+03Z workload, improving fetch phase runtime by about 17s versus smaller CH2
+chunks with `ch1-first`, and about 23s versus the download-workers 8 run with
+legacy CH2 chunks. It also improves first-wave RAM when CH1 has only two chunks.
+For heavier CH1 03Z runs, however, it still starts the third CH1 chunk before
+the two long CH1 chunks finish, so RAM can still dip well below the preferred
+6 GB headroom.
+
+A third run changed only `--max-jobs` from 4 to 5 to test the upper bound of
+the same interleaved layout:
+
+```bash
+/home/sebas/projects/XCBenz_Data_Parallel/.venv/bin/python \
+  scripts/run_coding_server_pipeline.py \
+  --run-mode force-refresh \
+  --skip-deploy \
+  --no-push-data-branch \
+  --python-cmd /home/sebas/projects/XCBenz_Data_Parallel/.venv/bin/python \
+  --job-layout combined \
+  --combined-job-order interleave \
+  --max-jobs 5 \
+  --download-workers 8 \
+  --ch2-chunk-size 15 \
+  --ch1-run-tag 20260628_0300 \
+  --ch2-run-tag 20260628_0000 \
+  --run-dir .local_pipeline/runs/manual-coding-server-test-20260628T091319Z-interleave-ch2c15-dw8-pinned03-max5
+```
+
+Pinned 03Z max-jobs 5 result:
+
+- branch: `codex/coding-server-pipeline-prototype`
+- commit: `695c818`
+- fetch jobs planned: 11
+- fetch jobs active at peak: 5
+- run window: `2026-06-28T09:13:21Z` to `2026-06-28T09:20:21Z`
+- total runtime: about 7m00s
+- fetch phase runtime: about 5m28s, from first fetch start to last fetch done
+- validation: passed
+- sampled CPU peaked around 77%
+- sampled load1 peaked at 5.18
+- lowest sampled available RAM was about 3739 MB
+- no SSH timeout was observed
+
+The max-jobs 5 interleaved run is not a candidate configuration. It was slower
+than the earlier batched max-jobs 5 run and violated both resource goals more
+clearly than max-jobs 4. Further gains should come from reducing per-horizon
+decode/write/map work or changing how intermediate artifacts are generated, not
+from adding more scheduler pressure.
+
 ## Server Setup
 
 Assuming the repo is checked out at `/opt/xcbenz/XCBenz_Data_Parallel` and the
