@@ -600,6 +600,7 @@ def run_parallel_jobs(
     jobs: list[Job],
     *,
     max_jobs: int,
+    max_ch1_jobs: int = 0,
     monitor: ResourceMonitor,
     log_dir: Path,
 ) -> None:
@@ -634,7 +635,21 @@ def run_parallel_jobs(
                     last_wait_reason = reason
                 break
             last_wait_reason = ""
-            job = pending.pop(0)
+            job_index = 0
+            if max_ch1_jobs > 0:
+                active_ch1 = sum(1 for name in running if name.startswith("ch1-"))
+                if active_ch1 >= max_ch1_jobs:
+                    job_index = next(
+                        (idx for idx, candidate in enumerate(pending) if not candidate.name.startswith("ch1-")),
+                        -1,
+                    )
+                    if job_index < 0:
+                        reason = f"active CH1 jobs {active_ch1} >= cap {max_ch1_jobs}"
+                        if reason != last_wait_reason:
+                            log(f"waiting to start more jobs: {reason}")
+                            last_wait_reason = reason
+                        break
+            job = pending.pop(job_index)
             job_log = log_dir / f"{safe_name(job.name)}.log"
             handle = job_log.open("w", encoding="utf-8")
             handle.write(f"{now_label()} command: {' '.join(job.command)}\n")
@@ -843,6 +858,12 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--download-workers", type=int, default=parse_int_env("DOWNLOAD_WORKERS", 6))
     parser.add_argument("--max-jobs", type=int, default=parse_int_env("XCBENZ_LOCAL_MAX_JOBS", 0))
     parser.add_argument(
+        "--max-ch1-jobs",
+        type=int,
+        default=parse_int_env("XCBENZ_LOCAL_MAX_CH1_JOBS", 0),
+        help="Experimental cap for concurrently active CH1 fetch jobs; 0 disables the cap.",
+    )
+    parser.add_argument(
         "--ch1-chunk-size",
         type=int,
         default=parse_int_env("XCBENZ_CH1_CHUNK_SIZE", 0),
@@ -928,6 +949,7 @@ def run_pipeline(args: argparse.Namespace) -> int:
     max_jobs = args.max_jobs if args.max_jobs > 0 else auto_max_jobs(len(jobs))
     log(
         f"job plan: {len(jobs)} fetch jobs, max_jobs={max_jobs}, layout={args.job_layout}, "
+        f"max_ch1_jobs={args.max_ch1_jobs}, "
         f"ch1_chunk_size={args.ch1_chunk_size}, ch2_chunk_size={args.ch2_chunk_size}, "
         f"prefetch_next_horizon={args.prefetch_next_horizon}, "
         f"latest_ch1={latest_ch1}, latest_ch2={latest_ch2}, deploy={deploy}, "
@@ -952,7 +974,13 @@ def run_pipeline(args: argparse.Namespace) -> int:
     )
     monitor.start()
     try:
-        run_parallel_jobs(jobs, max_jobs=max_jobs, monitor=monitor, log_dir=log_dir)
+        run_parallel_jobs(
+            jobs,
+            max_jobs=max_jobs,
+            max_ch1_jobs=args.max_ch1_jobs,
+            monitor=monitor,
+            log_dir=log_dir,
+        )
     finally:
         monitor.stop()
 
