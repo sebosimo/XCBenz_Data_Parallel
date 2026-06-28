@@ -1080,8 +1080,8 @@ Local synthetic compatibility checks on Windows passed:
 - direct chunk merge plus direct web export produced valid `url` step references
   and expected byte lengths
 
-The Hetzner benchmark is still pending. Use the previous best pinned 03Z command
-shape plus `--direct-wind-web`:
+The first Hetzner benchmark used the previous best pinned 03Z command shape plus
+`--direct-wind-web`:
 
 ```bash
 /home/sebas/projects/XCBenz_Data_Parallel/.venv/bin/python \
@@ -1103,11 +1103,63 @@ shape plus `--direct-wind-web`:
   --run-dir .local_pipeline/runs/manual-coding-server-test-direct-wind-web-pinned03-max4
 ```
 
-Compare against the profile-only field release baseline: fetch phase about
-5m18s, total runtime about 6m48s, CPU peak about 71%, and minimum available RAM
-about 6174 MB. The expected win is post-fetch wind overhead: no packed wind
-NetCDF writes, no xarray wind chunk concat, and no NetCDF-to-browser conversion
-inside `generate_web_exports.py`.
+Result:
+
+- branch: `codex/coding-server-pipeline-prototype`
+- commit: `331b9708`
+- server: `codex-cx43-nbg1`, 8 CPU, 15 GiB RAM
+- worktree:
+  `/home/sebas/projects/XCBenz_Data_Parallel_directwind_20260628T162446Z`
+- run window: `2026-06-28T16:25:09Z` to `2026-06-28T16:31:54Z`
+- total runtime: about 6m45s
+- fetch phase runtime: about 5m22s, from first fetch start to last fetch done
+- selected runs: CH1 `20260628_0300`, CH2 `20260628_0000`
+- fetch jobs planned: 11
+- fetch jobs active at peak: 4
+- deploy: skipped
+- `data-web` push: skipped
+- validation: passed
+- sampled CPU peaked around 69%
+- sampled load1 peaked at 6.78
+- lowest sampled available RAM was about 6969 MB
+- no scheduler pause or SSH timeout was observed
+
+Validation summary:
+
+```text
+profiles=90160
+bundles=1120
+region_forecasts=1120
+wind_steps=3864
+sunshine_steps=636
+rain_steps=644
+sunrain_steps=636
+cloud_steps=2576
+```
+
+Output sizes:
+
+```text
+web_exports:        1.2G
+map_chunks:         241M
+web_profile_chunks: 86M
+```
+
+Interpretation:
+
+Direct wind web output validated and materially reduced intermediate map output
+size. `map_chunks` dropped to 241M, compared with roughly 371M in the earlier
+pinned 03Z runs that carried packed wind NetCDF chunks. It also removed the
+expensive xarray wind chunk concat: `merge-map-chunks` completed in about 2s,
+and `generate-web-exports` completed in about 1s.
+
+The direct path did not improve fetch runtime versus the previous best
+profile-only field release baseline: fetch was about 5m22s here versus about
+5m18s before. Total runtime was slightly better, about 6m45s versus about
+6m48s, and resource headroom improved: CPU peak about 69% versus about 71%,
+and RAM minimum about 6969 MB versus about 6174 MB. This is a strong validation
+for removing the packed wind NetCDF intermediate, but it does not by itself
+reach the sub-5-minute fetch target.
 
 ## Server Setup
 
