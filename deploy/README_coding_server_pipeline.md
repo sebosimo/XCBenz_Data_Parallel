@@ -286,6 +286,81 @@ server target. Neither combined run reached the sub-5-minute fetch target; the
 next optimization target is reducing per-horizon CH1 processing and decode work
 inside each combined worker.
 
+### 2026-06-28 Cached Location-Index Dry Run
+
+Commit `a09800b` caches per-worker profile location indices and static height
+profiles in `fetch_data.py` and `fetch_data_ch2.py`. This removes repeated
+nearest-grid scans for every location and horizon in direct profile chunk mode.
+
+The original pinned 2026-06-24 source runs were no longer available from
+MeteoSwiss by this date, so this benchmark used current latest runs instead of a
+direct A/B replay:
+
+- CH1 `20260628_0300`
+- CH2 `20260628_0000`
+
+Command shape:
+
+```bash
+/home/sebas/projects/XCBenz_Data_Parallel/.venv/bin/python \
+  scripts/run_coding_server_pipeline.py \
+  --run-mode force-refresh \
+  --skip-deploy \
+  --no-push-data-branch \
+  --python-cmd /home/sebas/projects/XCBenz_Data_Parallel/.venv/bin/python \
+  --job-layout combined \
+  --max-jobs 4 \
+  --run-dir .local_pipeline/runs/manual-coding-server-test-20260628T0548Z-cachedidx-current-max4
+```
+
+Result:
+
+- branch: `codex/coding-server-pipeline-prototype`
+- commit: `a09800b`
+- fetch jobs planned: 7 because this was a 03Z CH1 run
+- fetch jobs active at peak: 4
+- run window: `2026-06-28T05:48:06Z` to `2026-06-28T05:56:58Z`
+- total runtime: about 8m52s
+- fetch phase runtime: about 7m24s, from first fetch start to last fetch done
+- validation: passed
+- sampled CPU peaked around 63%
+- sampled load1 peaked at 4.44
+- lowest sampled available RAM was about 4412 MB
+- no SSH timeout was observed
+
+Validation summary:
+
+```text
+profiles=68460
+bundles=840
+region_forecasts=840
+wind_steps=2934
+sunshine_steps=483
+rain_steps=489
+sunrain_steps=483
+cloud_steps=1956
+```
+
+Output sizes:
+
+```text
+web_exports:        891M
+map_chunks:         371M
+web_profile_chunks: 84M
+run logs:           2.1M
+```
+
+Interpretation:
+
+The cached-index change validated on a real current run, but this was a heavier
+03Z CH1 case and cannot be compared directly with the earlier pinned non-03Z
+timings. It also exceeded the preferred 6 GB RAM headroom during the initial
+four-worker wave. For 03Z runs, combined max-jobs 4 is viable but not yet within
+the desired sub-5-minute target or the preferred resource envelope. The next
+optimization should focus on reducing CH1 per-horizon decode/map work, or on a
+layout that avoids starting three CH1 combined workers at once when RAM
+headroom matters.
+
 ## Server Setup
 
 Assuming the repo is checked out at `/opt/xcbenz/XCBenz_Data_Parallel` and the
