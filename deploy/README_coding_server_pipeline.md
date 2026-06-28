@@ -570,6 +570,64 @@ run. It still misses the sub-5-minute target and does not meet the preferred
 resource envelope, so it is useful as a measured upper setting but not enough by
 itself to justify calling the coding-server migration complete.
 
+### 2026-06-28 Smaller CH2 Chunk Dry Run
+
+Commit `f53bd7b` adds an experimental `--ch2-chunk-size` runner option. The
+default keeps the legacy four CH2 chunks, while positive values split CH2 into
+smaller contiguous horizon chunks and merge tiny final remainders into the
+previous chunk. This run used `--ch2-chunk-size 15` with the previous fastest
+max-jobs 4 tuning, `--download-workers 8`.
+
+The benchmark used the same current source runs as the previous 2026-06-28
+tests:
+
+- CH1 `20260628_0300`
+- CH2 `20260628_0000`
+
+Command shape:
+
+```bash
+/home/sebas/projects/XCBenz_Data_Parallel/.venv/bin/python \
+  scripts/run_coding_server_pipeline.py \
+  --run-mode force-refresh \
+  --skip-deploy \
+  --no-push-data-branch \
+  --python-cmd /home/sebas/projects/XCBenz_Data_Parallel/.venv/bin/python \
+  --job-layout combined \
+  --max-jobs 4 \
+  --download-workers 8 \
+  --ch2-chunk-size 15 \
+  --run-dir .local_pipeline/runs/manual-coding-server-test-20260628T075255Z-ch2c15-dw8-current-max4
+```
+
+Result:
+
+- branch: `codex/coding-server-pipeline-prototype`
+- commit: `f53bd7b`
+- fetch jobs planned: 11 because CH2 was split into eight chunks
+- fetch jobs active at peak: 4
+- run window: `2026-06-28T07:52:56Z` to `2026-06-28T08:00:53Z`
+- total runtime: about 7m57s
+- fetch phase runtime: about 6m32s, from first fetch start to last fetch done
+- validation: passed
+- sampled CPU peaked around 69%
+- sampled load1 peaked at 4.35
+- lowest sampled available RAM was about 4336 MB
+- no SSH timeout was observed
+
+Validation summary and final `web_exports` size matched the earlier current
+runs. Intermediate `web_profile_chunks` was slightly larger because more CH2
+chunk directories were staged before final export generation.
+
+Interpretation:
+
+Smaller CH2 chunks reduced the max-jobs 4 fetch phase by about 6s versus the
+download-workers 8 run with legacy CH2 chunks. This proves arbitrary CH2 chunk
+boundaries can preserve output shape, but the speedup is too small by itself.
+The likely next scheduler lever is job ordering: the current combined layout
+starts all CH1 chunks before most CH2 chunks, which keeps the first-wave RAM
+pressure high and still leaves CH2 work after CH1 drains.
+
 ## Server Setup
 
 Assuming the repo is checked out at `/opt/xcbenz/XCBenz_Data_Parallel` and the
