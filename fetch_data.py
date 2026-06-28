@@ -56,6 +56,7 @@ from wind_maps import (
     CACHE_DIR_WIND_PACKED,
     WindMapAccumulator,
     cleanup_old_wind_runs,
+    is_direct_wind_web_enabled,
     is_wind_maps_enabled,
     load_config as load_wind_map_config,
 )
@@ -862,6 +863,7 @@ def main():
     sunrain_map_out_root = os.getenv("CH1_SUNRAIN_MAP_OUT_ROOT", CACHE_DIR_SUNRAIN_MAPS)
     cloud_map_out_root = os.getenv("CH1_CLOUD_MAP_OUT_ROOT", CACHE_DIR_CLOUD_MAPS)
     wind_enabled = is_wind_maps_enabled("ch1")
+    direct_wind_web = is_direct_wind_web_enabled()
     sunshine_enabled = is_sunshine_maps_enabled("ch1")
     rain_enabled = is_rain_maps_enabled("ch1")
     sunrain_enabled = is_sunrain_maps_enabled("ch1")
@@ -871,6 +873,8 @@ def main():
             wind_config = load_wind_map_config(log=log)
             if wind_enabled:
                 log("CH1 wind-map generation enabled for this run.", "NOTICE")
+                if direct_wind_web:
+                    log("CH1 direct wind web output enabled for this run.", "NOTICE")
             if sunshine_enabled:
                 log("CH1 sunshine-map generation enabled for this run.", "NOTICE")
             if rain_enabled:
@@ -948,7 +952,15 @@ def main():
         height_cache = {} if profile_mode == "direct-chunk" else None
         release_profile_only_fields = env_flag("XCBENZ_RELEASE_PROFILE_ONLY_FIELDS", default=False)
         wind_accumulator = (
-            WindMapAccumulator("ch1", tag, ref_time, wind_config, log=log, out_root=wind_map_out_root)
+            WindMapAccumulator(
+                "ch1",
+                tag,
+                ref_time,
+                wind_config,
+                log=log,
+                out_root=wind_map_out_root,
+                direct_web=direct_wind_web,
+            )
             if wind_enabled and wind_config is not None
             else None
         )
@@ -1300,7 +1312,7 @@ def main():
                     except: pass
 
     cleanup_old_runs()
-    cleanup_old_wind_runs("ch1", anchor_hour=3, log=log)
+    cleanup_old_wind_runs("ch1", anchor_hour=3, log=log, root=wind_map_out_root)
     cleanup_old_sunshine_runs("ch1", anchor_hour=3, log=log)
     cleanup_old_rain_runs("ch1", anchor_hour=3, log=log)
     cleanup_old_sunrain_runs("ch1", anchor_hour=3, log=log)

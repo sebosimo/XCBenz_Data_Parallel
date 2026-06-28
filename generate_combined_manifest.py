@@ -16,6 +16,7 @@ CACHE_DIR_CH2 = "cache_data_ch2"
 CACHE_DIR_CH1_PACKED = "cache_data_packed"
 CACHE_DIR_CH2_PACKED = "cache_data_ch2_packed"
 CACHE_DIR_WIND_PACKED = "cache_wind_packed"
+CACHE_DIR_WIND_MAPS = "cache_wind_maps"
 CACHE_DIR_SUNSHINE_MAPS = "cache_sunshine_maps"
 CACHE_DIR_RAIN_MAPS = "cache_rain_maps"
 CACHE_DIR_SUNRAIN_MAPS = "cache_sunrain_maps"
@@ -142,6 +143,78 @@ def scan_wind_maps(cache_dir=CACHE_DIR_WIND_PACKED):
             wind_maps[model] = model_runs
 
     return wind_maps
+
+
+def scan_direct_wind_maps(cache_dir=CACHE_DIR_WIND_MAPS):
+    """
+    Scan browser-ready wind-map files.
+
+    Layout:
+      cache_wind_maps/{model}/{run}/{level}/metadata.json
+      cache_wind_maps/{model}/{run}/{level}/steps/{step}.bin
+    """
+    wind_maps = {}
+    if not os.path.exists(cache_dir):
+        return wind_maps
+
+    for model in ("ch1", "ch2"):
+        model_dir = os.path.join(cache_dir, model)
+        if not os.path.isdir(model_dir):
+            continue
+        model_runs = {}
+        for run in sorted(os.listdir(model_dir), reverse=True):
+            run_path = os.path.join(model_dir, run)
+            if not os.path.isdir(run_path):
+                continue
+            levels = {}
+            for level_dir_name in sorted(os.listdir(run_path)):
+                metadata_path = os.path.join(run_path, level_dir_name, "metadata.json")
+                if not os.path.exists(metadata_path):
+                    continue
+                rel_metadata = os.path.relpath(metadata_path, ".").replace(os.sep, "/")
+                try:
+                    with open(metadata_path, "r", encoding="utf-8") as f:
+                        metadata = json.load(f)
+                    steps = metadata.get("steps") or []
+                    if not steps:
+                        continue
+                    if not all(os.path.exists((step.get("path") or "").replace("/", os.sep)) for step in steps):
+                        continue
+                    level = metadata.get("level") or {}
+                    grid = metadata.get("grid") or {}
+                    level_name = str(level.get("name") or level_dir_name)
+                    levels[level_name] = {
+                        "metadata": rel_metadata,
+                        "components": (metadata.get("encoding") or {}).get("components", []),
+                        "level_type": str(level.get("type") or ""),
+                        "level_h": float(level.get("height_m") or 0.0),
+                        "grid": {
+                            "width": grid.get("width"),
+                            "height": grid.get("height"),
+                            "source_stride": grid.get("source_stride"),
+                        },
+                        "steps": steps,
+                        "step_count": len(steps),
+                        "bytes": sum(int(step.get("byte_length") or 0) for step in steps),
+                    }
+                except Exception as exc:
+                    log(f"Skipping invalid direct wind-map metadata {rel_metadata}: {exc}")
+            if levels:
+                model_runs[run] = {
+                    "layout": "browser_ready_split_binary_by_step",
+                    "levels": levels,
+                }
+        if model_runs:
+            wind_maps[model] = model_runs
+
+    return wind_maps
+
+
+def merge_map_runs(base, overlay):
+    merged = {model: dict(runs) for model, runs in base.items()}
+    for model, runs in overlay.items():
+        merged.setdefault(model, {}).update(runs)
+    return merged
 
 
 def scan_sunshine_maps(cache_dir=CACHE_DIR_SUNSHINE_MAPS):
@@ -354,7 +427,7 @@ def main():
     runs_ch2 = scan_runs(CACHE_DIR_CH2, pad=3)
     runs_ch1_packed = scan_packed_runs(CACHE_DIR_CH1_PACKED)
     runs_ch2_packed = scan_packed_runs(CACHE_DIR_CH2_PACKED)
-    wind_maps = scan_wind_maps()
+    wind_maps = merge_map_runs(scan_wind_maps(), scan_direct_wind_maps())
     sunshine_maps = scan_sunshine_maps()
     rain_maps = scan_rain_maps()
     sunrain_maps = scan_sunrain_maps()

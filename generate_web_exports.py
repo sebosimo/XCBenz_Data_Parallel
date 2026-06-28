@@ -810,6 +810,69 @@ def export_wind_level(
     }
 
 
+def export_direct_wind_level(
+    model_key: str,
+    run_tag: str,
+    level_name: str,
+    source_metadata_path: Path,
+) -> dict[str, Any]:
+    source_metadata = load_json(source_metadata_path)
+    if not source_metadata:
+        raise FileNotFoundError(f"wind metadata missing: {source_metadata_path}")
+
+    output_dir = WEB_DIR / "wind_maps" / model_key / run_tag / level_name
+    steps_dir = output_dir / "steps"
+    step_exports: list[dict[str, Any]] = []
+
+    for source_step in source_metadata.get("steps") or []:
+        step_label = str(source_step.get("step") or "")
+        if not step_label:
+            continue
+        source_step_path = Path(str(source_step.get("path") or ""))
+        if not source_step_path.exists():
+            source_step_path = source_metadata_path.parent / "steps" / f"{step_label}.bin"
+        if not source_step_path.exists():
+            raise FileNotFoundError(f"wind step missing: {source_step_path}")
+
+        step_path = steps_dir / f"{step_label}.bin"
+        step_path.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copyfile(source_step_path, step_path)
+
+        output_step = dict(source_step)
+        output_step.pop("path", None)
+        output_step.pop("url", None)
+        output_step["url"] = rel(step_path)
+        output_step["byte_length"] = int(step_path.stat().st_size)
+        step_exports.append(output_step)
+
+    metadata_path = output_dir / "metadata.json"
+    payload = dict(source_metadata)
+    payload["schema_version"] = SCHEMA_VERSION
+    payload["product"] = "wind_map_level"
+    payload["model"] = model_key
+    payload["run"] = run_tag
+    payload["source"] = rel(source_metadata_path)
+    payload["steps"] = step_exports
+    write_json(metadata_path, payload, pretty=True)
+
+    level = payload.get("level") or {}
+    grid = payload.get("grid") or {}
+    return {
+        "metadata": rel(metadata_path),
+        "source": payload["source"],
+        "level_type": level.get("type"),
+        "level_h": level.get("height_m"),
+        "grid": {
+            "width": grid.get("width"),
+            "height": grid.get("height"),
+            "source_stride": grid.get("source_stride"),
+        },
+        "steps": step_exports,
+        "step_count": len(step_exports),
+        "bytes": sum(step["byte_length"] for step in step_exports),
+    }
+
+
 def export_wind_maps(source_manifest: dict[str, Any]) -> dict[str, Any] | None:
     source_wind = source_manifest.get("wind_maps") or {}
     if not source_wind:
@@ -840,6 +903,23 @@ def export_wind_maps(source_manifest: dict[str, Any]) -> dict[str, Any] | None:
             run_manifest = {"layout": "split_binary_by_step", "levels": {}}
             for level_name, level_entry in (run_entry.get("levels") or {}).items():
                 if selected_levels is not None and level_name not in selected_levels:
+                    continue
+
+                if run_entry.get("layout") == "browser_ready_split_binary_by_step":
+                    source_path = Path(level_entry.get("metadata", ""))
+                    if not source_path.exists():
+                        log(f"WARN direct wind metadata missing for {model_key} {run_tag} {level_name}: {source_path}")
+                        continue
+                    try:
+                        exported_level = export_direct_wind_level(model_key, run_tag, level_name, source_path)
+                    except Exception as exc:
+                        log(f"WARN direct wind export failed for {source_path}: {exc}")
+                        continue
+
+                    run_manifest["levels"][level_name] = exported_level
+                    wind_manifest["counts"]["levels"] += 1
+                    wind_manifest["counts"]["steps"] += exported_level["step_count"]
+                    wind_manifest["counts"]["bytes"] += exported_level["bytes"]
                     continue
 
                 source_path = Path(level_entry.get("path", ""))

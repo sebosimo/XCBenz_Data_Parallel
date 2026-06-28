@@ -18,6 +18,7 @@ from wind_maps import wind_netcdf_encoding
 
 CHUNK_ROOT = Path("map_chunks")
 WIND_ROOT = Path("cache_wind_packed")
+WIND_WEB_ROOT = Path("cache_wind_maps")
 SUNSHINE_ROOT = Path("cache_sunshine_maps")
 RAIN_ROOT = Path("cache_rain_maps")
 SUNRAIN_ROOT = Path("cache_sunrain_maps")
@@ -88,6 +89,11 @@ def merge_wind_group(model: str, run_tag: str, filename: str, paths: list[Path])
 def merge_wind_chunks() -> None:
     for (model, run_tag, filename), paths in sorted(wind_sources().items()):
         merge_wind_group(model, run_tag, filename, paths)
+
+
+def merge_direct_wind_chunks() -> None:
+    for (model, run_tag, level), paths in sorted(split_binary_sources("cache_wind_maps").items()):
+        merge_split_binary_group("wind", WIND_WEB_ROOT, model, run_tag, level, paths)
 
 
 def sunshine_sources() -> dict[tuple[str, str, str], list[Path]]:
@@ -183,6 +189,7 @@ def main() -> int:
     if not CHUNK_ROOT.exists():
         log("no map chunk root found; nothing to merge")
         return 0
+    merge_direct_wind_chunks()
     merge_wind_chunks()
     merge_sunshine_chunks()
     merge_rain_chunks()

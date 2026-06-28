@@ -72,6 +72,12 @@ default `0` leaves the normal FIFO scheduler unchanged.
 direct profile chunks. After a horizon's profile bundle values are extracted, it
 frees pressure-only fields before map accumulators continue.
 
+`--direct-wind-web` is an experimental wind-output switch for the local runner.
+When enabled, wind chunks write browser-ready `cache_wind_maps/{model}/{run}/`
+metadata and `steps/*.bin` files directly instead of writing intermediate
+`cache_wind_packed/*.nc` files. The final `web_exports/wind_maps/...` contract
+stays the same.
+
 ## Benchmark Notes
 
 ### 2026-06-24 Max-Jobs 7 Dry Run
@@ -1050,6 +1056,58 @@ Early field release is a useful improvement. It produced the best pinned 03Z
 fetch time so far while keeping the preferred 6 GB RAM headroom. It still does
 not meet the CPU/load goal; the remaining bottleneck is compute pressure during
 decode/map/profile work, not just retained field memory.
+
+### 2026-06-28 Direct Wind Web Output Prototype
+
+This prototype adds experimental `--direct-wind-web` /
+`XCBENZ_DIRECT_WIND_WEB`. The old packed NetCDF wind path remains the default.
+With the flag enabled:
+
+- fetch workers write `cache_wind_maps/{model}/{run}/{level}/metadata.json`
+  and `steps/*.bin` directly
+- `scripts/merge_map_chunks.py` merges those split-binary wind chunks by level
+- `generate_combined_manifest.py` marks direct wind runs as
+  `browser_ready_split_binary_by_step`
+- `generate_web_exports.py` copies direct wind step binaries into
+  `web_exports/wind_maps/...` without reopening a wind NetCDF
+
+Local synthetic compatibility checks on Windows passed:
+
+- direct wind metadata matches the old NetCDF-derived browser metadata after
+  ignoring only the provenance `source` path
+- direct wind browser step binaries are byte-for-byte identical to the old
+  NetCDF-derived `steps/*.bin` output for the same synthetic source fields
+- direct chunk merge plus direct web export produced valid `url` step references
+  and expected byte lengths
+
+The Hetzner benchmark is still pending. Use the previous best pinned 03Z command
+shape plus `--direct-wind-web`:
+
+```bash
+/home/sebas/projects/XCBenz_Data_Parallel/.venv/bin/python \
+  scripts/run_coding_server_pipeline.py \
+  --run-mode force-refresh \
+  --skip-deploy \
+  --no-push-data-branch \
+  --python-cmd /home/sebas/projects/XCBenz_Data_Parallel/.venv/bin/python \
+  --job-layout combined \
+  --combined-job-order interleave \
+  --max-jobs 4 \
+  --download-workers 8 \
+  --ch2-chunk-size 15 \
+  --prefetch-next-horizon \
+  --release-profile-only-fields \
+  --direct-wind-web \
+  --ch1-run-tag 20260628_0300 \
+  --ch2-run-tag 20260628_0000 \
+  --run-dir .local_pipeline/runs/manual-coding-server-test-direct-wind-web-pinned03-max4
+```
+
+Compare against the profile-only field release baseline: fetch phase about
+5m18s, total runtime about 6m48s, CPU peak about 71%, and minimum available RAM
+about 6174 MB. The expected win is post-fetch wind overhead: no packed wind
+NetCDF writes, no xarray wind chunk concat, and no NetCDF-to-browser conversion
+inside `generate_web_exports.py`.
 
 ## Server Setup
 
