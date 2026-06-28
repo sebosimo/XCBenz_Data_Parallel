@@ -397,6 +397,12 @@ def ch2_chunks(chunk_size: int) -> list[tuple[int, int]]:
     return horizon_chunks(120, chunk_size)
 
 
+def order_combined_jobs(ch1_jobs: list[Job], ch2_jobs: list[Job], order: str) -> list[Job]:
+    if order == "interleave":
+        return [*ch1_jobs[:2], *ch2_jobs[:2], *ch1_jobs[2:], *ch2_jobs[2:]]
+    return [*ch1_jobs, *ch2_jobs]
+
+
 def map_output_roots(model: str, cid: str) -> dict[str, str]:
     root = Path("map_chunks") / model / cid
     prefix = "CH1" if model == "ch1" else "CH2"
@@ -473,6 +479,8 @@ def build_jobs(
     jobs: list[Job] = []
 
     if args.job_layout == "combined":
+        ch1_jobs: list[Job] = []
+        ch2_jobs: list[Job] = []
         for start, end in ch1_map_chunks(latest_ch1):
             cid = chunk_id(start, end)
             name = f"ch1-combined-{cid}"
@@ -488,7 +496,7 @@ def build_jobs(
                     **map_output_roots("ch1", cid),
                 }
             )
-            jobs.append(Job(name, [*py, "fetch_data.py"], env))
+            ch1_jobs.append(Job(name, [*py, "fetch_data.py"], env))
 
         for start, end in ch2_chunks(args.ch2_chunk_size):
             cid = chunk_id(start, end)
@@ -505,9 +513,9 @@ def build_jobs(
                     **map_output_roots("ch2", cid),
                 }
             )
-            jobs.append(Job(name, [*py, "fetch_data_ch2.py"], env))
+            ch2_jobs.append(Job(name, [*py, "fetch_data_ch2.py"], env))
 
-        return jobs
+        return order_combined_jobs(ch1_jobs, ch2_jobs, args.combined_job_order)
 
     for start, end in ch1_map_chunks(latest_ch1):
         cid = chunk_id(start, end)
@@ -841,6 +849,12 @@ def build_parser() -> argparse.ArgumentParser:
         choices=("split", "combined"),
         default=os.getenv("XCBENZ_JOB_LAYOUT", "split"),
         help="Use split map/profile workers or combined workers that write both products per horizon chunk.",
+    )
+    parser.add_argument(
+        "--combined-job-order",
+        choices=("ch1-first", "interleave"),
+        default=os.getenv("XCBENZ_COMBINED_JOB_ORDER", "ch1-first"),
+        help="Experimental ordering for combined-layout fetch jobs.",
     )
     parser.add_argument("--max-cpu-percent", type=float, default=parse_float_env("XCBENZ_LOCAL_MAX_CPU_PERCENT", 88.0))
     parser.add_argument("--max-load-percent", type=float, default=parse_float_env("XCBENZ_LOCAL_MAX_LOAD_PERCENT", 110.0))
