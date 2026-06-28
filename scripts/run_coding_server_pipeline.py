@@ -399,6 +399,7 @@ def base_pipeline_env(args: argparse.Namespace, deploy: bool) -> dict[str, str]:
             "DATA_HOST_BASE_URL": args.data_host_base_url,
             "WEB_EXPORT_DATA_ROOT": web_data_root,
             "DOWNLOAD_WORKERS": str(args.download_workers),
+            "XCBENZ_FETCH_HORIZON_BATCH": "true",
             "ENABLE_WIND_MAPS": "true",
             "ENABLE_WIND_MAPS_CH1": "true",
             "ENABLE_WIND_MAPS_CH2": "true",

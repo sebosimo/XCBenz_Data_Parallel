@@ -822,6 +822,7 @@ def main():
     chunk_id = os.getenv("CH1_PROFILE_CHUNK_ID") or f"H{horizon_start:03d}_H{horizon_end:03d}"
     pinned_run = env_run_tag("CH1_RUN_TAG") or env_run_tag("CH1_REFERENCE_TIME")
     require_full_horizon_run = env_flag("CH1_REQUIRE_FULL_HORIZON_RUN", profile_mode == "direct-chunk")
+    horizon_fetch_batch = env_flag("XCBENZ_FETCH_HORIZON_BATCH", default=False)
     if force_refresh:
         log("FORCE_REFRESH enabled: existing CH1 run-complete checks will be ignored.", "NOTICE")
     log(
@@ -973,15 +974,41 @@ def main():
             profile_variables = VARS_TRACES if profile_mode in {"netcdf", "direct-chunk"} else []
             map_variables = ["U", "V", *VARS_NATIVE_10M_WIND] if (wind_enabled or sunshine_enabled) else []
             variables_to_fetch = list(dict.fromkeys([*profile_variables, *map_variables]))
-            downloaded_fields = fetch_variable_files(
-                "ogd-forecasting-icon-ch1",
-                variables_to_fetch,
-                ref_time,
-                iso_h,
-                tag,
-                f"{h:02d}",
-                "temp",
+            rain_needed = rain_accumulator is not None or sunrain_accumulator is not None
+            cloud_needed = cloud_accumulator is not None
+            radiation_needed = (
+                profile_mode in {"netcdf", "direct-chunk"}
+                or sunshine_accumulator is not None
+                or sunrain_accumulator is not None
             )
+            downloaded_all = {}
+            if horizon_fetch_batch:
+                batch_variables = list(dict.fromkeys([
+                    *variables_to_fetch,
+                    *(VARS_RAIN_ACCUM if rain_needed else []),
+                    *(VARS_CLOUD_MAPS if cloud_needed else []),
+                    *(VARS_SUNSHINE_MAPS if h > 0 and radiation_needed else []),
+                ]))
+                downloaded_all = fetch_variable_files(
+                    "ogd-forecasting-icon-ch1",
+                    batch_variables,
+                    ref_time,
+                    iso_h,
+                    tag,
+                    f"{h:02d}",
+                    "temp_batch",
+                )
+                downloaded_fields = {var: downloaded_all[var] for var in variables_to_fetch if var in downloaded_all}
+            else:
+                downloaded_fields = fetch_variable_files(
+                    "ogd-forecasting-icon-ch1",
+                    variables_to_fetch,
+                    ref_time,
+                    iso_h,
+                    tag,
+                    f"{h:02d}",
+                    "temp",
+                )
             for var, tmp in downloaded_fields.items():
                 try:
                     ds = xr.open_dataset(tmp, engine='cfgrib', backend_kwargs={'indexpath': ''})
@@ -1001,16 +1028,19 @@ def main():
             sample_field = next((v for v in fields.values() if v is not None and hasattr(v, 'dims')), None)
             rain_scalars = {}
             rain_sample_field = None
-            if rain_accumulator is not None or sunrain_accumulator is not None:
-                downloaded_rain = fetch_variable_files(
-                    "ogd-forecasting-icon-ch1",
-                    VARS_RAIN_ACCUM,
-                    ref_time,
-                    iso_h,
-                    tag,
-                    f"{h:02d}",
-                    "temp_rain",
-                )
+            if rain_needed:
+                if horizon_fetch_batch:
+                    downloaded_rain = {var: downloaded_all[var] for var in VARS_RAIN_ACCUM if var in downloaded_all}
+                else:
+                    downloaded_rain = fetch_variable_files(
+                        "ogd-forecasting-icon-ch1",
+                        VARS_RAIN_ACCUM,
+                        ref_time,
+                        iso_h,
+                        tag,
+                        f"{h:02d}",
+                        "temp_rain",
+                    )
                 for var, tmp in downloaded_rain.items():
                     try:
                         ds_rain = xr.open_dataset(tmp, engine='cfgrib', backend_kwargs={'indexpath': ''})
@@ -1035,16 +1065,19 @@ def main():
 
             cloud_scalars = {}
             cloud_sample_field = None
-            if cloud_accumulator is not None:
-                downloaded_cloud = fetch_variable_files(
-                    "ogd-forecasting-icon-ch1",
-                    VARS_CLOUD_MAPS,
-                    ref_time,
-                    iso_h,
-                    tag,
-                    f"{h:02d}",
-                    "temp_cloud",
-                )
+            if cloud_needed:
+                if horizon_fetch_batch:
+                    downloaded_cloud = {var: downloaded_all[var] for var in VARS_CLOUD_MAPS if var in downloaded_all}
+                else:
+                    downloaded_cloud = fetch_variable_files(
+                        "ogd-forecasting-icon-ch1",
+                        VARS_CLOUD_MAPS,
+                        ref_time,
+                        iso_h,
+                        tag,
+                        f"{h:02d}",
+                        "temp_cloud",
+                    )
                 for var, tmp in downloaded_cloud.items():
                     try:
                         ds_cloud = xr.open_dataset(tmp, engine='cfgrib', backend_kwargs={'indexpath': ''})
@@ -1073,11 +1106,6 @@ def main():
             #   hourly_mean = h * raw[h] - (h-1) * raw[h-1]
             # We fetch raw[h] here and use the cached raw[h-1] from prev_rad_raw.
             rad_scalars = {}
-            radiation_needed = (
-                profile_mode in {"netcdf", "direct-chunk"}
-                or sunshine_accumulator is not None
-                or sunrain_accumulator is not None
-            )
             if h > 0 and radiation_needed:
                 # Extract nearest-grid-point index from any existing field
                 if sample_field is not None:
@@ -1085,15 +1113,18 @@ def main():
                     lon_n = 'longitude' if 'longitude' in sample_field.coords else 'lon'
                     lats_r = sample_field[lat_n].values
                     lons_r = sample_field[lon_n].values
-                    downloaded_radiation = fetch_variable_files(
-                        "ogd-forecasting-icon-ch1",
-                        VARS_SUNSHINE_MAPS,
-                        ref_time,
-                        iso_h,
-                        tag,
-                        f"{h:02d}",
-                        "temp_rad",
-                    )
+                    if horizon_fetch_batch:
+                        downloaded_radiation = {var: downloaded_all[var] for var in VARS_SUNSHINE_MAPS if var in downloaded_all}
+                    else:
+                        downloaded_radiation = fetch_variable_files(
+                            "ogd-forecasting-icon-ch1",
+                            VARS_SUNSHINE_MAPS,
+                            ref_time,
+                            iso_h,
+                            tag,
+                            f"{h:02d}",
+                            "temp_rad",
+                        )
                     for var, tmp in downloaded_radiation.items():
                         try:
                             ds_r = xr.open_dataset(tmp, engine='cfgrib', backend_kwargs={'indexpath': ''})
