@@ -435,6 +435,34 @@ headroom during the first four-worker wave. The remaining runtime is likely not
 only request scheduling: CH2 tail chunks and per-variable decode/write work are
 now a larger share of the measured wall time.
 
+Max-jobs 5 changed only `--max-jobs` and used run dir
+`.local_pipeline/runs/manual-coding-server-test-20260628T071024Z-batched-current-max5`.
+
+Max-jobs 5 result:
+
+- branch: `codex/coding-server-pipeline-prototype`
+- commit: `20cf607`
+- fetch jobs planned: 7 because this was a 03Z CH1 run
+- fetch jobs active at peak: 5
+- run window: `2026-06-28T07:10:26Z` to `2026-06-28T07:17:10Z`
+- total runtime: about 6m44s
+- fetch phase runtime: about 5m18s, from first fetch start to last fetch done
+- validation: passed
+- sampled CPU peaked around 74%
+- sampled load1 peaked at 4.99
+- lowest sampled available RAM was about 3823 MB
+- no SSH timeout was observed
+
+Validation summary and output sizes matched the max-jobs 4 batched current run.
+
+Interpretation:
+
+Max-jobs 5 is the fastest measured 03Z current-run layout so far, improving
+fetch phase runtime by about 1m38s over batched max-jobs 4. It still did not
+reach the sub-5-minute fetch target, and it is not aligned with the preferred
+interactive coding-server resource envelope: the first wave held five workers,
+peaked around 74% sampled CPU, and dropped available RAM below 4 GB.
+
 ## Server Setup
 
 Assuming the repo is checked out at `/opt/xcbenz/XCBenz_Data_Parallel` and the
