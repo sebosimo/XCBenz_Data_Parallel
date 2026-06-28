@@ -56,6 +56,11 @@ that reduces top-level fetch jobs from 12 to 6 while preserving the same
 browser-facing output validation contract. Keep the default split layout
 available until the combined layout has more production-like runs behind it.
 
+`--ch1-chunk-size` and `--ch2-chunk-size` are experimental runner-only knobs.
+The default `0` preserves the legacy chunk plans. Positive values split each
+model into fixed-size horizon chunks, merging a tiny final remainder into the
+previous chunk.
+
 ## Benchmark Notes
 
 ### 2026-06-24 Max-Jobs 7 Dry Run
@@ -771,6 +776,68 @@ than the earlier batched max-jobs 5 run and violated both resource goals more
 clearly than max-jobs 4. Further gains should come from reducing per-horizon
 decode/write/map work or changing how intermediate artifacts are generated, not
 from adding more scheduler pressure.
+
+### 2026-06-28 CH1 Chunk Size 12 Dry Run
+
+Commit `98d0c45` adds an experimental `--ch1-chunk-size` runner option. The
+first benchmark used `--ch1-chunk-size 12` with the previous best max-jobs 4
+shape:
+
+```bash
+/home/sebas/projects/XCBenz_Data_Parallel/.venv/bin/python \
+  scripts/run_coding_server_pipeline.py \
+  --run-mode force-refresh \
+  --skip-deploy \
+  --no-push-data-branch \
+  --python-cmd /home/sebas/projects/XCBenz_Data_Parallel/.venv/bin/python \
+  --job-layout combined \
+  --combined-job-order interleave \
+  --max-jobs 4 \
+  --download-workers 8 \
+  --ch1-chunk-size 12 \
+  --ch2-chunk-size 15 \
+  --ch1-run-tag 20260628_0300 \
+  --ch2-run-tag 20260628_0000 \
+  --run-dir .local_pipeline/runs/manual-coding-server-test-20260628T093100Z-ch1c12-ch2c15-dw8-pinned03-max4
+```
+
+Result:
+
+- branch: `codex/coding-server-pipeline-prototype`
+- commit: `98d0c45`
+- fetch jobs planned: 12
+- fetch jobs active at peak: 4
+- run window: `2026-06-28T09:30:38Z` to `2026-06-28T09:38:12Z`
+- total runtime: about 7m34s
+- fetch phase runtime: about 6m10s, from first fetch start to last fetch done
+- validation: passed
+- sampled CPU peaked around 63%
+- sampled load1 peaked at 4.74
+- lowest sampled available RAM was about 2744 MB
+- no SSH timeout was observed
+
+Validation summary matched the pinned 03Z runs:
+
+```text
+profiles=68460
+bundles=840
+region_forecasts=840
+wind_steps=2934
+sunshine_steps=483
+rain_steps=489
+sunrain_steps=483
+cloud_steps=1956
+```
+
+Interpretation:
+
+CH1 chunk size 12 is not a candidate configuration. It only improved fetch
+runtime by about 5s versus the previous best max-jobs 4 interleaved run, while
+making RAM much worse because both short CH2 jobs finished early and the queue
+started the remaining CH1 chunks before the first CH1 chunks completed. The
+option is still useful for controlled experiments, but this result reinforces
+that the next speed gain likely needs to reduce per-horizon download/decode work
+rather than split CH1 more aggressively under the current scheduler.
 
 ## Server Setup
 
