@@ -463,6 +463,59 @@ reach the sub-5-minute fetch target, and it is not aligned with the preferred
 interactive coding-server resource envelope: the first wave held five workers,
 peaked around 74% sampled CPU, and dropped available RAM below 4 GB.
 
+### 2026-06-28 Vectorized Direct-Profile Extraction Dry Run
+
+Commit `6136782` changes direct profile chunk writing to select all configured
+location indices for a variable in one xarray operation per horizon, instead of
+selecting each location one by one. This keeps `bundle.json` and `profiles.bin`
+ordering unchanged and only reduces profile extraction overhead inside the
+combined workers.
+
+The benchmark used the same current source runs as the previous 2026-06-28
+tests:
+
+- CH1 `20260628_0300`
+- CH2 `20260628_0000`
+
+Command shape:
+
+```bash
+/home/sebas/projects/XCBenz_Data_Parallel/.venv/bin/python \
+  scripts/run_coding_server_pipeline.py \
+  --run-mode force-refresh \
+  --skip-deploy \
+  --no-push-data-branch \
+  --python-cmd /home/sebas/projects/XCBenz_Data_Parallel/.venv/bin/python \
+  --job-layout combined \
+  --max-jobs 4 \
+  --run-dir .local_pipeline/runs/manual-coding-server-test-20260628T072352Z-vectorized-current-max4
+```
+
+Result:
+
+- branch: `codex/coding-server-pipeline-prototype`
+- commit: `6136782`
+- fetch jobs planned: 7 because this was a 03Z CH1 run
+- fetch jobs active at peak: 4
+- run window: `2026-06-28T07:23:53Z` to `2026-06-28T07:32:13Z`
+- total runtime: about 8m20s
+- fetch phase runtime: about 6m54s, from first fetch start to last fetch done
+- validation: passed
+- sampled CPU peaked around 67%
+- sampled load1 peaked at 4.26
+- lowest sampled available RAM was about 4099 MB
+- no SSH timeout was observed
+
+Validation summary matched the earlier current runs.
+
+Interpretation:
+
+Vectorized point extraction validated, but it was not a material speedup for the
+full coding-server run: fetch phase improved by only about 2s versus batched
+max-jobs 4, likely within normal MeteoSwiss/network variation. The dominant
+runtime remains broader per-horizon download/decode/write work and the CH2 tail,
+not the per-location profile selection loop by itself.
+
 ## Server Setup
 
 Assuming the repo is checked out at `/opt/xcbenz/XCBenz_Data_Parallel` and the
