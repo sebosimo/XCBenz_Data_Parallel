@@ -431,6 +431,7 @@ def base_pipeline_env(args: argparse.Namespace, deploy: bool) -> dict[str, str]:
             "WEB_EXPORT_DATA_ROOT": web_data_root,
             "DOWNLOAD_WORKERS": str(args.download_workers),
             "XCBENZ_FETCH_HORIZON_BATCH": "true",
+            "XCBENZ_PREFETCH_NEXT_HORIZON": "true" if args.prefetch_next_horizon else "false",
             "ENABLE_WIND_MAPS": "true",
             "ENABLE_WIND_MAPS_CH1": "true",
             "ENABLE_WIND_MAPS_CH2": "true",
@@ -865,6 +866,12 @@ def build_parser() -> argparse.ArgumentParser:
         default=os.getenv("XCBENZ_COMBINED_JOB_ORDER", "ch1-first"),
         help="Experimental ordering for combined-layout fetch jobs.",
     )
+    parser.add_argument(
+        "--prefetch-next-horizon",
+        action="store_true",
+        default=env_bool("XCBENZ_PREFETCH_NEXT_HORIZON", False),
+        help="Experimentally download the next horizon while decoding the current horizon.",
+    )
     parser.add_argument("--max-cpu-percent", type=float, default=parse_float_env("XCBENZ_LOCAL_MAX_CPU_PERCENT", 88.0))
     parser.add_argument("--max-load-percent", type=float, default=parse_float_env("XCBENZ_LOCAL_MAX_LOAD_PERCENT", 110.0))
     parser.add_argument("--min-available-mb", type=float, default=parse_float_env("XCBENZ_LOCAL_MIN_AVAILABLE_MB", 4096.0))
@@ -922,6 +929,7 @@ def run_pipeline(args: argparse.Namespace) -> int:
     log(
         f"job plan: {len(jobs)} fetch jobs, max_jobs={max_jobs}, layout={args.job_layout}, "
         f"ch1_chunk_size={args.ch1_chunk_size}, ch2_chunk_size={args.ch2_chunk_size}, "
+        f"prefetch_next_horizon={args.prefetch_next_horizon}, "
         f"latest_ch1={latest_ch1}, latest_ch2={latest_ch2}, deploy={deploy}, "
         f"push_data_branch={args.push_data_branch}"
     )

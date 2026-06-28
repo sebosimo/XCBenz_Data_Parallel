@@ -968,6 +968,41 @@ def main():
         )
         # Cache previous raw radiation values for de-accumulation (running mean → hourly mean)
         prev_rad_raw = seed_previous_radiation(COLLECTION_CH2, ref_time, tag, horizon_start)
+        prefetch_next_horizon = horizon_fetch_batch and env_flag("XCBENZ_PREFETCH_NEXT_HORIZON", default=False)
+        prefetch_executor = ThreadPoolExecutor(max_workers=1) if prefetch_next_horizon else None
+        prefetch_future = None
+        prefetch_horizon = None
+
+        def fetch_horizon_batch(h_value):
+            profile_variables = VARS if profile_mode in {"netcdf", "direct-chunk"} else []
+            map_variables = ["U", "V", *VARS_NATIVE_10M_WIND] if (wind_enabled or sunshine_enabled) else []
+            variables_to_fetch = list(dict.fromkeys([*profile_variables, *map_variables]))
+            rain_needed = rain_accumulator is not None or sunrain_accumulator is not None
+            cloud_needed = cloud_accumulator is not None
+            radiation_needed = (
+                profile_mode in {"netcdf", "direct-chunk"}
+                or sunshine_accumulator is not None
+                or sunrain_accumulator is not None
+            )
+            batch_variables = list(dict.fromkeys([
+                *variables_to_fetch,
+                *(VARS_RAIN_ACCUM if rain_needed else []),
+                *(VARS_CLOUD_MAPS if cloud_needed else []),
+                *(VARS_SUNSHINE_MAPS if h_value > 0 and radiation_needed else []),
+            ]))
+            return fetch_variable_files(
+                COLLECTION_CH2,
+                batch_variables,
+                ref_time,
+                get_iso_horizon(h_value),
+                tag,
+                f"{h_value:03d}",
+                "temp_ch2_batch",
+            )
+
+        if prefetch_executor is not None:
+            prefetch_horizon = horizon_start
+            prefetch_future = prefetch_executor.submit(fetch_horizon_batch, prefetch_horizon)
         if rain_accumulator is not None or sunrain_accumulator is not None:
             rain_seed = seed_previous_rain(COLLECTION_CH2, ref_time, tag, horizon_start)
             if rain_accumulator is not None:
@@ -1006,21 +1041,16 @@ def main():
 
             downloaded_all = {}
             if horizon_fetch_batch:
-                batch_variables = list(dict.fromkeys([
-                    *variables_to_fetch,
-                    *(VARS_RAIN_ACCUM if rain_needed else []),
-                    *(VARS_CLOUD_MAPS if cloud_needed else []),
-                    *(VARS_SUNSHINE_MAPS if h > 0 and radiation_needed else []),
-                ]))
-                downloaded_all = fetch_variable_files(
-                    COLLECTION_CH2,
-                    batch_variables,
-                    ref_time,
-                    iso_h,
-                    tag,
-                    f"{h:03d}",
-                    "temp_ch2_batch",
-                )
+                if prefetch_future is not None and prefetch_horizon == h:
+                    downloaded_all = prefetch_future.result()
+                    if h < horizon_end:
+                        prefetch_horizon = h + 1
+                        prefetch_future = prefetch_executor.submit(fetch_horizon_batch, prefetch_horizon)
+                    else:
+                        prefetch_horizon = None
+                        prefetch_future = None
+                else:
+                    downloaded_all = fetch_horizon_batch(h)
                 downloaded_fields = {var: downloaded_all[var] for var in variables_to_fetch if var in downloaded_all}
             else:
                 downloaded_fields = fetch_variable_files(
@@ -1222,6 +1252,8 @@ def main():
                     wind_accumulator.append(fields, h, ref_time)
                 log(f"CH2 H+{h:03d} done")
                 any_success = True
+        if prefetch_executor is not None:
+            prefetch_executor.shutdown(wait=True)
 
         if any_success:
             log(f"CH2 run {tag} complete.", "NOTICE")
