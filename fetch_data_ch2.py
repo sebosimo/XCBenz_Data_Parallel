@@ -941,6 +941,7 @@ def main():
         profile_buffers = {} if profile_mode == "direct-chunk" else None
         location_indices_cache = None
         height_cache = {} if profile_mode == "direct-chunk" else None
+        release_profile_only_fields = env_flag("XCBENZ_RELEASE_PROFILE_ONLY_FIELDS", default=False)
         wind_accumulator = (
             WindMapAccumulator("ch2", tag, ref_time, wind_config, log=log, out_root=wind_map_out_root)
             if wind_enabled and wind_config is not None
@@ -1235,6 +1236,9 @@ def main():
                         location_indices=location_indices_cache,
                         height_cache=height_cache,
                     )
+                    if release_profile_only_fields:
+                        for profile_only_var in ("P", "T", "QV"):
+                            fields.pop(profile_only_var, None)
                 if sunshine_accumulator is not None and rad_scalars and sample_field is not None:
                     sunshine_accumulator.append(sample_field, rad_scalars, h, ref_time)
                 if rain_accumulator is not None and rain_scalars and rain_sample_field is not None:
