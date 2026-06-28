@@ -361,6 +361,80 @@ optimization should focus on reducing CH1 per-horizon decode/map work, or on a
 layout that avoids starting three CH1 combined workers at once when RAM
 headroom matters.
 
+### 2026-06-28 Batched Per-Horizon Download Dry Run
+
+Commit `a66d8c2` adds `XCBENZ_FETCH_HORIZON_BATCH=true` for the local
+coding-server runner. With the flag enabled, each CH1/CH2 fetch worker requests
+the profile/wind, rain, cloud, and radiation variables for a horizon through one
+download pool, then passes the files through the same decode/write blocks as
+before. The output shape is unchanged; only the timing of the requests changes.
+
+This was run against the same current source runs as the cached-index benchmark:
+
+- CH1 `20260628_0300`
+- CH2 `20260628_0000`
+
+Command shape:
+
+```bash
+/home/sebas/projects/XCBenz_Data_Parallel/.venv/bin/python \
+  scripts/run_coding_server_pipeline.py \
+  --run-mode force-refresh \
+  --skip-deploy \
+  --no-push-data-branch \
+  --python-cmd /home/sebas/projects/XCBenz_Data_Parallel/.venv/bin/python \
+  --job-layout combined \
+  --max-jobs 4 \
+  --run-dir .local_pipeline/runs/manual-coding-server-test-20260628T065402Z-batched-current-max4
+```
+
+Result:
+
+- branch: `codex/coding-server-pipeline-prototype`
+- commit: `a66d8c2`
+- fetch jobs planned: 7 because this was a 03Z CH1 run
+- fetch jobs active at peak: 4
+- run window: `2026-06-28T06:54:04Z` to `2026-06-28T07:02:26Z`
+- total runtime: about 8m22s
+- fetch phase runtime: about 6m56s, from first fetch start to last fetch done
+- validation: passed
+- sampled CPU peaked around 67%
+- sampled load1 peaked at 3.93
+- lowest sampled available RAM was about 4403 MB
+- no SSH timeout was observed
+
+Validation summary matched the cached-index current run:
+
+```text
+profiles=68460
+bundles=840
+region_forecasts=840
+wind_steps=2934
+sunshine_steps=483
+rain_steps=489
+sunrain_steps=483
+cloud_steps=1956
+```
+
+Output sizes:
+
+```text
+web_exports:        891M
+map caches:         about 369M
+web_profile_chunks: 84M
+run logs:           2.0M
+```
+
+Interpretation:
+
+Compared with the previous current-run cached-index benchmark, per-horizon
+download batching improved fetch phase runtime by about 28s and total runtime
+by about 30s. This is directionally useful, but it did not reach the
+sub-5-minute fetch target and it still dipped below the preferred 6 GB RAM
+headroom during the first four-worker wave. The remaining runtime is likely not
+only request scheduling: CH2 tail chunks and per-variable decode/write work are
+now a larger share of the measured wall time.
+
 ## Server Setup
 
 Assuming the repo is checked out at `/opt/xcbenz/XCBenz_Data_Parallel` and the
