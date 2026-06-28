@@ -609,6 +609,20 @@ def _point_profile(data, lat_name, idx):
     return np.asarray(profile.values, dtype=np.float32).ravel()
 
 
+def _point_profiles(data, lat_name, indices):
+    names = list(indices.keys())
+    if not names:
+        return names, np.empty((0, 0), dtype=np.float32)
+    spatial_dim = data[lat_name].dims[0]
+    selected = data.squeeze().isel({spatial_dim: [indices[name] for name in names]}).compute()
+    values = np.asarray(selected.values, dtype=np.float32)
+    if spatial_dim in selected.dims:
+        values = np.moveaxis(values, selected.get_axis_num(spatial_dim), 0)
+    else:
+        values = values.reshape((1, -1))
+    return names, values.reshape((len(names), -1))
+
+
 def _height_profile(fields, lat_name, idx, fallback_level_count):
     if "HHL" not in fields or fields["HHL"] is None:
         return np.arange(fallback_level_count, dtype=np.float32)
@@ -636,14 +650,22 @@ def append_profile_chunk(
     lat_name, _lon_name = _field_lat_lon_names(sample)
     indices = location_indices if location_indices is not None else _location_indices(sample, locations)
     valid_time = ref + datetime.timedelta(hours=h)
+    location_names = list(indices.keys())
+    profiles_by_var = {}
+    for var in VARS:
+        if var not in fields:
+            profiles_by_var[var] = None
+            continue
+        names, profiles = _point_profiles(fields[var], lat_name, indices)
+        if names != location_names:
+            raise RuntimeError(f"CH2 direct profile location order changed for {var} H+{h:03d}")
+        profiles_by_var[var] = profiles
 
-    for name, idx in indices.items():
-        raw_profiles = {}
-        for var in VARS:
-            if var not in fields:
-                raw_profiles[var] = None
-                continue
-            raw_profiles[var] = _point_profile(fields[var], lat_name, idx)
+    for loc_pos, (name, idx) in enumerate(indices.items()):
+        raw_profiles = {
+            var: None if profiles_by_var[var] is None else profiles_by_var[var][loc_pos]
+            for var in VARS
+        }
 
         level_source = next((arr for arr in raw_profiles.values() if arr is not None), None)
         if level_source is None:
