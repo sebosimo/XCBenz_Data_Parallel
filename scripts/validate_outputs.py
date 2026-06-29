@@ -253,13 +253,16 @@ def main() -> int:
         if not Path(path).exists():
             return fail(f"{product} map manifest path does not exist: {path}")
 
-    root_runs = (root.get("runs") or {}, root.get("runs_ch2") or {})
-    modern_web_runs = tuple(
-        (models.get(model_key) or {}).get("runs") or {}
-        for model_key in ("icon-ch1", "icon-ch2")
-    )
-    if not any(root_runs) and not all(modern_web_runs):
-        return fail("neither root manifest nor web manifest exposes CH1 and CH2 runs")
+    root_ch1_runs = root.get("runs") or {}
+    root_ch2_runs = root.get("runs_ch2") or {}
+    if not root_ch1_runs or not root_ch2_runs:
+        return fail("root manifest must expose fresh direct CH1 and CH2 profile runs")
+
+    for model_key, root_runs in (("icon-ch1", root_ch1_runs), ("icon-ch2", root_ch2_runs)):
+        web_runs = (models.get(model_key) or {}).get("runs") or {}
+        missing = sorted(set(root_runs).difference(web_runs))
+        if missing:
+            return fail(f"web manifest is missing fresh {model_key} run(s) from root manifest: {missing}")
 
     try:
         bundle_count, bundle_bytes = validate_bundles()
