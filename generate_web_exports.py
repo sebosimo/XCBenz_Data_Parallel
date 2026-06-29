@@ -220,18 +220,26 @@ def location_payload(location_id: str, meta: dict[str, Any]) -> dict[str, Any]:
     }
 
 
+def expected_profile_chunks(model_key: str, run_tag: str) -> set[str]:
+    if model_key == "icon-ch1":
+        try:
+            run_hour = int(run_tag.split("_", 1)[1][:2])
+        except (IndexError, ValueError):
+            run_hour = 3
+        return {"H000_H016", "H017_H045"} if run_hour == 3 else {"H000_H016", "H017_H033"}
+    if model_key == "icon-ch2":
+        return {"H000_H030", "H031_H060", "H061_H090", "H091_H120"}
+    return set()
+
+
 def scan_profile_chunks(root: Path, locations: dict[str, Any]) -> dict[str, dict[str, list[Path]]]:
     runs: dict[str, dict[str, list[Path]]] = {}
     if not root.exists():
         return runs
-    expected_chunks = set()
-    if root.name == "icon-ch1":
-        expected_chunks = {"H000_H016", "H017_H045"}
-    elif root.name == "icon-ch2":
-        expected_chunks = {"H000_H030", "H031_H060", "H061_H090", "H091_H120"}
     saw_chunks = False
 
     for run_dir in sorted((p for p in root.iterdir() if p.is_dir()), reverse=True):
+        expected_chunks = expected_profile_chunks(root.name, run_dir.name)
         found: dict[str, dict[str, Path]] = {}
         chunk_names: set[str] = set()
         for chunk_dir in sorted(p for p in run_dir.iterdir() if p.is_dir()):
