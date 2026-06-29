@@ -1,6 +1,26 @@
 # Coding Server Direct Pipeline
 
 The coding-server pipeline branch writes browser-ready artifacts directly and does not generate or publish NetCDF intermediates. During the current rollout, the production GitHub Actions workflow remains unchanged.
+## Server Polling
+
+Production scheduling on the coding server should call `scripts/poll_coding_server_pipeline.py`, not the heavy runner directly. The poller is cheap enough for a 5 minute timer:
+
+1. Probe MeteoSwiss STAC for the latest complete CH1 and CH2 run pair.
+2. Compare the pair with `.local_pipeline/poller_state.json`.
+3. Exit immediately if the pair already succeeded, is incomplete, or is inside retry backoff after a failed attempt.
+4. Start `scripts/run_coding_server_pipeline.py` with pinned run tags only when a new complete pair is available.
+5. Mark `last_success` only after the direct pipeline and validation exit cleanly.
+
+The systemd unit in `deploy/systemd/xcbenz-coding-server-forecast.service` runs the poller. The timer in `deploy/systemd/xcbenz-coding-server-forecast.timer` polls every 5 minutes. The poller and the heavy runner use separate nonblocking lock files so duplicate starts exit without overlap.
+
+Manual dry-run poll:
+
+```bash
+uv run python scripts/poll_coding_server_pipeline.py \
+  --plan-only \
+  --skip-deploy \
+  --no-push-data-branch
+```
 
 ## Output Contract
 
