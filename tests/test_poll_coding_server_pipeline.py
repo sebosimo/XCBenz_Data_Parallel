@@ -26,7 +26,7 @@ def _args(state_file, **overrides):
         "state_file": state_file,
         "lock_file": "unused.lock",
         "probe_timeout": 1,
-        "retry_minutes": 30,
+        "retry_minutes": 10,
         "force_run": False,
         "plan_only": False,
         "skip_deploy": False,

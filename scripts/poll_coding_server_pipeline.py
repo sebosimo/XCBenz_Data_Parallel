@@ -408,7 +408,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--state-file", default=os.getenv("XCBENZ_POLL_STATE_FILE", ".local_pipeline/poller_state.json"))
     parser.add_argument("--lock-file", default=os.getenv("XCBENZ_POLL_LOCK_FILE", "/run/lock/xcbenz-coding-server-poller.lock"))
     parser.add_argument("--probe-timeout", type=int, default=parse_int_env("XCBENZ_POLL_PROBE_TIMEOUT", 12))
-    parser.add_argument("--retry-minutes", type=int, default=parse_int_env("XCBENZ_POLL_RETRY_MINUTES", 30))
+    parser.add_argument("--retry-minutes", type=int, default=parse_int_env("XCBENZ_POLL_RETRY_MINUTES", 10))
     parser.add_argument("--force-run", action="store_true", default=env_bool("XCBENZ_POLL_FORCE_RUN", False))
     parser.add_argument("--plan-only", action="store_true", help="Probe and print the pipeline command without executing it.")
     parser.add_argument("--skip-deploy", action="store_true", default=env_bool("XCBENZ_POLL_SKIP_DEPLOY", False))
