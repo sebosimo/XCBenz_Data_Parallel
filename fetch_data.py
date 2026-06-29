@@ -53,10 +53,9 @@ from sunrain_maps import (
     is_sunrain_run_complete,
 )
 from wind_maps import (
-    CACHE_DIR_WIND_PACKED,
+    CACHE_DIR_WIND_MAPS,
     WindMapAccumulator,
     cleanup_old_wind_runs,
-    is_direct_wind_web_enabled,
     is_wind_maps_enabled,
     load_config as load_wind_map_config,
 )
@@ -84,10 +83,7 @@ SURFACE_SCALAR_UNITS = {
     "ASWDIR_S": "W m-2",
     "ASWDIFD_S": "W m-2",
 }
-CACHE_DIR_TRACES = "cache_data"
-CACHE_DIR_TRACES_PACKED = "cache_data_packed"
-CACHE_DIR_MAPS = "cache_wind"
-CACHE_DIR_MAPS_PACKED = CACHE_DIR_WIND_PACKED
+CACHE_DIR_MAPS_PACKED = CACHE_DIR_WIND_MAPS
 PROFILE_CHUNK_DIR = "web_profile_chunks"
 STATIC_DIR = "static_data"
 HHL_FILENAME = "vertical_constants_icon-ch1-eps.grib2"
@@ -96,12 +92,7 @@ STAC_BASE_URL = "https://data.geo.admin.ch/api/stac/v1/collections/ch.meteoschwe
 STAC_ASSETS_URL = f"{STAC_BASE_URL}/assets"
 
 WIND_LEVELS = []
-NETCDF_ENGINE = "netcdf4"
-NETCDF_COMPRESS_KW = {"zlib": True, "shuffle": True, "complevel": 4}
 
-os.makedirs(CACHE_DIR_TRACES, exist_ok=True)
-os.makedirs(CACHE_DIR_TRACES_PACKED, exist_ok=True)
-os.makedirs(CACHE_DIR_MAPS, exist_ok=True)
 os.makedirs(CACHE_DIR_MAPS_PACKED, exist_ok=True)
 os.makedirs(CACHE_DIR_SUNSHINE_MAPS, exist_ok=True)
 os.makedirs(CACHE_DIR_RAIN_MAPS, exist_ok=True)
@@ -109,33 +100,15 @@ os.makedirs(CACHE_DIR_CLOUD_MAPS, exist_ok=True)
 os.makedirs(PROFILE_CHUNK_DIR, exist_ok=True)
 
 
-def compressed_encoding(ds):
-    return {name: dict(NETCDF_COMPRESS_KW) for name in ds.data_vars}
-
-def packed_encoding(ds):
-    encoding = {}
-    for name, data_array in ds.data_vars.items():
-        if data_array.dtype.kind in ("U", "S", "O"):
-            encoding[name] = {}
-        else:
-            enc = dict(NETCDF_COMPRESS_KW)
-            if name == "horizon":
-                enc["dtype"] = "i2"
-            elif name == "valid_time_epoch":
-                enc["dtype"] = "i8"
-            elif np.issubdtype(data_array.dtype, np.floating):
-                enc["dtype"] = "f4"
-            encoding[name] = enc
-    return encoding
-
 def get_iso_horizon(total_hours):
     days = total_hours // 24
     hours = total_hours % 24
     return f"P{days}DT{hours}H"
 
 def sanitize_name(name):
-    n = name.replace("ü", "ue").replace("ö", "oe").replace("ä", "ae") \
-            .replace("Ü", "Ue").replace("Ö", "Oe").replace("Ä", "Ae").replace("ß", "ss")
+    n = name
+    for src, dst in {"\u00fc": "ue", "\u00f6": "oe", "\u00e4": "ae", "\u00dc": "Ue", "\u00d6": "Oe", "\u00c4": "Ae", "\u00df": "ss"}.items():
+        n = n.replace(src, dst)
     clean = "".join(c for c in n if c.isalnum() or c in ('-', '_'))
     return clean if clean else "unnamed"
 
@@ -343,284 +316,6 @@ def load_static_grid():
         ds.close()
         return grid if grid.get('lat') is not None else None
     except Exception as e: log(f"Error loading HGRID: {e}", "ERROR"); return None
-
-def is_run_complete_locally(time_tag, locations, max_h):
-    last_loc = sanitize_name(list(locations.keys())[-1])
-    trace_path = os.path.join(CACHE_DIR_TRACES, time_tag, last_loc, f"H{max_h:02d}.nc")
-    return os.path.exists(trace_path)
-
-def is_packed_run_complete_locally(time_tag, locations):
-    return all(
-        os.path.exists(os.path.join(CACHE_DIR_TRACES_PACKED, time_tag, f"{sanitize_name(name)}.nc"))
-        for name in locations
-    )
-
-def build_packed_dataset_from_hourlies(tag, safe_name, location_name, location_meta, step_labels):
-    level_height = None
-    profile_columns = {var: [] for var in VARS_TRACES}
-    radiation_columns = {var: [] for var in VARS_RADIATION}
-    valid_time_epochs = []
-    available_steps = []
-    ref_time = None
-
-    for step_label in step_labels:
-        step_path = os.path.join(CACHE_DIR_TRACES, tag, safe_name, f"{step_label}.nc")
-        if not os.path.exists(step_path):
-            continue
-
-        with xr.open_dataset(step_path, engine=NETCDF_ENGINE) as ds_in:
-            ds_loaded = ds_in.load()
-
-        if ref_time is None:
-            ref_time = datetime.datetime.fromisoformat(str(ds_loaded.attrs["ref_time"]))
-
-        height = ds_loaded["HEIGHT"].values.astype(np.float32)
-        if level_height is None:
-            level_height = height
-
-        for var in VARS_TRACES:
-            profile_columns[var].append(ds_loaded[var].values.astype(np.float32))
-
-        for var in VARS_RADIATION:
-            if var in ds_loaded:
-                radiation_columns[var].append(np.float32(ds_loaded[var].values))
-            else:
-                radiation_columns[var].append(np.float32(np.nan))
-
-        valid_attr = ds_loaded.attrs.get("valid_time")
-        if valid_attr:
-            valid_time = datetime.datetime.fromisoformat(str(valid_attr))
-        else:
-            valid_time = ref_time + datetime.timedelta(hours=_step_number(step_label))
-        if valid_time.tzinfo is None:
-            valid_time = valid_time.replace(tzinfo=datetime.timezone.utc)
-        valid_time_epochs.append(int(valid_time.timestamp()))
-        available_steps.append(step_label)
-
-    if not available_steps or level_height is None or ref_time is None:
-        return None
-
-    packed_vars = {
-        "horizon": xr.DataArray(
-            np.asarray([_step_number(step) for step in available_steps], dtype=np.int16),
-            dims=["time"],
-        ),
-        "valid_time_epoch": xr.DataArray(
-            np.asarray(valid_time_epochs, dtype=np.int64),
-            dims=["time"],
-        ),
-        "step_label": xr.DataArray(np.asarray(available_steps), dims=["time"]),
-        "height": xr.DataArray(level_height, dims=["level"]),
-    }
-
-    for var, columns in profile_columns.items():
-        if columns:
-            packed_vars[var] = xr.DataArray(np.stack(columns).astype(np.float32), dims=["time", "level"])
-
-    for var, values in radiation_columns.items():
-        if values and not np.all(np.isnan(values)):
-            packed_vars[var] = xr.DataArray(np.asarray(values, dtype=np.float32), dims=["time"])
-
-    packed_ds = xr.Dataset(packed_vars)
-    packed_ds.attrs = {
-        "location": location_meta.get("display_name", location_name),
-        "location_id": location_name,
-        "display_name": location_meta.get("display_name", location_name),
-        "point_type": location_meta.get("type", "legacy"),
-        "region_name": location_meta.get("region_name") or "",
-        "latitude": float(location_meta["lat"]),
-        "longitude": float(location_meta["lon"]),
-        "ref_time": ref_time.isoformat(),
-        "model": "icon-ch1",
-        "step_label_pad": 2,
-        "schema_version": 1,
-    }
-    return packed_ds
-
-def write_packed_run_files(tag, locations):
-    run_dir = os.path.join(CACHE_DIR_TRACES, tag)
-    if not os.path.isdir(run_dir):
-        return
-
-    packed_run_dir = os.path.join(CACHE_DIR_TRACES_PACKED, tag)
-    os.makedirs(packed_run_dir, exist_ok=True)
-
-    for location_name, location_meta in locations.items():
-        safe_name = sanitize_name(location_name)
-        step_dir = os.path.join(run_dir, safe_name)
-        if not os.path.isdir(step_dir):
-            continue
-        step_labels = sorted(
-            f.replace(".nc", "")
-            for f in os.listdir(step_dir)
-            if f.endswith(".nc") and f.startswith("H")
-        )
-        packed_ds = build_packed_dataset_from_hourlies(tag, safe_name, location_name, location_meta, step_labels)
-        if packed_ds is None:
-            continue
-
-        packed_path = os.path.join(packed_run_dir, f"{safe_name}.nc")
-        tmp_path = packed_path + ".tmp"
-        packed_ds.to_netcdf(
-            tmp_path,
-            engine=NETCDF_ENGINE,
-            format="NETCDF4",
-            encoding=packed_encoding(packed_ds),
-        )
-        os.replace(tmp_path, packed_path)
-        log(f"Packed CH1 location written: {tag}/{safe_name}.nc")
-
-def process_traces(fields, locations, tag, h, ref, rad_scalars=None):
-    sample = list(fields.values())[0]
-    lat_n = 'latitude' if 'latitude' in sample.coords else 'lat'
-    lon_n = 'longitude' if 'longitude' in sample.coords else 'lon'
-    lats, lons = sample[lat_n].values, sample[lon_n].values
-    indices = {n: int(np.argmin((lats-c['lat'])**2+(lons-c['lon'])**2)) for n, c in locations.items()}
-
-    for name, idx in indices.items():
-        # New Naming: [Location]_[RunTag]_H[horizon].nc
-        safe_name = sanitize_name(name)
-        loc_dir = os.path.join(CACHE_DIR_TRACES, tag, safe_name)
-        os.makedirs(loc_dir, exist_ok=True)
-        filename = f"H{h:02d}.nc"
-        path = os.path.join(loc_dir, filename)
-        
-        if os.path.exists(path): continue
-
-        loc_vars = {}
-        hhl_profile = None
-        
-        # 1. First, check if HHL is available to determine the target level count
-        if "HHL" in fields:
-            ds_hhl = fields["HHL"]
-            s_dim = ds_hhl[lat_n].dims[0]
-            z_dim = ds_hhl.dims[0] # Usually the vertical dimension
-            hhl_profile = ds_hhl.squeeze().isel({s_dim: idx}).compute()
-            # Calculate cell-center heights (80 values from 81 half-levels)
-            h_vals = hhl_profile.values
-            height_centers = (h_vals[:-1] + h_vals[1:]) / 2.0
-            
-            # Create a DataArray for HEIGHT
-            loc_vars["HEIGHT"] = xr.DataArray(height_centers, dims=["level"])
-
-        # 2. Process all other variables
-        for var, ds in fields.items():
-            if var == "HHL": continue # Skip raw HHL
-            
-            s_dim = ds[lat_n].dims[0]
-            profile = ds.squeeze().isel({s_dim: idx}).compute()
-            if profile.dims: 
-                # Rename the vertical dimension to 'level' for consistency
-                profile = profile.rename({profile.dims[0]: 'level'})
-            
-            # Drop unnecessary coordinates but keep the data
-            loc_vars[var] = profile.drop_vars([c for c in profile.coords if c not in profile.dims])
-
-        # Store de-accumulated radiation scalars (if provided)
-        if rad_scalars:
-            for var, val in rad_scalars.items():
-                loc_vars[var] = xr.DataArray(float(val), attrs={"units": SURFACE_SCALAR_UNITS.get(var, "")})
-
-        ds_out = xr.Dataset(loc_vars)
-        valid_time = ref + datetime.timedelta(hours=h)
-        coords = locations[name]
-        ds_out.attrs = {
-            "location": coords.get("display_name", name),
-            "location_id": name,
-            "display_name": coords.get("display_name", name),
-            "point_type": coords.get("type", "legacy"),
-            "region_name": coords.get("region_name") or "",
-            "latitude": float(coords["lat"]),
-            "longitude": float(coords["lon"]),
-            "ref_time": ref.isoformat(),
-            "horizon": h,
-            "valid_time": valid_time.isoformat()
-        }
-        ds_out.to_netcdf(
-            path,
-            engine=NETCDF_ENGINE,
-            format="NETCDF4",
-            encoding=compressed_encoding(ds_out),
-        )
-
-def process_wind_maps(fields, tag, h_int, ref):
-    if "U" not in fields or "V" not in fields or "HHL" not in fields:
-        missing = [k for k in ["U", "V", "HHL"] if k not in fields]
-        log(f"process_wind_maps aborting. Missing fields: {missing}", "ERROR")
-        return
-    
-    # Load WIND_LEVELS from JSON if not already loaded available globally or passed
-    # For now assuming global WIND_LEVELS is populated in main/config
-    
-    from metpy.interpolate import interpolate_to_isosurface
-    u, v, hhl = fields["U"].squeeze(), fields["V"].squeeze(), fields["HHL"].squeeze()
-    
-    try:
-        z_dim = hhl.dims[0]
-        z_f = (hhl.isel({z_dim: slice(0,-1)}).values + hhl.isel({z_dim: slice(1,None)}).values) / 2
-        h_surf = hhl.isel({z_dim: -1})
-        
-        np_u, np_v = u.values, v.values
-        np_z = z_f
-        
-        for lvl in WIND_LEVELS:
-            try:
-                # New Naming: Wind_[Type]_[Level]_[RunTag]_H[horizon].nc
-                fname = f"Wind_{lvl['type']}_{lvl['name']}_{tag}_H{h_int:02d}.nc"
-                out_dir = os.path.join(CACHE_DIR_MAPS, tag)
-                os.makedirs(out_dir, exist_ok=True)
-                output_path = os.path.join(out_dir, fname)
-                
-                if os.path.exists(output_path): continue
-
-                target_z = np_z - h_surf.values if lvl['type'] == 'AGL' else np_z
-                res_u = interpolate_to_isosurface(target_z, np_u, lvl['h'])
-                res_v = interpolate_to_isosurface(target_z, np_v, lvl['h'])
-                
-                spatial = u.dims[-1]
-                coords = {spatial: u[spatial], "latitude": u.latitude, "longitude": u.longitude}
-                
-                out_ds = xr.Dataset({
-                    f"u_{lvl['name']}": xr.DataArray(res_u, dims=[spatial], coords=coords),
-                    f"v_{lvl['name']}": xr.DataArray(res_v, dims=[spatial], coords=coords)
-                })
-                valid_time = ref + datetime.timedelta(hours=h_int)
-                out_ds.attrs = {
-                    "level_name": lvl['name'], 
-                    "level_type": lvl['type'], 
-                    "level_h": lvl['h'], 
-                    "ref_time": ref.isoformat(),
-                    "horizon": h_int,
-                    "valid_time": valid_time.isoformat()
-                }
-                out_ds.to_netcdf(
-                    output_path,
-                    engine=NETCDF_ENGINE,
-                    format="NETCDF4",
-                    encoding=compressed_encoding(out_ds),
-                )
-                log(f"Saved wind map: {fname}")
-            except Exception as e: log(f"Error processing level {lvl['name']}: {e}", "ERROR")
-
-    except Exception as e: log(f"Wind map setup error: {e}", "ERROR")
-
-def _process_traces_with_radiation(fields, locations, tag, h, ref, loc_rad_map):
-    """
-    Wrapper around process_traces that injects per-location radiation scalars.
-    loc_rad_map: {location_name: {"ASWDIR_S": float, "ASWDIFD_S": float}}
-    """
-    for name, rad_vals in loc_rad_map.items():
-        # Temporarily build a single-location fields view and call process_traces
-        # with that location's radiation values passed as rad_scalars.
-        # We call process_traces with a single-item locations dict so it only
-        # writes one file — radiation scalars are location-specific.
-        single_loc = {name: locations[name]}
-        process_traces(fields, single_loc, tag, h, ref, rad_scalars=rad_vals)
-    # Handle locations that had no radiation data
-    no_rad = {n: c for n, c in locations.items() if n not in loc_rad_map}
-    if no_rad:
-        process_traces(fields, no_rad, tag, h, ref)
-
 
 def _sample_field(fields):
     return next((v for v in fields.values() if v is not None and hasattr(v, "dims")), None)
@@ -837,7 +532,7 @@ def seed_previous_rain(collection, ref_time, tag, start_h):
 def main():
     log("Main start...")
     force_refresh = env_flag("FORCE_REFRESH", default=False)
-    profile_mode = env_choice("CH1_PROFILE_MODE", "netcdf", {"netcdf", "direct-chunk", "none"})
+    profile_mode = env_choice("CH1_PROFILE_MODE", "direct-chunk", {"direct-chunk", "none"})
     horizon_start = env_int("CH1_HORIZON_START", default=0, minimum=0, maximum=45)
     horizon_end = env_int("CH1_HORIZON_END", default=45, minimum=0, maximum=45)
     if horizon_end < horizon_start:
@@ -857,13 +552,12 @@ def main():
         log(f"CH1 pinned run: {pinned_run.strftime('%Y%m%d_%H%M')}", "NOTICE")
 
     wind_config = None
-    wind_map_out_root = os.getenv("CH1_WIND_MAP_OUT_ROOT", CACHE_DIR_WIND_PACKED)
+    wind_map_out_root = os.getenv("CH1_WIND_MAP_OUT_ROOT", CACHE_DIR_WIND_MAPS)
     sunshine_map_out_root = os.getenv("CH1_SUNSHINE_MAP_OUT_ROOT", CACHE_DIR_SUNSHINE_MAPS)
     rain_map_out_root = os.getenv("CH1_RAIN_MAP_OUT_ROOT", CACHE_DIR_RAIN_MAPS)
     sunrain_map_out_root = os.getenv("CH1_SUNRAIN_MAP_OUT_ROOT", CACHE_DIR_SUNRAIN_MAPS)
     cloud_map_out_root = os.getenv("CH1_CLOUD_MAP_OUT_ROOT", CACHE_DIR_CLOUD_MAPS)
     wind_enabled = is_wind_maps_enabled("ch1")
-    direct_wind_web = is_direct_wind_web_enabled()
     sunshine_enabled = is_sunshine_maps_enabled("ch1")
     rain_enabled = is_rain_maps_enabled("ch1")
     sunrain_enabled = is_sunrain_maps_enabled("ch1")
@@ -873,8 +567,6 @@ def main():
             wind_config = load_wind_map_config(log=log)
             if wind_enabled:
                 log("CH1 wind-map generation enabled for this run.", "NOTICE")
-                if direct_wind_web:
-                    log("CH1 direct wind web output enabled for this run.", "NOTICE")
             if sunshine_enabled:
                 log("CH1 sunshine-map generation enabled for this run.", "NOTICE")
             if rain_enabled:
@@ -904,7 +596,7 @@ def main():
     grid = load_static_grid()
 
     if hhl is not None and grid is not None:
-        # Inject coords into HHL so it can serve as a sample for process_traces
+        # Inject coords into HHL so it can serve as a sample for direct profile chunks
         n_grid = grid['lat'].size
         match_dim = next((d for d in hhl.dims if hhl.sizes[d] == n_grid), None)
         if match_dim:
@@ -920,18 +612,6 @@ def main():
         rain_missing = rain_enabled and not is_rain_run_complete("ch1", tag, root=rain_map_out_root)
         sunrain_missing = sunrain_enabled and not is_sunrain_run_complete("ch1", tag, root=sunrain_map_out_root)
         cloud_missing = cloud_enabled and not is_cloud_run_complete("ch1", tag, root=cloud_map_out_root)
-        if (
-            profile_mode == "netcdf"
-            and not force_refresh
-            and is_run_complete_locally(tag, locations, max_h)
-            and not sunshine_missing
-            and not rain_missing
-            and not sunrain_missing
-            and not cloud_missing
-        ):
-            if not is_packed_run_complete_locally(tag, locations):
-                write_packed_run_files(tag, locations)
-            log(f"Run {tag} complete locally."); break
 
         run_horizon_end = min(horizon_end, max_h)
         if run_horizon_end < horizon_start:
@@ -959,7 +639,6 @@ def main():
                 wind_config,
                 log=log,
                 out_root=wind_map_out_root,
-                direct_web=direct_wind_web,
             )
             if wind_enabled and wind_config is not None
             else None
@@ -984,8 +663,8 @@ def main():
             if cloud_enabled and wind_config is not None
             else None
         )
-        # Cache previous raw radiation values for de-accumulation (running mean → hourly mean)
-        # Formula: hourly_mean[n→n+1h] = (n+1)*raw[n+1h] - n*raw[nh]
+        # Cache previous raw radiation values for de-accumulation (running mean to hourly mean)
+        # Formula: hourly_mean[n to n+1h] = (n+1)*raw[n+1h] - n*raw[nh]
         prev_rad_raw = seed_previous_radiation(
             "ogd-forecasting-icon-ch1",
             ref_time,
@@ -998,13 +677,13 @@ def main():
         prefetch_horizon = None
 
         def fetch_horizon_batch(h_value):
-            profile_variables = VARS_TRACES if profile_mode in {"netcdf", "direct-chunk"} else []
+            profile_variables = VARS_TRACES if profile_mode == "direct-chunk" else []
             map_variables = ["U", "V", *VARS_NATIVE_10M_WIND] if (wind_enabled or sunshine_enabled) else []
             variables_to_fetch = list(dict.fromkeys([*profile_variables, *map_variables]))
             rain_needed = rain_accumulator is not None or sunrain_accumulator is not None
             cloud_needed = cloud_accumulator is not None
             radiation_needed = (
-                profile_mode in {"netcdf", "direct-chunk"}
+                profile_mode == "direct-chunk"
                 or sunshine_accumulator is not None
                 or sunrain_accumulator is not None
             )
@@ -1042,13 +721,13 @@ def main():
 
             fields = {"HHL": hhl} if hhl is not None else {}
             has_new_data = False
-            profile_variables = VARS_TRACES if profile_mode in {"netcdf", "direct-chunk"} else []
+            profile_variables = VARS_TRACES if profile_mode == "direct-chunk" else []
             map_variables = ["U", "V", *VARS_NATIVE_10M_WIND] if (wind_enabled or sunshine_enabled) else []
             variables_to_fetch = list(dict.fromkeys([*profile_variables, *map_variables]))
             rain_needed = rain_accumulator is not None or sunrain_accumulator is not None
             cloud_needed = cloud_accumulator is not None
             radiation_needed = (
-                profile_mode in {"netcdf", "direct-chunk"}
+                profile_mode == "direct-chunk"
                 or sunshine_accumulator is not None
                 or sunrain_accumulator is not None
             )
@@ -1221,10 +900,8 @@ def main():
             if has_new_data:
                 if sample_field is not None and location_indices_cache is None:
                     location_indices_cache = _location_indices(sample_field, locations)
-                # Build per-location radiation dict (scalar per location)
+                loc_rad_map = {}
                 if rad_scalars and sample_field is not None:
-                    # Pre-compute location → flat index mapping
-                    loc_rad_map = {}
                     indices_for_radiation = location_indices_cache or _location_indices(sample_field, locations)
                     for name, idx_loc in indices_for_radiation.items():
                         loc_rad_map[name] = {
@@ -1232,14 +909,6 @@ def main():
                             for var, arr in rad_scalars.items()
                             if var in VARS_RADIATION
                         }
-                    # Pass rad_scalars as per-location dict into process_traces
-                    # We override the function call below to pass per-location radiation
-                    if profile_mode == "netcdf":
-                        _process_traces_with_radiation(fields, locations, tag, h, ref_time, loc_rad_map)
-                else:
-                    loc_rad_map = {}
-                    if profile_mode == "netcdf":
-                        process_traces(fields, locations, tag, h, ref_time)
                 if profile_mode == "direct-chunk" and profile_buffers is not None:
                     append_profile_chunk(
                         profile_buffers,
@@ -1289,29 +958,9 @@ def main():
                 cloud_accumulator.finalize()
             if profile_mode == "direct-chunk" and profile_buffers is not None:
                 finalize_profile_chunk(profile_buffers, locations, tag, chunk_id, ref_time)
-            if profile_mode == "netcdf":
-                write_packed_run_files(tag, locations)
-            if profile_mode != "netcdf":
-                break
-            # Compute thermal forecasts for the newly fetched run
-            try:
-                import compute_thermals
-                log(f"Computing thermals for {tag}…")
-                compute_thermals.process_run(tag, CACHE_DIR_TRACES)
-                log(f"Thermals complete for {tag}.", "NOTICE")
-            except Exception as e:
-                log(f"Thermal computation failed for {tag}: {e}", "WARNING")
-            break # Success, don't Fallback to older runs
+            break
         else:
             log(f"Run {tag} yield no data, trying next available run...")
-            # Cleanup the empty directory if it was created
-            for d in [CACHE_DIR_TRACES, CACHE_DIR_MAPS]:
-                p = os.path.join(d, tag)
-                if os.path.exists(p) and not os.listdir(p):
-                    try: shutil.rmtree(p)
-                    except: pass
-
-    cleanup_old_runs()
     cleanup_old_wind_runs("ch1", anchor_hour=3, log=log, root=wind_map_out_root)
     cleanup_old_sunshine_runs("ch1", anchor_hour=3, log=log)
     cleanup_old_rain_runs("ch1", anchor_hour=3, log=log)
@@ -1320,60 +969,6 @@ def main():
     # Manifest is now written by generate_combined_manifest.py (CI step after CH2 fetch)
     log("--- Data Fetcher Complete ---", "NOTICE")
 
-def generate_manifest():
-    """Write manifest.json reflecting current cache_data contents."""
-    runs = {}
-    if os.path.exists(CACHE_DIR_TRACES):
-        for run in sorted(os.listdir(CACHE_DIR_TRACES), reverse=True):
-            run_path = os.path.join(CACHE_DIR_TRACES, run)
-            if not os.path.isdir(run_path):
-                continue
-            locations = {}
-            for loc in sorted(os.listdir(run_path)):
-                loc_path = os.path.join(run_path, loc)
-                if not os.path.isdir(loc_path):
-                    continue
-                steps = sorted(
-                    f.replace(".nc", "")
-                    for f in os.listdir(loc_path)
-                    if f.endswith(".nc")
-                )
-                if steps:
-                    locations[loc] = steps
-            if locations:
-                runs[run] = locations
-
-    manifest = {
-        "generated_at": max(runs.keys()) if runs else "",
-        "runs": runs,
-    }
-    with open("manifest.json", "w") as f:
-        json.dump(manifest, f)
-    log(f"Manifest written: {len(runs)} runs")
-
-def cleanup_old_runs():
-    now = datetime.datetime.now(datetime.timezone.utc)
-    keep_dates = {now.date(), (now - datetime.timedelta(days=1)).date()}
-    for d in [CACHE_DIR_TRACES, CACHE_DIR_TRACES_PACKED, CACHE_DIR_MAPS]:
-        if not os.path.exists(d): continue
-        all_runs = sorted(
-            [item for item in os.listdir(d) if os.path.isdir(os.path.join(d, item))],
-            reverse=True  # newest first
-        )
-        keep_recent = set(all_runs[:2])  # always keep the 2 most recent runs
-        for item in all_runs:
-            if item in keep_recent: continue
-            path = os.path.join(d, item)
-            try:
-                dt = datetime.datetime.strptime(item, "%Y%m%d_%H%M").replace(
-                    tzinfo=datetime.timezone.utc)
-            except ValueError:
-                continue
-            # Keep 03:00 anchor run from today or yesterday
-            if dt.hour == 3 and dt.minute == 0 and dt.date() in keep_dates:
-                continue
-            try: shutil.rmtree(path); log(f"Cleanup: removed {item}")
-            except Exception as e: log(f"Cleanup failed {item}: {e}", "ERROR")
 
 if __name__ == "__main__":
     main()

@@ -61,9 +61,6 @@ def prune_run_dir(root: Path, *, anchor_hour: int) -> None:
 
 def main() -> None:
     # CH1 production policy: keep top-2 latest + 03Z anchor from today/yesterday.
-    for root in (Path("cache_data"), Path("cache_data_packed"), Path("cache_wind")):
-        prune_run_dir(root, anchor_hour=3)
-    prune_run_dir(Path("cache_wind_packed/ch1"), anchor_hour=3)
     prune_run_dir(Path("cache_wind_maps/ch1"), anchor_hour=3)
     prune_run_dir(Path("cache_sunshine_maps/ch1"), anchor_hour=3)
     prune_run_dir(Path("cache_rain_maps/ch1"), anchor_hour=3)
@@ -71,9 +68,6 @@ def main() -> None:
     prune_run_dir(Path("cache_cloud_maps/ch1"), anchor_hour=3)
 
     # CH2 production policy: keep top-2 latest + 00Z anchor from today/yesterday.
-    for root in (Path("cache_data_ch2"), Path("cache_data_ch2_packed")):
-        prune_run_dir(root, anchor_hour=0)
-    prune_run_dir(Path("cache_wind_packed/ch2"), anchor_hour=0)
     prune_run_dir(Path("cache_wind_maps/ch2"), anchor_hour=0)
     prune_run_dir(Path("cache_sunshine_maps/ch2"), anchor_hour=0)
     prune_run_dir(Path("cache_rain_maps/ch2"), anchor_hour=0)

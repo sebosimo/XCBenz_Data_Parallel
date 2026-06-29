@@ -8,17 +8,12 @@ from dataclasses import dataclass
 from typing import Callable
 
 import numpy as np
-import xarray as xr
 from scipy.spatial import Delaunay, cKDTree
 
 
-CACHE_DIR_WIND_PACKED = "cache_wind_packed"
 CACHE_DIR_WIND_MAPS = "cache_wind_maps"
 DEFAULT_CONFIG_PATH = "wind_maps_config.json"
-NETCDF_ENGINE = "netcdf4"
 WIND_SCHEMA_VERSION = 1
-WIND_ENCODING_NAME = "int16_scale_0.1_ms"
-WIND_COMPRESS_KW = {"zlib": True, "shuffle": True, "complevel": 4}
 WIND_SCALE_FACTOR = 0.1
 WIND_FILL_VALUE = np.int16(-32768)
 WIND_WEB_DEFAULT_GRID_STRIDE = 2
@@ -71,10 +66,6 @@ def is_wind_maps_enabled(model, env=None):
     if not _env_bool("ENABLE_WIND_MAPS", False, env=env):
         return False
     return _env_bool(f"ENABLE_WIND_MAPS_{model.upper()}", False, env=env)
-
-
-def is_direct_wind_web_enabled(env=None):
-    return _env_bool("XCBENZ_DIRECT_WIND_WEB", False, env=env)
 
 
 def _env_float(name, default, env=None):
@@ -225,30 +216,6 @@ def load_config(path=DEFAULT_CONFIG_PATH, env=None, log: Callable[[str, str], No
     return cfg
 
 
-def wind_netcdf_encoding(ds):
-    encoding = {}
-    for name, data_array in ds.variables.items():
-        if data_array.dtype.kind in ("U", "S", "O"):
-            encoding[name] = {}
-            continue
-        enc = dict(WIND_COMPRESS_KW)
-        if name in {"u", "v"}:
-            enc.update({
-                "dtype": "i2",
-                "scale_factor": WIND_SCALE_FACTOR,
-                "add_offset": 0.0,
-                "_FillValue": WIND_FILL_VALUE,
-            })
-        elif name == "horizon":
-            enc["dtype"] = "i2"
-        elif name == "valid_time_epoch":
-            enc["dtype"] = "i8"
-        else:
-            enc["dtype"] = "f4"
-        encoding[name] = enc
-    return encoding
-
-
 def _regular_crop_grid(crop, spacing):
     lon = np.arange(crop["lon_min"], crop["lon_max"] + spacing * 0.5, spacing, dtype=np.float32)
     lat = np.arange(crop["lat_min"], crop["lat_max"] + spacing * 0.5, spacing, dtype=np.float32)
@@ -383,8 +350,7 @@ class WindMapAccumulator:
         ref_time,
         config,
         log=None,
-        out_root=CACHE_DIR_WIND_PACKED,
-        direct_web=False,
+        out_root=CACHE_DIR_WIND_MAPS,
         web_grid_stride=None,
     ):
         self.model = model
@@ -394,7 +360,6 @@ class WindMapAccumulator:
         self.config = config
         self.log = log or _default_log
         self.out_root = out_root
-        self.direct_web = bool(direct_web)
         self.web_grid_stride = max(
             1,
             int(
@@ -415,10 +380,6 @@ class WindMapAccumulator:
         self.heights_full = None
         self.surface_height = None
         self.weights = None
-        self.records = {
-            level.name: {"u": [], "v": [], "horizon": [], "valid_time_epoch": [], "step_label": []}
-            for level in config.enabled_levels
-        }
         self.direct_steps = {level.name: [] for level in config.enabled_levels}
         self.direct_byte_count = 0
 
@@ -503,15 +464,7 @@ class WindMapAccumulator:
                     heights = self.heights_full - self.surface_height if level.type == "AGL" else self.heights_full
                     u_target = self.weights.apply(_interpolate_vertical(heights, u_source, level.h))
                     v_target = self.weights.apply(_interpolate_vertical(heights, v_source, level.h))
-                if self.direct_web:
-                    self._write_direct_step(level, horizon, valid_time, u_target, v_target)
-                else:
-                    rec = self.records[level.name]
-                    rec["u"].append(u_target)
-                    rec["v"].append(v_target)
-                    rec["horizon"].append(int(horizon))
-                    rec["valid_time_epoch"].append(int(valid_time.timestamp()))
-                    rec["step_label"].append(self._step_label(horizon))
+                self._write_direct_step(level, horizon, valid_time, u_target, v_target)
             return True
         except Exception as exc:
             self.failed = True
@@ -528,7 +481,7 @@ class WindMapAccumulator:
             "schema_version": WIND_SCHEMA_VERSION,
             "source": "MeteoSwiss ICON OGD",
             "model": f"icon-{self.model}",
-            "layout": "packed_by_level",
+            "layout": "browser_ready_split_binary_by_step",
             "level_name": level.name,
             "level_type": level.type,
             "level_h": float(level.h),
@@ -541,27 +494,7 @@ class WindMapAccumulator:
             "grid_spacing_deg": self.config.grid_spacing_deg,
             "domain_id": self.config.domain_id,
             "domain_label": self.config.domain_label,
-            "encoding": WIND_ENCODING_NAME,
         }
-
-    def _dataset_for_level(self, level, rec):
-        u_stack = np.stack(rec["u"]).astype(np.float32)
-        v_stack = np.stack(rec["v"]).astype(np.float32)
-        ds = xr.Dataset(
-            {
-                "u": xr.DataArray(u_stack, dims=("step", "y", "x"), attrs={"units": "m s-1"}),
-                "v": xr.DataArray(v_stack, dims=("step", "y", "x"), attrs={"units": "m s-1"}),
-            },
-            coords={
-                "horizon": xr.DataArray(np.asarray(rec["horizon"], dtype=np.int16), dims=("step",)),
-                "valid_time_epoch": xr.DataArray(np.asarray(rec["valid_time_epoch"], dtype=np.int64), dims=("step",)),
-                "step_label": xr.DataArray(np.asarray(rec["step_label"]), dims=("step",)),
-                "latitude": xr.DataArray(self.target_lat, dims=("y", "x"), attrs={"units": "degrees_north"}),
-                "longitude": xr.DataArray(self.target_lon, dims=("y", "x"), attrs={"units": "degrees_east"}),
-            },
-            attrs=self._level_attrs(level),
-        )
-        return ds
 
     def _wind_axis_payload(self, values, precision=5):
         axis = np.asarray(values, dtype=float)
@@ -675,7 +608,7 @@ class WindMapAccumulator:
                 "height_m": _clean_number(attrs.get("level_h"), 1),
             },
             "ref_time": attrs.get("ref_time"),
-            "source": "direct_wind_web",
+            "source": "direct-grib",
             "grid": {
                 "projection": "EPSG:4326",
                 "width": int(width),
@@ -697,7 +630,7 @@ class WindMapAccumulator:
             "steps": sorted(steps, key=lambda item: int(item.get("horizon", 0))),
         }
 
-    def _finalize_direct_web(self):
+    def finalize(self):
         elapsed = time.monotonic() - self.started_at
         if not any(self.direct_steps.values()):
             self.log(
@@ -752,73 +685,8 @@ class WindMapAccumulator:
             "wind_elapsed_seconds": self.wind_elapsed_seconds,
         }
 
-    def finalize(self):
-        if self.direct_web:
-            return self._finalize_direct_web()
 
-        elapsed = time.monotonic() - self.started_at
-        if not any(rec["horizon"] for rec in self.records.values()):
-            self.log(
-                f"Wind maps {self.model}: no horizons accumulated "
-                f"(wind={self.wind_elapsed_seconds:.1f}s, wall={elapsed:.1f}s)",
-                "INFO",
-            )
-            return {"files": 0, "bytes": 0, "elapsed_seconds": elapsed, "wind_elapsed_seconds": self.wind_elapsed_seconds}
-        if self.budget_exceeded:
-            self.log(
-                f"Wind maps {self.model}: not writing partial files after wind budget exceed "
-                f"(wind={self.wind_elapsed_seconds:.1f}s, wall={elapsed:.1f}s)",
-                "WARNING",
-            )
-            return {
-                "files": 0,
-                "bytes": 0,
-                "elapsed_seconds": elapsed,
-                "wind_elapsed_seconds": self.wind_elapsed_seconds,
-                "budget_exceeded": True,
-            }
-
-        out_dir = os.path.join(self.out_root, self.model, self.run_tag)
-        os.makedirs(out_dir, exist_ok=True)
-        file_count = 0
-        byte_count = 0
-        for level in self.config.enabled_levels:
-            rec = self.records[level.name]
-            if not rec["horizon"]:
-                continue
-            ds = self._dataset_for_level(level, rec)
-            path = os.path.join(out_dir, f"Wind_{level.type}_{level.name}.nc")
-            tmp_path = path + ".tmp"
-            ds.to_netcdf(
-                tmp_path,
-                engine=NETCDF_ENGINE,
-                format="NETCDF4",
-                encoding=wind_netcdf_encoding(ds),
-            )
-            os.replace(tmp_path, path)
-            size = os.path.getsize(path)
-            file_count += 1
-            byte_count += size
-            self.log(
-                f"Wind maps {self.model}: wrote {path} ({len(rec['horizon'])} horizon(s), {size} bytes)",
-                "INFO",
-            )
-
-        elapsed = time.monotonic() - self.started_at
-        self.log(
-            f"Wind maps {self.model}: complete in {self.wind_elapsed_seconds:.1f}s active wind time "
-            f"({elapsed:.1f}s wall), files={file_count}, bytes={byte_count}",
-            "NOTICE",
-        )
-        return {
-            "files": file_count,
-            "bytes": byte_count,
-            "elapsed_seconds": elapsed,
-            "wind_elapsed_seconds": self.wind_elapsed_seconds,
-        }
-
-
-def cleanup_old_wind_runs(model, anchor_hour, log=None, root=CACHE_DIR_WIND_PACKED):
+def cleanup_old_wind_runs(model, anchor_hour, log=None, root=CACHE_DIR_WIND_MAPS):
     logger = log or _default_log
     model_dir = os.path.join(root, model)
     if not os.path.exists(model_dir):

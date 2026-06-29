@@ -3,14 +3,13 @@ import unittest
 import numpy as np
 import xarray as xr
 
-from generate_web_exports import wind_style_payload
 from wind_maps import (
     _HorizontalWeights,
     _interpolate_vertical,
     _single_level_values,
+    WindMapAccumulator,
     is_wind_maps_enabled,
     load_config,
-    wind_netcdf_encoding,
 )
 
 
@@ -49,29 +48,12 @@ class WindMapTests(unittest.TestCase):
         cfg = load_config(env={"WIND_MAP_LEVELS": "800m_AGL,1500m_AMSL"}, log=lambda *_: None)
         self.assertEqual([level.name for level in cfg.enabled_levels], ["800m_AGL", "1500m_AMSL"])
 
-    def test_wind_netcdf_encoding_packs_wind_components(self):
-        ds = xr.Dataset(
-            {
-                "u": xr.DataArray(np.ones((2, 2, 2), dtype=np.float32), dims=("step", "y", "x")),
-                "v": xr.DataArray(np.ones((2, 2, 2), dtype=np.float32), dims=("step", "y", "x")),
-            },
-            coords={
-                "horizon": xr.DataArray(np.asarray([0, 1], dtype=np.int16), dims=("step",)),
-                "valid_time_epoch": xr.DataArray(np.asarray([1, 2], dtype=np.int64), dims=("step",)),
-            },
-        )
-        encoding = wind_netcdf_encoding(ds)
-        self.assertEqual(encoding["u"]["dtype"], "i2")
-        self.assertEqual(encoding["v"]["dtype"], "i2")
-        self.assertAlmostEqual(encoding["u"]["scale_factor"], 0.1)
-        self.assertEqual(encoding["horizon"]["dtype"], "i2")
-        self.assertEqual(encoding["valid_time_epoch"]["dtype"], "i8")
-
     def test_export_style_uses_dataset_crop_attrs(self):
         lat = np.asarray([[43.0, 43.0], [43.02, 43.02]], dtype=np.float32)
         lon = np.asarray([[4.0, 4.02], [4.0, 4.02]], dtype=np.float32)
 
-        style = wind_style_payload(
+        accumulator = object.__new__(WindMapAccumulator)
+        style = accumulator._wind_style_payload(
             lat,
             lon,
             {

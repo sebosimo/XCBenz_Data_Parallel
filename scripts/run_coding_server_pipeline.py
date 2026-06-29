@@ -406,10 +406,10 @@ def order_combined_jobs(ch1_jobs: list[Job], ch2_jobs: list[Job], order: str) ->
     return [*ch1_jobs, *ch2_jobs]
 
 
-def map_output_roots(model: str, cid: str, *, direct_wind_web: bool = False) -> dict[str, str]:
+def map_output_roots(model: str, cid: str) -> dict[str, str]:
     root = Path("map_chunks") / model / cid
     prefix = "CH1" if model == "ch1" else "CH2"
-    wind_cache = "cache_wind_maps" if direct_wind_web else "cache_wind_packed"
+    wind_cache = "cache_wind_maps"
     return {
         f"{prefix}_WIND_MAP_OUT_ROOT": str(root / wind_cache),
         f"{prefix}_SUNSHINE_MAP_OUT_ROOT": str(root / "cache_sunshine_maps"),
@@ -434,7 +434,6 @@ def base_pipeline_env(args: argparse.Namespace, deploy: bool) -> dict[str, str]:
             "XCBENZ_FETCH_HORIZON_BATCH": "true",
             "XCBENZ_PREFETCH_NEXT_HORIZON": "true" if args.prefetch_next_horizon else "false",
             "XCBENZ_RELEASE_PROFILE_ONLY_FIELDS": "true" if args.release_profile_only_fields else "false",
-            "XCBENZ_DIRECT_WIND_WEB": "true" if args.direct_wind_web else "false",
             "ENABLE_WIND_MAPS": "true",
             "ENABLE_WIND_MAPS_CH1": "true",
             "ENABLE_WIND_MAPS_CH2": "true",
@@ -500,7 +499,7 @@ def build_jobs(
                     "CH1_HORIZON_START": str(start),
                     "CH1_HORIZON_END": str(end),
                     "CH1_REQUIRE_FULL_HORIZON_RUN": "true",
-                    **map_output_roots("ch1", cid, direct_wind_web=args.direct_wind_web),
+                    **map_output_roots("ch1", cid),
                 }
             )
             ch1_jobs.append(Job(name, [*py, "fetch_data.py"], env))
@@ -517,7 +516,7 @@ def build_jobs(
                     "CH2_HORIZON_START": str(start),
                     "CH2_HORIZON_END": str(end),
                     "CH2_REQUIRE_FULL_HORIZON_RUN": "true",
-                    **map_output_roots("ch2", cid, direct_wind_web=args.direct_wind_web),
+                    **map_output_roots("ch2", cid),
                 }
             )
             ch2_jobs.append(Job(name, [*py, "fetch_data_ch2.py"], env))
@@ -535,7 +534,7 @@ def build_jobs(
                 "CH1_HORIZON_START": str(start),
                 "CH1_HORIZON_END": str(end),
                 "CH1_REQUIRE_FULL_HORIZON_RUN": "true",
-                **map_output_roots("ch1", cid, direct_wind_web=args.direct_wind_web),
+                **map_output_roots("ch1", cid),
             }
         )
         jobs.append(Job(name, [*py, "fetch_data.py"], env))
@@ -569,7 +568,7 @@ def build_jobs(
                 "CH2_HORIZON_START": str(start),
                 "CH2_HORIZON_END": str(end),
                 "CH2_REQUIRE_FULL_HORIZON_RUN": "true",
-                **map_output_roots("ch2", cid, direct_wind_web=args.direct_wind_web),
+                **map_output_roots("ch2", cid),
             }
         )
         jobs.append(Job(name, [*py, "fetch_data_ch2.py"], env))
@@ -902,12 +901,6 @@ def build_parser() -> argparse.ArgumentParser:
         default=env_bool("XCBENZ_RELEASE_PROFILE_ONLY_FIELDS", False),
         help="Experimentally free direct-profile-only fields before map accumulation.",
     )
-    parser.add_argument(
-        "--direct-wind-web",
-        action="store_true",
-        default=env_bool("XCBENZ_DIRECT_WIND_WEB", False),
-        help="Experimentally write browser-ready wind map metadata and step binaries without packed NetCDF.",
-    )
     parser.add_argument("--max-cpu-percent", type=float, default=parse_float_env("XCBENZ_LOCAL_MAX_CPU_PERCENT", 88.0))
     parser.add_argument("--max-load-percent", type=float, default=parse_float_env("XCBENZ_LOCAL_MAX_LOAD_PERCENT", 110.0))
     parser.add_argument("--min-available-mb", type=float, default=parse_float_env("XCBENZ_LOCAL_MIN_AVAILABLE_MB", 4096.0))
@@ -968,7 +961,6 @@ def run_pipeline(args: argparse.Namespace) -> int:
         f"ch1_chunk_size={args.ch1_chunk_size}, ch2_chunk_size={args.ch2_chunk_size}, "
         f"prefetch_next_horizon={args.prefetch_next_horizon}, "
         f"release_profile_only_fields={args.release_profile_only_fields}, "
-        f"direct_wind_web={args.direct_wind_web}, "
         f"latest_ch1={latest_ch1}, latest_ch2={latest_ch2}, deploy={deploy}, "
         f"push_data_branch={args.push_data_branch}"
     )
