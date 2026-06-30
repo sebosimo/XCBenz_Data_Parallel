@@ -226,7 +226,9 @@ def expected_profile_chunks(model_key: str, run_tag: str) -> set[str]:
             run_hour = int(run_tag.split("_", 1)[1][:2])
         except (IndexError, ValueError):
             run_hour = 3
-        return {"H000_H016", "H017_H045"} if run_hour == 3 else {"H000_H016", "H017_H033"}
+        if run_hour == 3:
+            return {"H000_H016", "H017_H033", "H034_H045"}
+        return {"H000_H016", "H017_H033"}
     if model_key == "icon-ch2":
         return {"H000_H030", "H031_H060", "H061_H090", "H091_H120"}
     return set()
