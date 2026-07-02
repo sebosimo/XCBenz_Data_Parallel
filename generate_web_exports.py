@@ -66,6 +66,7 @@ SUNSHINE_WEB_DIR = WEB_DIR / "sunshine_maps"
 RAIN_WEB_DIR = WEB_DIR / "rain_maps"
 SUNRAIN_WEB_DIR = WEB_DIR / "sunrain_maps"
 CLOUD_WEB_DIR = WEB_DIR / "cloud_maps"
+RADAR_MAP_PRODUCT = "radar"
 WIND_WEB_STYLE = {
     "source": "XCBenz wind-map style v1",
     "map_bbox": [4.0, 43.0, 16.5, 48.8],
@@ -146,6 +147,20 @@ def load_json(path: Path) -> dict[str, Any]:
         return {}
     with path.open("r", encoding="utf-8") as f:
         return json.load(f)
+
+
+def radar_map_manifest_path() -> Path:
+    return WEB_DIR / "radar_maps" / "manifest.json"
+
+
+def radar_map_manifest_url() -> str:
+    return rel(radar_map_manifest_path())
+
+
+def radar_map_layer_count() -> int:
+    manifest = load_json(radar_map_manifest_path())
+    layers = manifest.get("layers")
+    return len(layers) if isinstance(layers, dict) else 0
 
 
 def write_json(path: Path, payload: Any, *, pretty: bool = False) -> None:
@@ -1486,6 +1501,7 @@ def main() -> None:
                 "rain": None,
                 "sunrain": None,
                 "cloud": None,
+                RADAR_MAP_PRODUCT: radar_map_manifest_url(),
             },
         },
         "models": {},
@@ -1506,6 +1522,7 @@ def main() -> None:
             "sunrain_map_steps": 0,
             "cloud_map_products": 0,
             "cloud_map_steps": 0,
+            "radar_map_layers": radar_map_layer_count(),
         },
         "notes": [
             "Generated from existing NetCDF files; no additional MeteoSwiss downloads are performed.",
@@ -1515,6 +1532,7 @@ def main() -> None:
             "Rain map exports are browser-readable metadata JSON plus lazy-loaded uint8 binary precipitation slices.",
             "Sun+Rain map exports are browser-readable metadata JSON plus lazy-loaded uint8 semantic sunshine/rain slices.",
             "Cloud map exports are browser-readable metadata JSON plus lazy-loaded packed uint4 cloud-cover slices.",
+            "Radar map exports are live-owned browser-readable metadata JSON plus lazy-loaded uint8 rain-rate slices.",
         ],
     }
 
@@ -1576,7 +1594,8 @@ def main() -> None:
         f"{manifest['counts']['sunshine_map_steps']} sunshine map steps, "
         f"{manifest['counts']['rain_map_steps']} rain map steps, "
         f"{manifest['counts']['sunrain_map_steps']} Sun+Rain map steps, "
-        f"{manifest['counts']['cloud_map_steps']} cloud map steps"
+        f"{manifest['counts']['cloud_map_steps']} cloud map steps, "
+        f"{manifest['counts']['radar_map_layers']} radar map layers"
     )
 
 

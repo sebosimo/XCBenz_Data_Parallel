@@ -14,6 +14,8 @@ RUN_FORMAT = "%Y%m%d_%H%M"
 WEB_DIR = Path(os.getenv("WEB_EXPORT_DIR", "web_exports"))
 STAGING_DIR = Path(os.getenv("WEB_EXPORT_STAGING_DIR", "web_exports_staging"))
 DEFAULT_DATA_ROOT = "https://raw.githubusercontent.com/sebosimo/XCBenz_Data/data"
+RADAR_MAP_PRODUCT = "radar"
+
 MODEL_LABELS = {
     "icon-ch1": "ICON-CH1",
     "icon-ch2": "ICON-CH2",
@@ -78,6 +80,20 @@ def write_json(path: Path, payload: Any, *, pretty: bool = True) -> None:
 
 def web_path(path: Path) -> str:
     return path.as_posix()
+
+
+def radar_map_manifest_path() -> Path:
+    return WEB_DIR / "radar_maps" / "manifest.json"
+
+
+def radar_map_manifest_url() -> str:
+    return web_path(radar_map_manifest_path())
+
+
+def radar_map_layer_count() -> int:
+    manifest = load_json(radar_map_manifest_path()) if radar_map_manifest_path().exists() else {}
+    layers = manifest.get("layers")
+    return len(layers) if isinstance(layers, dict) else 0
 
 
 def resolve_web_url(url: str | None) -> Path | None:
@@ -503,6 +519,7 @@ def rebuild_main_manifest(
                 "rain": "web_exports/rain_maps/manifest.json" if rain_manifest else None,
                 "sunrain": "web_exports/sunrain_maps/manifest.json" if sunrain_manifest else None,
                 "cloud": "web_exports/cloud_maps/manifest.json" if cloud_manifest else None,
+                RADAR_MAP_PRODUCT: radar_map_manifest_url(),
             },
         },
         "models": {},
@@ -524,6 +541,7 @@ def rebuild_main_manifest(
             "sunrain_map_steps": (sunrain_manifest or {}).get("counts", {}).get("steps", 0),
             "cloud_map_products": (cloud_manifest or {}).get("counts", {}).get("products", 0),
             "cloud_map_steps": (cloud_manifest or {}).get("counts", {}).get("steps", 0),
+            "radar_map_layers": radar_map_layer_count(),
         },
         "notes": [
             "Generated from retained browser-ready web_exports.",
@@ -533,6 +551,7 @@ def rebuild_main_manifest(
             "Rain map exports are browser-readable metadata JSON plus lazy-loaded uint8 binary precipitation slices.",
             "Sun+Rain map exports are browser-readable metadata JSON plus lazy-loaded uint8 semantic sunshine/rain slices.",
             "Cloud map exports are browser-readable metadata JSON plus lazy-loaded packed uint4 cloud-cover slices.",
+            "Radar map exports are live-owned browser-readable metadata JSON plus lazy-loaded uint8 rain-rate slices.",
         ],
     }
 
@@ -611,7 +630,8 @@ def rebuild_main_manifest(
         f"sunshine_steps={manifest['counts']['sunshine_map_steps']}, "
         f"rain_steps={manifest['counts']['rain_map_steps']}, "
         f"sunrain_steps={manifest['counts']['sunrain_map_steps']}, "
-        f"cloud_steps={manifest['counts']['cloud_map_steps']}"
+        f"cloud_steps={manifest['counts']['cloud_map_steps']}, "
+        f"radar_layers={manifest['counts']['radar_map_layers']}"
     )
 
 
