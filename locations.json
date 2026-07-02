@@ -2,7 +2,7 @@
   "bauges": {
     "lat": 45.709463,
     "lon": 6.118573,
-    "display_name": "Bauges - Le Châtelard",
+    "display_name": "Bauges - La Motte-en-Bauges",
     "type": "region",
     "region_name": "Bauges"
   },
@@ -16,14 +16,14 @@
   "haut_bugey": {
     "lat": 45.953409,
     "lon": 5.68421,
-    "display_name": "Haut-Bugey - Nantua",
+    "display_name": "Haut-Bugey - Champagne-en-Valromey",
     "type": "region",
     "region_name": "Haut-Bugey"
   },
   "bassin_lemanique": {
     "lat": 46.171429,
     "lon": 6.117785,
-    "display_name": "Bassin Lemanique - Geneva",
+    "display_name": "Bassin Lemanique - Plan-les-Ouates",
     "type": "region",
     "region_name": "Bassin Lemanique"
   },
@@ -37,21 +37,21 @@
   "les_aravis": {
     "lat": 45.923919,
     "lon": 6.410394,
-    "display_name": "Les Aravis - Le Grand-Bornand",
+    "display_name": "Les Aravis - Saint-Jean-de-Sixt",
     "type": "region",
     "region_name": "Les Aravis"
   },
   "bornes_faucigny_bonneville": {
     "lat": 46.236243,
     "lon": 6.653982,
-    "display_name": "Bornes/Faucigny - Bonneville - Bonneville",
+    "display_name": "Bornes/Faucigny - Bonneville - Saint-Jean-d'Aulps",
     "type": "region",
     "region_name": "Bornes/Faucigny - Bonneville"
   },
   "chablais_abondance": {
     "lat": 46.090603,
     "lon": 6.24512,
-    "display_name": "Chablais - Abondance - Abondance",
+    "display_name": "Chablais - Abondance - Pers-Jussy",
     "type": "region",
     "region_name": "Chablais - Abondance"
   },
@@ -65,7 +65,7 @@
   "jura_1_montricher": {
     "lat": 46.550307,
     "lon": 6.34119,
-    "display_name": "1. Kette Montricher - Montricher",
+    "display_name": "1. Kette Montricher - Berolle",
     "type": "region",
     "region_name": "1. Kette Montricher"
   },
@@ -79,14 +79,14 @@
   "jura_3_dombief": {
     "lat": 46.725932,
     "lon": 6.086313,
-    "display_name": "3. Kette: Dombief - Saint-Laurent-en-Grandvaux",
+    "display_name": "3. Kette: Dombief - Arsure-Arsurette",
     "type": "region",
     "region_name": "3. Kette: Dombief"
   },
   "jura_3_west": {
     "lat": 46.351434,
     "lon": 5.555447,
-    "display_name": "3. Kette: West Jura - Oyonnax",
+    "display_name": "3. Kette: West Jura - Saint-Hymetière-sur-Valouse",
     "type": "region",
     "region_name": "3. Kette: West Jura"
   },
@@ -100,14 +100,14 @@
   "jura_3_maiche": {
     "lat": 47.230008,
     "lon": 6.568341,
-    "display_name": "3. Kette: Maiche - Maîche",
+    "display_name": "3. Kette: Maiche - Pierrefontaine-les-Varans",
     "type": "region",
     "region_name": "3. Kette: Maiche"
   },
   "jura_1_mauborget": {
     "lat": 46.817795,
     "lon": 6.57929,
-    "display_name": "1 Kette: Mauborget - Sainte-Croix",
+    "display_name": "1 Kette: Mauborget - Orges",
     "type": "region",
     "region_name": "1 Kette: Mauborget"
   },
@@ -121,21 +121,21 @@
   "jura_1_chasseral": {
     "lat": 47.101285,
     "lon": 7.082915,
-    "display_name": "1. Kette Chasseral - Chasseral",
+    "display_name": "1. Kette Chasseral - Nods",
     "type": "region",
     "region_name": "1. Kette Chasseral"
   },
   "jura_1_solothurner": {
     "lat": 47.229041,
     "lon": 7.507106,
-    "display_name": "1. Kette: Solothurner Jura - Solothurn",
+    "display_name": "1. Kette: Solothurner Jura - Oberdorf (SO)",
     "type": "region",
     "region_name": "1. Kette: Solothurner Jura"
   },
   "jura_2_moutier": {
     "lat": 47.282423,
     "lon": 7.421369,
-    "display_name": "2. Kette: Moutier Jura - Moutier",
+    "display_name": "2. Kette: Moutier Jura - Grandval",
     "type": "region",
     "region_name": "2. Kette: Moutier Jura"
   },
@@ -156,21 +156,21 @@
   "jura_1_kuettiger": {
     "lat": 47.415167,
     "lon": 8.050706,
-    "display_name": "1. Kette: Kuettiger Jura - Aarau/Kuettigen",
+    "display_name": "1. Kette: Kuettiger Jura - Rombach",
     "type": "region",
     "region_name": "1. Kette: Kuettiger Jura"
   },
   "jura_2_kuettiger": {
     "lat": 47.41782,
     "lon": 7.945963,
-    "display_name": "2. Kette: Kuettiger Jura - Aarau/Kuettigen",
+    "display_name": "2. Kette: Kuettiger Jura - Oltingen",
     "type": "region",
     "region_name": "2. Kette: Kuettiger Jura"
   },
   "liestal": {
     "lat": 47.469383,
     "lon": 7.800835,
-    "display_name": "Liestal",
+    "display_name": "Liestal - Sissach",
     "type": "region",
     "region_name": "Liestal"
   },
@@ -184,49 +184,49 @@
   "zuercher_flachland": {
     "lat": 47.396586,
     "lon": 8.73623,
-    "display_name": "Zuercher Flachland - Uster",
+    "display_name": "Zuercher Flachland - Fehraltorf",
     "type": "region",
     "region_name": "Zuercher Flachland"
   },
   "bodensee": {
     "lat": 47.500086,
     "lon": 9.112636,
-    "display_name": "Bodensee - Weinfelden",
+    "display_name": "Bodensee - Wuppenau",
     "type": "region",
     "region_name": "Bodensee"
   },
   "schaffhausen": {
     "lat": 47.781524,
     "lon": 8.706268,
-    "display_name": "Schaffhausen",
+    "display_name": "Schaffhausen - Schlatt am Randen",
     "type": "region",
     "region_name": "Schaffhausen"
   },
   "alpstein": {
     "lat": 47.197738,
     "lon": 9.31143,
-    "display_name": "Alpstein - Appenzell",
+    "display_name": "Alpstein - Alt St. Johann",
     "type": "region",
     "region_name": "Alpstein"
   },
   "ostschweizer_plateau": {
     "lat": 47.355911,
     "lon": 9.286186,
-    "display_name": "Ostschweizer Plateau - Herisau",
+    "display_name": "Ostschweizer Plateau - Waldstatt",
     "type": "region",
     "region_name": "Ostschweizer Plateau"
   },
   "aargauer_mitteland": {
     "lat": 47.296063,
     "lon": 8.324368,
-    "display_name": "Aargauer Mitteland - Muri AG",
+    "display_name": "Aargauer Mitteland - Boswil",
     "type": "region",
     "region_name": "Aargauer Mitteland"
   },
   "schwyzer_voralpen": {
     "lat": 47.047275,
     "lon": 8.57744,
-    "display_name": "Schwyzer Voralpen - Schwyz",
+    "display_name": "Schwyzer Voralpen - Steinerberg",
     "type": "region",
     "region_name": "Schwyzer Voralpen"
   },
@@ -240,14 +240,14 @@
   "zentrales_buendnerland": {
     "lat": 46.820021,
     "lon": 9.403998,
-    "display_name": "Zentrales Buendnerland - Domat/Ems",
+    "display_name": "Zentrales Buendnerland - Bonaduz",
     "type": "region",
     "region_name": "Zentrales Buendnerland"
   },
   "praetigau": {
     "lat": 46.967966,
     "lon": 9.691773,
-    "display_name": "Prätigau - Schiers",
+    "display_name": "Prätigau - Fajauna",
     "type": "region",
     "region_name": "Prätigau"
   },
@@ -303,7 +303,7 @@
   "stubai_brenner": {
     "lat": 47.088899,
     "lon": 11.467375,
-    "display_name": "Stubai/Brenner - Matrei am Brenner",
+    "display_name": "Stubai/Brenner - Mauern",
     "type": "region",
     "region_name": "Stubai/Brenner"
   },
@@ -317,7 +317,7 @@
   "solothurner_mitteland": {
     "lat": 47.095445,
     "lon": 7.456972,
-    "display_name": "Solothurner Mitteland - Fraubrunnen",
+    "display_name": "Solothurner Mitteland - Brunnenthal",
     "type": "region",
     "region_name": "Solothurner Mitteland"
   },
@@ -331,21 +331,21 @@
   "entlebuch": {
     "lat": 46.941065,
     "lon": 8.007649,
-    "display_name": "Entlebuch",
+    "display_name": "Entlebuch - Schüpfheim",
     "type": "region",
     "region_name": "Entlebuch"
   },
   "fribourger_voralpen": {
     "lat": 46.73777,
     "lon": 7.294062,
-    "display_name": "Fribourger Voralpen - Schwarzsee",
+    "display_name": "Fribourger Voralpen - Oberschrot",
     "type": "region",
     "region_name": "Fribourger Voralpen"
   },
   "berner_voralpen": {
     "lat": 46.656115,
     "lon": 7.483169,
-    "display_name": "Berner Voralpen - Zweisimmen",
+    "display_name": "Berner Voralpen - Weissenburg",
     "type": "region",
     "region_name": "Berner Voralpen"
   },
@@ -359,7 +359,7 @@
   "berner_nidwaldner_voralpen": {
     "lat": 46.736933,
     "lon": 8.153765,
-    "display_name": "Berner/Nidwaldner Voralpen - Meiringen",
+    "display_name": "Berner/Nidwaldner Voralpen - Balm",
     "type": "region",
     "region_name": "Berner/Nidwaldner Voralpen"
   },
@@ -415,14 +415,14 @@
   "walliser_hochalpen": {
     "lat": 46.066416,
     "lon": 7.780926,
-    "display_name": "Walliser Hochalpen - Zermatt",
+    "display_name": "Walliser Hochalpen - Täsch",
     "type": "region",
     "region_name": "Walliser Hochalpen"
   },
   "chablais_valaisanne_alps_vaudoise": {
     "lat": 46.326041,
     "lon": 6.935626,
-    "display_name": "Chablais Valaisanne/Alps Vaudoise - Aigle",
+    "display_name": "Chablais Valaisanne/Alps Vaudoise - Yvorne",
     "type": "region",
     "region_name": "Chablais Valaisanne/Alps Vaudoise"
   },
@@ -457,7 +457,7 @@
   "tessiner_voralpen": {
     "lat": 45.87968,
     "lon": 8.879535,
-    "display_name": "Tessiner Voralpen - Bisuschino",
+    "display_name": "Tessiner Voralpen - Bisuschio",
     "type": "region",
     "region_name": "Tessiner Voralpen"
   },
@@ -471,21 +471,21 @@
   "hinterrhein": {
     "lat": 46.600196,
     "lon": 9.595941,
-    "display_name": "Hinterrhein - Spluegen",
+    "display_name": "Hinterrhein - Savognin",
     "type": "region",
     "region_name": "Hinterrhein"
   },
   "val_d_ossola": {
     "lat": 46.00952,
     "lon": 8.279752,
-    "display_name": "Val d'ossola - Vogogna",
+    "display_name": "Val d'ossola - Pieve Vergonte",
     "type": "region",
     "region_name": "Val d'ossola"
   },
   "domodossola_hochalpen": {
     "lat": 46.265578,
     "lon": 8.337515,
-    "display_name": "Domodossola Hochalpen - Domodossola",
+    "display_name": "Domodossola Hochalpen - Premia",
     "type": "region",
     "region_name": "Domodossola Hochalpen"
   },
@@ -569,14 +569,14 @@
   "ecrins": {
     "lat": 44.932551,
     "lon": 6.292419,
-    "display_name": "Écrins - La Chapelle-en-Valgaudémar",
+    "display_name": "Écrins - Saint-Christophe-en-Oisans",
     "type": "region",
     "region_name": "Écrins"
   },
   "cerces_galibier": {
     "lat": 45.019144,
     "lon": 6.630334,
-    "display_name": "Cerces-Galibier - Valloire",
+    "display_name": "Cerces-Galibier - Roubion",
     "type": "region",
     "region_name": "Cerces-Galibier"
   },
@@ -618,14 +618,14 @@
   "serre_poncon": {
     "lat": 44.464155,
     "lon": 6.233869,
-    "display_name": "Serre-Ponçon - Espinasses",
+    "display_name": "Serre-Ponçon - Rousset-Serre-Ponçon",
     "type": "region",
     "region_name": "Serre-Ponçon"
   },
   "lechtal": {
     "lat": 47.289476,
     "lon": 10.444221,
-    "display_name": "Lechtal - Elbigenalp",
+    "display_name": "Lechtal - Grießau",
     "type": "region",
     "region_name": "Lechtal"
   },
@@ -639,7 +639,7 @@
   "vinschgau": {
     "lat": 46.617846,
     "lon": 10.702057,
-    "display_name": "Vinschgau - Laas",
+    "display_name": "Vinschgau - Tarnell - Tarnello",
     "type": "region",
     "region_name": "Vinschgau"
   },
@@ -709,14 +709,14 @@
   "valle_vigezzo": {
     "lat": 46.133932,
     "lon": 8.47784,
-    "display_name": "Valle Vigezzo - Santa Maria Maggiore",
+    "display_name": "Valle Vigezzo - Craveggia",
     "type": "region",
     "region_name": "Valle Vigezzo"
   },
   "alto_lario": {
     "lat": 46.041902,
     "lon": 8.92828,
-    "display_name": "Alto Lario - Gravedona",
+    "display_name": "Alto Lario - Lamone",
     "type": "region",
     "region_name": "Alto Lario"
   },
@@ -779,21 +779,21 @@
   "ausserfern": {
     "lat": 47.394166,
     "lon": 10.897751,
-    "display_name": "Außerfern - Lermoos",
+    "display_name": "Außerfern - Biberwier",
     "type": "region",
     "region_name": "Außerfern"
   },
   "ostallgaeu": {
     "lat": 47.569537,
     "lon": 10.719073,
-    "display_name": "Ostallgäu - Füssen",
+    "display_name": "Ostallgäu - Horn",
     "type": "region",
     "region_name": "Ostallgäu"
   },
   "karwendel": {
     "lat": 47.48241,
     "lon": 11.462869,
-    "display_name": "Karwendel - Brandau",
+    "display_name": "Karwendel - Eben am Achensee",
     "type": "region",
     "region_name": "Karwendel"
   },
@@ -814,7 +814,7 @@
   "innsbruck_stubai": {
     "lat": 47.259063,
     "lon": 11.415663,
-    "display_name": "Innsbruck-Stubai - Fulpmes",
+    "display_name": "Innsbruck-Stubai - Innsbruck",
     "type": "region",
     "region_name": "Innsbruck-Stubai"
   },
