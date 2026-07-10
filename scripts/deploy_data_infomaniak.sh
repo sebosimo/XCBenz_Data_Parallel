@@ -166,7 +166,7 @@ retry "preserve live-owned folders" \
   current='$REMOTE_CURRENT'
   target='$REMOTE_TMP/web_exports'
   mkdir -p \"\$target\"
-  for subtree in live_stations webcams radar_maps; do
+  for subtree in live_stations webcams radar_maps airspace; do
     if [ -d \"\$current/\$subtree\" ]; then
       rm -rf \"\$target/\$subtree\"
       cp -a \"\$current/\$subtree\" \"\$target/\$subtree\"
