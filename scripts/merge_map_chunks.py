@@ -8,21 +8,12 @@ import sys
 from pathlib import Path
 from typing import Any
 
-import numpy as np
-import xarray as xr
-
-sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-
-from wind_maps import wind_netcdf_encoding
-
-
 CHUNK_ROOT = Path("map_chunks")
-WIND_ROOT = Path("cache_wind_packed")
+WIND_WEB_ROOT = Path("cache_wind_maps")
 SUNSHINE_ROOT = Path("cache_sunshine_maps")
 RAIN_ROOT = Path("cache_rain_maps")
 SUNRAIN_ROOT = Path("cache_sunrain_maps")
 CLOUD_ROOT = Path("cache_cloud_maps")
-NETCDF_ENGINE = "netcdf4"
 
 
 def log(message: str) -> None:
@@ -41,53 +32,9 @@ def write_json(path: Path, payload: dict[str, Any]) -> None:
         handle.write("\n")
 
 
-def wind_sources() -> dict[tuple[str, str, str], list[Path]]:
-    groups: dict[tuple[str, str, str], list[Path]] = {}
-    for path in CHUNK_ROOT.glob("**/cache_wind_packed/*/*/Wind_*.nc"):
-        parts = path.parts
-        try:
-            idx = parts.index("cache_wind_packed")
-        except ValueError:
-            continue
-        model, run_tag, filename = parts[idx + 1], parts[idx + 2], parts[idx + 3]
-        groups.setdefault((model, run_tag, filename), []).append(path)
-    return groups
-
-
-def merge_wind_group(model: str, run_tag: str, filename: str, paths: list[Path]) -> None:
-    datasets = []
-    try:
-        for path in sorted(paths):
-            ds = xr.open_dataset(path, engine=NETCDF_ENGINE)
-            datasets.append(ds.load())
-            ds.close()
-        if not datasets:
-            return
-        merged = xr.concat(datasets, dim="step")
-        order = np.argsort(np.asarray(merged["horizon"].values, dtype=np.int32))
-        merged = merged.isel(step=order)
-        horizons = np.asarray(merged["horizon"].values, dtype=np.int32)
-        _, unique_indices = np.unique(horizons, return_index=True)
-        merged = merged.isel(step=np.sort(unique_indices))
-        out_path = WIND_ROOT / model / run_tag / filename
-        out_path.parent.mkdir(parents=True, exist_ok=True)
-        tmp_path = out_path.with_suffix(out_path.suffix + ".tmp")
-        merged.to_netcdf(
-            tmp_path,
-            engine=NETCDF_ENGINE,
-            format="NETCDF4",
-            encoding=wind_netcdf_encoding(merged),
-        )
-        tmp_path.replace(out_path)
-        log(f"merged wind {model}/{run_tag}/{filename}: {merged.sizes.get('step', 0)} step(s)")
-    finally:
-        for ds in datasets:
-            ds.close()
-
-
-def merge_wind_chunks() -> None:
-    for (model, run_tag, filename), paths in sorted(wind_sources().items()):
-        merge_wind_group(model, run_tag, filename, paths)
+def merge_direct_wind_chunks() -> None:
+    for (model, run_tag, level), paths in sorted(split_binary_sources("cache_wind_maps").items()):
+        merge_split_binary_group("wind", WIND_WEB_ROOT, model, run_tag, level, paths)
 
 
 def sunshine_sources() -> dict[tuple[str, str, str], list[Path]]:
@@ -183,7 +130,7 @@ def main() -> int:
     if not CHUNK_ROOT.exists():
         log("no map chunk root found; nothing to merge")
         return 0
-    merge_wind_chunks()
+    merge_direct_wind_chunks()
     merge_sunshine_chunks()
     merge_rain_chunks()
     merge_sunrain_chunks()

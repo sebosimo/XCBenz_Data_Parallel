@@ -1,0 +1,12 @@
+[Unit]
+Description=Poll for XCBenz coding-server forecast updates every 5 minutes
+
+[Timer]
+OnCalendar=*:0/5
+AccuracySec=30s
+RandomizedDelaySec=20s
+Persistent=false
+Unit=xcbenz-coding-server-forecast.service
+
+[Install]
+WantedBy=timers.target

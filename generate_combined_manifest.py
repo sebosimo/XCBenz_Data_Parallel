@@ -1,21 +1,16 @@
 """
 generate_combined_manifest.py
 
-Called by CI after both fetch_data.py and fetch_data_ch2.py complete.
-Scans cache_data/ (CH1) and cache_data_ch2/ (CH2), then writes a single
-unified manifest.json that app.py reads at runtime.
+Called by the direct pipeline after fetch chunks complete.
+Scans direct profile chunks and browser-ready split-binary map caches, then
+writes manifest.json for web export generation.
 """
 import os
 import json
 import datetime
-import xarray as xr
 
-
-CACHE_DIR_CH1 = "cache_data"
-CACHE_DIR_CH2 = "cache_data_ch2"
-CACHE_DIR_CH1_PACKED = "cache_data_packed"
-CACHE_DIR_CH2_PACKED = "cache_data_ch2_packed"
-CACHE_DIR_WIND_PACKED = "cache_wind_packed"
+PROFILE_CHUNK_DIR = "web_profile_chunks"
+CACHE_DIR_WIND_MAPS = "cache_wind_maps"
 CACHE_DIR_SUNSHINE_MAPS = "cache_sunshine_maps"
 CACHE_DIR_RAIN_MAPS = "cache_rain_maps"
 CACHE_DIR_SUNRAIN_MAPS = "cache_sunrain_maps"
@@ -27,73 +22,53 @@ def log(msg):
     print(f"{timestamp} [INFO] {msg}", flush=True)
 
 
-def scan_runs(cache_dir, pad):
-    """
-    Scan a cache directory and return {run_tag: {location: [step_labels]}}.
+def _step_number(step_label):
+    return int(str(step_label).replace("H", ""))
 
-    pad: number of digits for horizon labels (2 for CH1 → H00, 3 for CH2 → H000).
-    Step labels are derived from filenames: H00.nc → "H00", H000.nc → "H000".
-    """
+
+def scan_profile_chunks(model_key, root=PROFILE_CHUNK_DIR):
+    """Return {run_tag: {location_id: [step_labels]}} from direct profile chunks."""
+    model_root = os.path.join(root, model_key)
     runs = {}
-    if not os.path.exists(cache_dir):
+    if not os.path.isdir(model_root):
         return runs
 
-    for run in sorted(os.listdir(cache_dir), reverse=True):
-        run_path = os.path.join(cache_dir, run)
+    for run in sorted(os.listdir(model_root), reverse=True):
+        run_path = os.path.join(model_root, run)
         if not os.path.isdir(run_path):
             continue
         locations = {}
-        for loc in sorted(os.listdir(run_path)):
-            loc_path = os.path.join(run_path, loc)
-            if not os.path.isdir(loc_path):
+        for chunk in sorted(os.listdir(run_path)):
+            chunk_path = os.path.join(run_path, chunk)
+            if not os.path.isdir(chunk_path):
                 continue
-            steps = sorted(
-                f.replace(".nc", "")
-                for f in os.listdir(loc_path)
-                if f.endswith(".nc") and f.startswith("H")   # skip thermals.nc etc.
-            )
-            if steps:
-                locations[loc] = steps
+            for location_id in sorted(os.listdir(chunk_path)):
+                metadata_path = os.path.join(chunk_path, location_id, "chunk.json")
+                if not os.path.exists(metadata_path):
+                    continue
+                try:
+                    with open(metadata_path, "r", encoding="utf-8") as f:
+                        metadata = json.load(f)
+                    steps = [str(step.get("step")) for step in metadata.get("steps") or [] if step.get("step")]
+                except Exception as exc:
+                    log(f"Skipping invalid profile chunk {metadata_path}: {exc}")
+                    continue
+                if steps:
+                    locations.setdefault(location_id, set()).update(steps)
         if locations:
-            runs[run] = locations
-
+            runs[run] = {
+                location_id: sorted(steps, key=_step_number)
+                for location_id, steps in sorted(locations.items())
+            }
     return runs
 
-def scan_packed_runs(cache_dir):
+def scan_direct_wind_maps(cache_dir=CACHE_DIR_WIND_MAPS):
     """
-    Scan a packed cache directory and return {run_tag: [location_names]}.
-    Packed filenames are <Location>.nc.
-    """
-    runs = {}
-    if not os.path.exists(cache_dir):
-        return runs
-
-    for run in sorted(os.listdir(cache_dir), reverse=True):
-        run_path = os.path.join(cache_dir, run)
-        if not os.path.isdir(run_path):
-            continue
-        locations = sorted(
-            f.replace(".nc", "")
-            for f in os.listdir(run_path)
-            if f.endswith(".nc")
-        )
-        if locations:
-            runs[run] = locations
-
-    return runs
-
-
-def _format_horizons(values, pad):
-    return [f"H{int(value):0{pad}d}" for value in values]
-
-
-def scan_wind_maps(cache_dir=CACHE_DIR_WIND_PACKED):
-    """
-    Scan packed wind-map files and return manifest-ready entries.
+    Scan browser-ready wind-map files.
 
     Layout:
-      cache_wind_packed/{model}/{run}/Wind_{type}_{level}.nc
-    Only fully written .nc files with u/v and horizon coordinates are emitted.
+      cache_wind_maps/{model}/{run}/{level}/metadata.json
+      cache_wind_maps/{model}/{run}/{level}/steps/{step}.bin
     """
     wind_maps = {}
     if not os.path.exists(cache_dir):
@@ -104,38 +79,46 @@ def scan_wind_maps(cache_dir=CACHE_DIR_WIND_PACKED):
         if not os.path.isdir(model_dir):
             continue
         model_runs = {}
-        pad = 3 if model == "ch2" else 2
         for run in sorted(os.listdir(model_dir), reverse=True):
             run_path = os.path.join(model_dir, run)
             if not os.path.isdir(run_path):
                 continue
             levels = {}
-            for filename in sorted(os.listdir(run_path)):
-                if not filename.endswith(".nc"):
+            for level_dir_name in sorted(os.listdir(run_path)):
+                metadata_path = os.path.join(run_path, level_dir_name, "metadata.json")
+                if not os.path.exists(metadata_path):
                     continue
-                path = os.path.join(run_path, filename)
-                rel_path = os.path.relpath(path, ".").replace(os.sep, "/")
+                rel_metadata = os.path.relpath(metadata_path, ".").replace(os.sep, "/")
                 try:
-                    with xr.open_dataset(path, engine="netcdf4") as ds:
-                        if "u" not in ds or "v" not in ds or "horizon" not in ds:
-                            continue
-                        level_name = str(ds.attrs.get("level_name") or filename.replace(".nc", ""))
-                        horizons = _format_horizons(ds["horizon"].values, pad)
-                        if not horizons:
-                            continue
-                        levels[level_name] = {
-                            "path": rel_path,
-                            "horizons": horizons,
-                            "encoding": str(ds.attrs.get("encoding", "int16_scale_0.1_ms")),
-                            "level_type": str(ds.attrs.get("level_type", "")),
-                            "level_h": float(ds.attrs.get("level_h", 0.0)),
-                            "size_bytes": os.path.getsize(path),
-                        }
+                    with open(metadata_path, "r", encoding="utf-8") as f:
+                        metadata = json.load(f)
+                    steps = metadata.get("steps") or []
+                    if not steps:
+                        continue
+                    if not all(os.path.exists((step.get("path") or "").replace("/", os.sep)) for step in steps):
+                        continue
+                    level = metadata.get("level") or {}
+                    grid = metadata.get("grid") or {}
+                    level_name = str(level.get("name") or level_dir_name)
+                    levels[level_name] = {
+                        "metadata": rel_metadata,
+                        "components": (metadata.get("encoding") or {}).get("components", []),
+                        "level_type": str(level.get("type") or ""),
+                        "level_h": float(level.get("height_m") or 0.0),
+                        "grid": {
+                            "width": grid.get("width"),
+                            "height": grid.get("height"),
+                            "source_stride": grid.get("source_stride"),
+                        },
+                        "steps": steps,
+                        "step_count": len(steps),
+                        "bytes": sum(int(step.get("byte_length") or 0) for step in steps),
+                    }
                 except Exception as exc:
-                    log(f"Skipping invalid wind-map file {rel_path}: {exc}")
+                    log(f"Skipping invalid direct wind-map metadata {rel_metadata}: {exc}")
             if levels:
                 model_runs[run] = {
-                    "layout": "packed_by_level",
+                    "layout": "browser_ready_split_binary_by_step",
                     "levels": levels,
                 }
         if model_runs:
@@ -350,17 +333,14 @@ def scan_cloud_maps(cache_dir=CACHE_DIR_CLOUD_MAPS):
 
 
 def main():
-    runs_ch1 = scan_runs(CACHE_DIR_CH1, pad=2)
-    runs_ch2 = scan_runs(CACHE_DIR_CH2, pad=3)
-    runs_ch1_packed = scan_packed_runs(CACHE_DIR_CH1_PACKED)
-    runs_ch2_packed = scan_packed_runs(CACHE_DIR_CH2_PACKED)
-    wind_maps = scan_wind_maps()
+    runs_ch1 = scan_profile_chunks("icon-ch1")
+    runs_ch2 = scan_profile_chunks("icon-ch2")
+    wind_maps = scan_direct_wind_maps()
     sunshine_maps = scan_sunshine_maps()
     rain_maps = scan_rain_maps()
     sunrain_maps = scan_sunrain_maps()
     cloud_maps = scan_cloud_maps()
 
-    # generated_at: use the newest CH1 run (the "current" model reference)
     generated_at = max(runs_ch1.keys()) if runs_ch1 else (
         max(runs_ch2.keys()) if runs_ch2 else ""
     )
@@ -370,8 +350,6 @@ def main():
         "schema_version": 3,
         "runs": runs_ch1,
         "runs_ch2": runs_ch2,
-        "runs_packed": runs_ch1_packed,
-        "runs_ch2_packed": runs_ch2_packed,
         "wind_maps": wind_maps,
         "sunshine_maps": sunshine_maps,
         "rain_maps": rain_maps,
@@ -379,12 +357,12 @@ def main():
         "cloud_maps": cloud_maps,
     }
 
-    with open("manifest.json", "w") as f:
+    with open("manifest.json", "w", encoding="utf-8") as f:
         json.dump(manifest, f)
 
     log(
-        f"Manifest written: {len(runs_ch1)} CH1 run(s), {len(runs_ch2)} CH2 run(s), "
-        f"{len(runs_ch1_packed)} packed CH1 run(s), {len(runs_ch2_packed)} packed CH2 run(s), "
+        f"Manifest written: {len(runs_ch1)} CH1 direct profile run(s), "
+        f"{len(runs_ch2)} CH2 direct profile run(s), "
         f"{sum(len(runs) for runs in wind_maps.values())} wind-map run(s), "
         f"{sum(len(runs) for runs in sunshine_maps.values())} sunshine-map run(s), "
         f"{sum(len(runs) for runs in rain_maps.values())} rain-map run(s), "

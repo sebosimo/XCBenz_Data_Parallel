@@ -500,8 +500,8 @@ def rebuild_main_manifest(
         "schema_version": 1,
         "generated_at": dt.datetime.now(dt.timezone.utc).replace(microsecond=0).isoformat(),
         "source": {
-            "netcdf_manifest": "manifest.json",
-            "netcdf_manifest_generated_at": source_manifest.get("generated_at"),
+            "source_manifest": "manifest.json",
+            "source_manifest_generated_at": source_manifest.get("generated_at"),
             "data_root": os.getenv("WEB_EXPORT_DATA_ROOT", DEFAULT_DATA_ROOT),
         },
         "urls": {
@@ -558,8 +558,6 @@ def rebuild_main_manifest(
     for model_key, label in MODEL_LABELS.items():
         model_manifest: dict[str, Any] = {
             "label": label,
-            "cache_dir": None,
-            "packed_cache_dir": None,
             "profile_source": "web_exports",
             "latest_run": None,
             "runs": {},

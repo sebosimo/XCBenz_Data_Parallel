@@ -13,8 +13,8 @@ on:
           - "deploy-data-host"
           - "standard-deploy-data-host"
   schedule:
-    # Backup schedule only. Primary 30-minute scheduling is handled by the
-    # external server trigger in deploy/trigger_github_workflow.py.
+    # Independent last-resort schedule. The weather server watchdog normally
+    # dispatches only after two consecutive stale production checks.
     - cron: "17 */6 * * *"
 
 concurrency:
@@ -66,6 +66,7 @@ jobs:
         id: preflight
         env:
           FORCE_REFRESH: ${{ env.FORCE_REFRESH }}
+          XCBENZ_PREFLIGHT_MANIFEST_URL: ${{ (github.event_name == 'schedule' || github.event.inputs.run_mode == 'standard-deploy-data-host') && 'https://data.xcbenz.com/web_exports/manifest.json' || '' }}
         run: python scripts/preflight_runs.py
 
   fetch-ch1:

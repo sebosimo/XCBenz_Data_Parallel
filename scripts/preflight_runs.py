@@ -124,6 +124,14 @@ def latest_run(model: str) -> str | None:
 
 
 def load_existing_manifest() -> dict:
+    manifest_url = os.environ.get("XCBENZ_PREFLIGHT_MANIFEST_URL", "").strip()
+    if manifest_url:
+        manifest = get_json(manifest_url, timeout=15)
+        if not isinstance(manifest, dict):
+            raise ValueError(f"Live manifest is not a JSON object: {manifest_url}")
+        log(f"Loaded existing manifest from {manifest_url}")
+        return manifest
+
     repository = os.environ.get("GITHUB_REPOSITORY", "sebosimo/XCBenz_Data")
     branch = os.environ.get("DATA_BRANCH", "data-test")
     base_url = f"https://raw.githubusercontent.com/{repository}/{branch}"
