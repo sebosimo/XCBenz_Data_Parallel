@@ -51,6 +51,7 @@ INFOMANIAK_PORT="${INFOMANIAK_PORT:-22}"
 DATA_HOST_BASE_URL="${DATA_HOST_BASE_URL:-https://data.xcbenz.com}"
 WEB_EXPORT_DIR="${WEB_EXPORT_DIR:-web_exports}"
 RELEASE_ID="${RELEASE_ID:-$(date -u +'%Y%m%dT%H%M%SZ')}"
+PYTHON_BIN="${PYTHON_BIN:-python3}"
 
 [[ -f "$WEB_EXPORT_DIR/manifest.json" ]] || fail "missing $WEB_EXPORT_DIR/manifest.json"
 
@@ -91,6 +92,12 @@ SSH_OPTS=(
   -o BatchMode=yes
   -o StrictHostKeyChecking=accept-new
 )
+SCP_OPTS=(
+  -i "$KEY_FILE"
+  -P "$INFOMANIAK_PORT"
+  -o BatchMode=yes
+  -o StrictHostKeyChecking=accept-new
+)
 RSYNC_SSH="ssh -i $KEY_FILE -p $INFOMANIAK_PORT -o BatchMode=yes -o StrictHostKeyChecking=accept-new"
 
 REMOTE_ROOT="${INFOMANIAK_DATA_ROOT%/}"
@@ -98,9 +105,13 @@ REMOTE_TMP="$REMOTE_ROOT/_upload_tmp_$RELEASE_ID"
 REMOTE_CURRENT="$REMOTE_ROOT/web_exports"
 REMOTE_PREVIOUS="$REMOTE_ROOT/_previous_web_exports"
 REMOTE_LOCK="$REMOTE_ROOT/.xcbenz_web_exports_publish.lock"
+REMOTE_BREAK_LOCK="$REMOTE_LOCK.break"
+CURRENT_MANIFEST_TMP="${RUNNER_TEMP:-/tmp}/xcbenz_current_manifest_${RELEASE_ID}.json"
 LOCK_ID="${LOCK_ID:-forecast-$RELEASE_ID}"
 DEPLOY_LOCK_WAIT_SECONDS="${DEPLOY_LOCK_WAIT_SECONDS:-300}"
 DEPLOY_LOCK_POLL_SECONDS="${DEPLOY_LOCK_POLL_SECONDS:-5}"
+DEPLOY_LOCK_STALE_SECONDS="${DEPLOY_LOCK_STALE_SECONDS:-1800}"
+DEPLOY_LOCK_BREAK_STALE_SECONDS="${DEPLOY_LOCK_BREAK_STALE_SECONDS:-120}"
 
 acquire_remote_lock() {
   log "Acquiring remote publish lock $REMOTE_LOCK"
@@ -109,8 +120,38 @@ acquire_remote_lock() {
     set -e
     mkdir -p '$REMOTE_ROOT'
     deadline=\$((\$(date +%s) + $DEPLOY_LOCK_WAIT_SECONDS))
-    while ! mkdir '$REMOTE_LOCK' 2>/dev/null; do
+    break_lock='$REMOTE_BREAK_LOCK'
+    while true; do
       now=\$(date +%s)
+      if [ -d \"\$break_lock\" ]; then
+        break_mtime=\$(stat -c %Y \"\$break_lock\" 2>/dev/null || echo 0)
+        break_age=\$((now - break_mtime))
+        if [ \"\$break_mtime\" -gt 0 ] && [ \"\$break_age\" -ge '$DEPLOY_LOCK_BREAK_STALE_SECONDS' ]; then
+          rm -rf \"\$break_lock\"
+        else
+          sleep '$DEPLOY_LOCK_POLL_SECONDS'
+          continue
+        fi
+      fi
+
+      if mkdir '$REMOTE_LOCK' 2>/dev/null; then
+        break
+      fi
+
+      lock_mtime=\$(stat -c %Y '$REMOTE_LOCK' 2>/dev/null || echo 0)
+      lock_age=\$((now - lock_mtime))
+      if [ \"\$lock_mtime\" -gt 0 ] && [ \"\$lock_age\" -ge '$DEPLOY_LOCK_STALE_SECONDS' ] && mkdir \"\$break_lock\" 2>/dev/null; then
+        current_mtime=\$(stat -c %Y '$REMOTE_LOCK' 2>/dev/null || echo 0)
+        current_age=\$((\$(date +%s) - current_mtime))
+        if [ \"\$current_mtime\" -gt 0 ] && [ \"\$current_age\" -ge '$DEPLOY_LOCK_STALE_SECONDS' ]; then
+          lock_owner=\$(cat '$REMOTE_LOCK/owner' 2>/dev/null || echo unknown)
+          echo \"Removing stale publish lock owned by \$lock_owner (age=\${current_age}s)\" >&2
+          rm -rf '$REMOTE_LOCK'
+        fi
+        rmdir \"\$break_lock\" 2>/dev/null || true
+        continue
+      fi
+
       if [ \"\$now\" -ge \"\$deadline\" ]; then
         echo 'Timed out waiting for $REMOTE_LOCK' >&2
         exit 42
@@ -118,8 +159,22 @@ acquire_remote_lock() {
       sleep '$DEPLOY_LOCK_POLL_SECONDS'
     done
     printf '%s\n' '$LOCK_ID' > '$REMOTE_LOCK/owner'
+    date -u +%Y-%m-%dT%H:%M:%SZ > '$REMOTE_LOCK/created_at'
   "
   lock_acquired=true
+}
+
+check_publish_freshness() {
+  if ssh "${SSH_OPTS[@]}" "$SSH_TARGET" "test -f '$REMOTE_CURRENT/manifest.json'"; then
+    rm -f "$CURRENT_MANIFEST_TMP"
+    retry "download current production manifest" \
+      scp "${SCP_OPTS[@]}" "$SSH_TARGET:$REMOTE_CURRENT/manifest.json" "$CURRENT_MANIFEST_TMP"
+    "$PYTHON_BIN" scripts/guard_publish_freshness.py \
+      --candidate "$WEB_EXPORT_DIR/manifest.json" \
+      --current "$CURRENT_MANIFEST_TMP"
+  else
+    log "No current production manifest found; freshness guard has nothing to compare"
+  fi
 }
 
 release_remote_lock() {
@@ -137,6 +192,7 @@ release_remote_lock() {
 
 cleanup() {
   release_remote_lock
+  rm -f "$CURRENT_MANIFEST_TMP"
   if [[ "$cleanup_key" == "true" ]]; then
     rm -f "$KEY_FILE"
   fi
@@ -158,6 +214,7 @@ retry "upload $WEB_EXPORT_DIR" \
   rsync -az --delete -e "$RSYNC_SSH" "$WEB_EXPORT_DIR/" "$SSH_TARGET:$REMOTE_TMP/web_exports/"
 
 acquire_remote_lock
+check_publish_freshness
 
 log "Preserving live-owned folders in forecast upload"
 retry "preserve live-owned folders" \

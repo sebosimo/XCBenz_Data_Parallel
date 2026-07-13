@@ -172,12 +172,50 @@ systemctl --user stop xcbenz-coding-server-staging.timer
 systemctl --user start xcbenz-coding-server-staging.timer
 ```
 
+## Production Publisher and Fallback
+
+The production design has three independent layers:
+
+1. The Coding Server polls MeteoSwiss every 5 minutes and is the primary
+   publisher to `https://data.xcbenz.com/web_exports/`.
+2. The weather server checks the live production manifest at minute `00` and
+   `30`. It dispatches GitHub Actions only after the same profile-complete
+   source cycle is stale twice consecutively, with a 90-minute same-cycle
+   cooldown.
+3. GitHub Actions retains its six-hour native schedule as a last resort and
+   rechecks the live manifest before starting heavy jobs.
+
+All publishers use the same remote lock and atomic directory swap. The deploy
+script removes locks older than 30 minutes and, while holding the lock, compares
+the candidate manifest with the live manifest. A candidate older in either
+model is rejected before the swap.
+
+During the dual-publisher rollout, keep `XCBENZ_PUSH_DATA_BRANCH=false` on the
+Coding Server. GitHub remains the only writer of `data-web`; Infomaniak is the
+production source of truth.
+
 ## Production Cutover Checklist
 
-1. Let staging run through several complete forecast cycles.
-2. Confirm repeated idle polls exit cheaply when the latest pair already succeeded.
-3. Confirm local and remote validation pass for each staging publish.
-4. Compare latest production and staging CH1/CH2 run tags plus high-level manifest counts.
-5. Decide whether GitHub Actions remains manual fallback or still scheduled during cutover.
-6. Change the production publisher root from `sites/data.xcbenz.com/server-staging` to `sites/data.xcbenz.com` only after the staging cycle is stable.
-7. Disable or retire the GitHub Actions scheduled production writer once Hetzner is the primary writer.
+1. Merge and deploy the GitHub live-manifest preflight and downgrade guard.
+2. Pull that revision on the Coding Server while staging remains enabled.
+3. Create a production environment with the production Infomaniak root and a
+   new `production_poller_state.json`. Never reuse the staging poller state.
+4. Stop the staging timer, run one production service invocation manually, and
+   verify the remote manifest, URL roots, validation output, and preserved
+   `live_stations`, `webcams`, `radar_maps`, and `airspace` folders.
+5. Enable the production 5-minute timer only after that manual publish passes.
+6. Deploy the weather-server watchdog and run `watchdog.py --dry-run` before
+   restarting its scheduler container.
+7. Confirm a first stale observation does not dispatch, a current observation
+   resets state, and the next native six-hour GitHub schedule is still present.
+
+## Rollback
+
+1. Stop the Coding Server production timer.
+2. Re-enable the prior staging timer if staging observation is still useful.
+3. Manually dispatch GitHub Actions with
+   `run_mode=standard-deploy-data-host`; its live preflight will publish only
+   if production is stale.
+4. If the active directory itself is damaged, restore
+   `_previous_web_exports` on Infomaniak under the same remote lock, then run
+   remote validation before reopening automated publishing.
