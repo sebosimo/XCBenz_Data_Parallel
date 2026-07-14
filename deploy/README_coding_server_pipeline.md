@@ -1,55 +1,50 @@
 # Coding Server Direct Pipeline
 
-The coding-server pipeline branch writes browser-ready artifacts directly and does not generate or publish NetCDF intermediates. During the current rollout, the production GitHub Actions workflow remains unchanged.
+The Coding Server pipeline writes browser-ready artifacts directly and does not
+generate or publish NetCDF intermediates.
 
-## Current Staging Status
+## Current Production Status
 
-As of 2026-06-29, Hetzner is running the direct pipeline as a staging publisher only. Production GitHub Actions and production `https://data.xcbenz.com/web_exports/` remain unchanged.
+As of 2026-07-14:
 
-Staging target:
+- `main` commit `cf582c9` is deployed on the Coding Server.
+- `xcbenz-coding-server-forecast.timer` is enabled and active.
+- The staging timer is disabled.
+- A manual production publish passed local and remote validation on 2026-07-13.
+- The Coding Server is the primary publisher to
+  `https://data.xcbenz.com/web_exports/`.
+- The weather server watchdog checks production twice per hour and dispatches
+  GitHub Actions only after two consecutive stale observations.
+- GitHub Actions retains its independent six-hour schedule as a last resort.
 
-```text
-https://data.xcbenz.com/server-staging/web_exports/
-```
-
-Hetzner checkout:
+Coding Server checkout:
 
 ```text
 /home/sebas/projects/XCBenz_Data_Parallel
-branch: codex/coding-server-pipeline-prototype
-validated commit: 3e622002
+branch: main
+validated commit: cf582c9
 ```
 
 Installed user systemd units:
 
 ```text
-~/.config/systemd/user/xcbenz-coding-server-staging.service
-~/.config/systemd/user/xcbenz-coding-server-staging.timer
+~/.config/systemd/user/xcbenz-coding-server-forecast.service
+~/.config/systemd/user/xcbenz-coding-server-forecast.timer
 ```
 
-The timer is enabled and polls every 5 minutes. It publishes only to `sites/data.xcbenz.com/server-staging` on Infomaniak, does not push `data-web`, and does not overwrite production `sites/data.xcbenz.com/web_exports`.
+The timer polls every 5 minutes. It publishes atomically to
+`sites/data.xcbenz.com/web_exports` on Infomaniak and does not push `data-web`.
 
-Runtime files on Hetzner:
+Runtime files on the Coding Server:
 
 ```text
-/home/sebas/projects/XCBenz_Data_Parallel/.local_pipeline/coding-server-staging.env
-/home/sebas/projects/XCBenz_Data_Parallel/.local_pipeline/staging_poller_state.json
-/home/sebas/logs/xcbenz-coding-server-staging.log
+/home/sebas/projects/XCBenz_Data_Parallel/.local_pipeline/coding-server-production.env
+/home/sebas/projects/XCBenz_Data_Parallel/.local_pipeline/production_poller_state.json
 /home/sebas/projects/XCBenz_Data_Parallel/.local_pipeline/runs/<timestamp>/logs/
 ```
 
-First successful staging publish:
-
-```text
-completed_at: 2026-06-29T18:26:57Z
-CH1: 20260629_1500
-CH2: 20260629_1200
-local validation: passed
-remote validation: passed
-web_exports .nc count: 0
-```
-
-A same-run follow-up poll exited cheaply with `latest pair already succeeded`, confirming the idle path does not start the heavy pipeline.
+Never reuse `staging_poller_state.json` for production because state paths are
+part of the publisher isolation boundary.
 
 ## Server Polling
 
@@ -97,7 +92,10 @@ The pipeline produces these local cache roots before export:
 
 ## Retired Paths
 
-The pipeline no longer supports hourly profile NetCDF files, packed profile NetCDF files, packed wind NetCDF files, or any NetCDF-derived web export fallback. The production `daily_plot.yml` workflow is intentionally left untouched during this server-runner rollout.
+The pipeline no longer supports hourly profile NetCDF files, packed profile
+NetCDF files, packed wind NetCDF files, or any NetCDF-derived web export
+fallback. GitHub Actions uses the same direct web-export contract when fallback
+publication is required.
 
 Do not reintroduce these cache roots as generation or publication inputs:
 
@@ -126,50 +124,32 @@ The publish stage runs:
 
 Validation must pass and `web_exports/` must contain no `*.nc` files.
 
-## Staging Operations
+## Production Operations
 
 Check timer and service status:
 
 ```bash
-systemctl --user list-timers --all xcbenz-coding-server-staging.timer
-systemctl --user status xcbenz-coding-server-staging.service --no-pager --lines=40
+systemctl --user list-timers --all xcbenz-coding-server-forecast.timer
+systemctl --user status xcbenz-coding-server-forecast.service --no-pager --lines=40
 ```
 
-Follow the main staging log:
+Follow the production service log:
 
 ```bash
-tail -f /home/sebas/logs/xcbenz-coding-server-staging.log
+journalctl --user -u xcbenz-coding-server-forecast.service -f
 ```
 
 Inspect the latest poller state:
 
 ```bash
-cat /home/sebas/projects/XCBenz_Data_Parallel/.local_pipeline/staging_poller_state.json
+cat /home/sebas/projects/XCBenz_Data_Parallel/.local_pipeline/production_poller_state.json
 ```
 
-Compare production and staging manifests:
+Pause or resume production polling:
 
 ```bash
-python - <<'PY'
-import json, urllib.request
-for name, url in {
-    "production": "https://data.xcbenz.com/web_exports/manifest.json",
-    "staging": "https://data.xcbenz.com/server-staging/web_exports/manifest.json",
-}.items():
-    with urllib.request.urlopen(url, timeout=30) as response:
-        manifest = json.loads(response.read().decode("utf-8"))
-    print(name, (manifest.get("source") or {}).get("data_root"))
-    print(name, manifest.get("counts"))
-    for model_key, model in sorted((manifest.get("models") or {}).items()):
-        print(name, model_key, model.get("latest_run"), sorted((model.get("runs") or {}).keys()))
-PY
-```
-
-Pause or resume staging polling:
-
-```bash
-systemctl --user stop xcbenz-coding-server-staging.timer
-systemctl --user start xcbenz-coding-server-staging.timer
+systemctl --user stop xcbenz-coding-server-forecast.timer
+systemctl --user start xcbenz-coding-server-forecast.timer
 ```
 
 ## Production Publisher and Fallback
@@ -190,24 +170,19 @@ script removes locks older than 30 minutes and, while holding the lock, compares
 the candidate manifest with the live manifest. A candidate older in either
 model is rejected before the swap.
 
-During the dual-publisher rollout, keep `XCBENZ_PUSH_DATA_BRANCH=false` on the
-Coding Server. GitHub remains the only writer of `data-web`; Infomaniak is the
-production source of truth.
+Keep `XCBENZ_PUSH_DATA_BRANCH=false` on the Coding Server. GitHub remains the
+only writer of `data-web`; Infomaniak is the production source of truth.
 
-## Production Cutover Checklist
+## Verified Cutover State
 
-1. Merge and deploy the GitHub live-manifest preflight and downgrade guard.
-2. Pull that revision on the Coding Server while staging remains enabled.
-3. Create a production environment with the production Infomaniak root and a
-   new `production_poller_state.json`. Never reuse the staging poller state.
-4. Stop the staging timer, run one production service invocation manually, and
-   verify the remote manifest, URL roots, validation output, and preserved
-   `live_stations`, `webcams`, `radar_maps`, and `airspace` folders.
-5. Enable the production 5-minute timer only after that manual publish passes.
-6. Deploy the weather-server watchdog and run `watchdog.py --dry-run` before
-   restarting its scheduler container.
-7. Confirm a first stale observation does not dispatch, a current observation
-   resets state, and the next native six-hour GitHub schedule is still present.
+The production cutover is complete:
+
+- GitHub live-manifest preflight and downgrade protection are merged.
+- The Coding Server production timer is enabled and staging is disabled.
+- The first manual production publish passed local and remote validation.
+- The weather-server watchdog is deployed and reports current production
+  without dispatching.
+- The GitHub six-hour native schedule remains enabled.
 
 ## Rollback
 

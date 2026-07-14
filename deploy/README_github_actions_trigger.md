@@ -1,14 +1,23 @@
-# External GitHub Actions Scheduler
+# Legacy External GitHub Actions Scheduler
 
-This is the preferred 30-minute scheduler for the XCBenz data pipeline. It
-keeps timing on the Hetzner server and leaves GitHub Actions responsible only
-for executing the workflow.
+> **Retired:** Do not install or enable the systemd units documented in this
+> file. The unconditional 30-minute dispatcher was replaced by the
+> health-gated watchdog in `sebosimo/Hetzner_Server/github-actions-trigger`.
 
-The script only sends one GitHub API request. It does not run the data pipeline
-locally and does not need access to MeteoSwiss data, Infomaniak SSH keys, or
-the generated `web_exports/` files.
+The legacy trigger sent a workflow dispatch every 30 minutes without checking
+whether production was current. Its script and unit examples remain only as
+rollback and implementation history.
 
-## GitHub Setup
+The current production design is documented in
+`README_coding_server_pipeline.md`:
+
+1. The Coding Server publishes directly to Infomaniak as the primary.
+2. The Hetzner weather server compares the live manifest with the latest
+   profile-complete MeteoSwiss cycles every 30 minutes.
+3. It dispatches GitHub Actions only after the same cycle is stale twice.
+4. GitHub retains its six-hour native schedule as an independent last resort.
+
+## Historical GitHub Setup
 
 Create a fine-grained GitHub token for `sebosimo/XCBenz_Data_Parallel` with:
 
@@ -18,7 +27,7 @@ Create a fine-grained GitHub token for `sebosimo/XCBenz_Data_Parallel` with:
 The classic PAT fallback also works for private repos, but it has broader
 access than this trigger needs.
 
-## Server Setup
+## Historical Server Setup
 
 Assuming the repo is checked out at `/opt/xcbenz/XCBenz_Data_Parallel` and the
 service user is `xcbenz`:
@@ -47,9 +56,9 @@ sudo systemctl start xcbenz-github-actions-trigger.service
 sudo journalctl -u xcbenz-github-actions-trigger.service -n 50 --no-pager
 ```
 
-## Behavior
+## Historical Behavior
 
-- The timer fires at minute `00` and `30`.
+- The retired timer fired at minute `00` and `30`.
 - The service is `oneshot`, runs with low CPU and IO priority, and exits after
   the GitHub API accepts or rejects the dispatch.
 - The trigger uses a non-blocking lock at
@@ -57,14 +66,13 @@ sudo journalctl -u xcbenz-github-actions-trigger.service -n 50 --no-pager
   cleanly.
 - The workflow uses `concurrency: cancel-in-progress: false`, so a new GitHub
   run will wait rather than interrupt a current data publish.
-- The trigger passes `run_mode=standard-deploy-data-host`; unchanged MeteoSwiss
-  cycles should finish as cheap no-op runs after preflight, while new cycles
-  still deploy to `data.xcbenz.com`.
+- The trigger passed `run_mode=standard-deploy-data-host`; the workflow's live
+  preflight could turn an unnecessary dispatch into a cheap no-op.
 - The dispatch uses the workflow's single `run_mode` input.
 - The GitHub-hosted cron in `.github/workflows/daily_plot.yml` is reduced to a
   six-hour backup schedule so it does not compete with the server timer.
 
-## Operations
+## Historical Operations
 
 Useful commands:
 
@@ -74,8 +82,13 @@ journalctl -u xcbenz-github-actions-trigger.service --since today
 systemctl status xcbenz-github-actions-trigger.timer
 ```
 
-To pause external scheduling:
+To ensure the retired scheduler is disabled on a host where it was previously
+installed:
 
 ```bash
 sudo systemctl disable --now xcbenz-github-actions-trigger.timer
 ```
+
+Do not store the active watchdog token on the Coding Server. The active token
+belongs only in the weather server's ignored
+`github-actions-trigger/.env` file.
