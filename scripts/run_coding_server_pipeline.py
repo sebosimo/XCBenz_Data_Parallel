@@ -759,7 +759,7 @@ def serial_publish_steps(args: argparse.Namespace, env: dict[str, str], log_dir:
     generate_env = dict(env)
     generate_env.update(
         {
-            "WIND_WEB_LEVELS": "10m_AGL,800m_AGL,1500m_AMSL,2000m_AMSL,3000m_AMSL,4000m_AMSL",
+            "WIND_WEB_LEVELS": "10m_AGL,800m_AGL,1000m_AMSL,1500m_AMSL,2000m_AMSL,2500m_AMSL,3000m_AMSL,4000m_AMSL",
             "WEB_EXPORT_DIR": "web_exports_staging",
             "WEB_EXPORT_URL_PREFIX": "web_exports",
         }

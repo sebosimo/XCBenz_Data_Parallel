@@ -28,6 +28,12 @@
       "enabled": true
     },
     {
+      "name": "1000m_AMSL",
+      "h": 1000,
+      "type": "AMSL",
+      "enabled": true
+    },
+    {
       "name": "1500m_AMSL",
       "h": 1500,
       "type": "AMSL",
@@ -36,6 +42,12 @@
     {
       "name": "2000m_AMSL",
       "h": 2000,
+      "type": "AMSL",
+      "enabled": true
+    },
+    {
+      "name": "2500m_AMSL",
+      "h": 2500,
       "type": "AMSL",
       "enabled": true
     },

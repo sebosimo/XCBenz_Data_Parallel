@@ -34,7 +34,16 @@ class WindMapTests(unittest.TestCase):
         cfg = load_config(log=lambda *_: None)
         self.assertEqual(
             [level.name for level in cfg.enabled_levels],
-            ["10m_AGL", "800m_AGL", "1500m_AMSL", "2000m_AMSL", "3000m_AMSL", "4000m_AMSL"],
+            [
+                "10m_AGL",
+                "800m_AGL",
+                "1000m_AMSL",
+                "1500m_AMSL",
+                "2000m_AMSL",
+                "2500m_AMSL",
+                "3000m_AMSL",
+                "4000m_AMSL",
+            ],
         )
         self.assertEqual(cfg.crop["lon_min"], 4.0)
         self.assertEqual(cfg.crop["lon_max"], 16.5)

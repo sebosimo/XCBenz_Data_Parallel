@@ -427,7 +427,7 @@ jobs:
 
       - name: Generate web exports
         env:
-          WIND_WEB_LEVELS: 10m_AGL,800m_AGL,1500m_AMSL,2000m_AMSL,3000m_AMSL,4000m_AMSL
+          WIND_WEB_LEVELS: 10m_AGL,800m_AGL,1000m_AMSL,1500m_AMSL,2000m_AMSL,2500m_AMSL,3000m_AMSL,4000m_AMSL
           WEB_EXPORT_DIR: web_exports_staging
           WEB_EXPORT_URL_PREFIX: web_exports
         run: uv run python generate_web_exports.py
