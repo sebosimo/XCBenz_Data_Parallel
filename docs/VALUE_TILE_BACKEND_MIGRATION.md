@@ -7,6 +7,32 @@ files after those files have been generated. This keeps Wind, Sun/Rain, Rain,
 and Cloud values byte-for-byte compatible and leaves every existing path in
 place for frontend fallback.
 
+## Processing model and historical runs
+
+Value-tile generation is an additional packaging pass, not a new forecast
+calculation. The normal pipeline remains:
+
+1. Download and decode the selected MeteoSwiss run.
+2. Produce the existing whole-grid Wind, Sun/Rain, Rain, and Cloud browser
+   files with their existing precision and encodings.
+3. Read those completed whole-grid files and split them into haloed `.xvt`
+   files.
+4. Validate tile hashes, headers, encodings, complete-grid reconstruction,
+   halos, and padding.
+5. Add the optional capability only after validation succeeds.
+
+The tile pass does not download or decode the model a second time and does not
+change the upstream map accumulators. It adds filesystem reads, tile encoding,
+validation, and publication work after the current browser files exist.
+
+Each newly processed forecast run receives tiles during its normal pipeline
+run when `ENABLE_VALUE_TILES=true`. Retention merges the new immutable revision
+with still-retained earlier revisions. Historical backfill is not required for
+rollout: when a selected run has no tile entry, the frontend uses its existing
+whole-grid files. If historical tiles are later wanted, package only complete
+retained whole-grid runs in an isolated candidate tree. Do not redownload or
+recalculate model data merely to backfill tiles.
+
 ## Feature gate
 
 Generation is disabled by default. A no-deploy run can opt in with:
@@ -27,28 +53,234 @@ retains the same model runs as the whole-grid products, deletes unreferenced
 revisions, validates every retained tile, and advertises the capability only
 when the retained index is valid.
 
-## Safe validation sequence
+Before any remote staging publication, disabled mode must also suppress a
+previously retained tile capability. The current implementation preserves an
+older tile manifest during retention, so simply removing the environment flag
+is not yet an immediate rollback. Add and test authoritative disabled behavior:
+the next candidate must omit `capabilities.spatial_value_tiles` even if older
+tile files remain on disk. Deleting those now-unreferenced files may be a later
+bounded cleanup step.
+
+## Exact staged acceptance plan
+
+This plan has four gates. A gate must pass before the next gate starts. No step
+publishes to or writes production forecast data. The temporary production timer
+pause in Gate 1 is a separately approved operational change.
+
+### Gate 0: finish staging safety controls
+
+Before connecting to Infomaniak:
+
+1. Implement and test the authoritative disabled behavior described above.
+2. Adjust the staging Apache rules so immutable revision matching works below
+   `/value-tiles-staging/web_exports/`, not only `/web_exports/`.
+3. Add `scripts/deploy_value_tiles_staging_infomaniak.sh` as a dedicated
+   staging publisher. It must refuse every remote root except
+   `sites/data.xcbenz.com/value-tiles-staging`, use a staging-specific lock and
+   rollback directory, upload the staging `.htaccess`, and never call the
+   production publisher as a shortcut.
+4. The staging publisher must upload a complete `web_exports` candidate so the
+   existing whole-grid fallback remains usable. For later beta2 testing, it may
+   copy the independently owned `live_stations`, `webcams`, `radar_maps`, and
+   `airspace` trees from production into the staging candidate without changing
+   their production sources.
+5. Run the narrow and complete repository tests. Do not proceed with an
+   uncommitted candidate.
 
 Run the narrow contract tests first:
 
 ```bash
-python -m unittest tests.test_value_tiles -v
+python -m unittest discover -s tests -p 'test_value_tiles.py' -v
 ```
 
-Then run the normal repository tests and output validation. A representative
-pipeline invocation must keep deployment and data-branch pushing disabled:
+Then run:
 
 ```bash
-ENABLE_VALUE_TILES=true uv run python scripts/run_coding_server_pipeline.py \
-  --skip-deploy \
-  --no-push-data-branch \
-  --ch1-run-tag <pinned-complete-run> \
-  --ch2-run-tag <pinned-complete-run>
+python -m unittest discover -s tests -v
 ```
 
-Do not enable the production Coding Server timer with the feature flag until
-the generated file-count, traversal, deletion, and validation measurements
-have been reviewed.
+### Gate 1: isolated Coding Server run
+
+Commit Gate 0, then push the clean feature branch directly. A pull request is
+not required for this staging exercise:
+
+```bash
+git push -u origin codex/value-tiles-backend-v1
+```
+
+On the Coding Server, fetch it and create a detached test worktree so the
+production `main` checkout remains untouched:
+
+```bash
+git -C /home/sebas/projects/XCBenz_Data_Parallel fetch origin
+git -C /home/sebas/projects/XCBenz_Data_Parallel worktree add --detach \
+  /home/sebas/projects/XCBenz_Data_Parallel-value-tiles \
+  origin/codex/value-tiles-backend-v1
+cd /home/sebas/projects/XCBenz_Data_Parallel-value-tiles
+```
+
+Use the poller only to identify the latest complete pair and print the pinned
+runner command. Give this test its own poller state and poller lock:
+
+```bash
+ENABLE_VALUE_TILES=true \
+WEB_EXPORT_DATA_ROOT=https://data.xcbenz.com/value-tiles-staging \
+uv run python scripts/poll_coding_server_pipeline.py \
+  --plan-only \
+  --force-run \
+  --state-file .local_pipeline/value-tile-staging-poller-state.json \
+  --lock-file /run/lock/xcbenz-value-tile-staging-poller.lock \
+  --skip-deploy \
+  --no-push-data-branch
+```
+
+The heavy runner uses the same default lock as production. Running a second
+heavy job concurrently risks resource contention, while a lock-skipped runner
+can be recorded by the poller as successful. Therefore obtain separate
+operational approval for a short timer pause immediately before the test. First
+verify that the production service is inactive. If it is active, wait for it to
+finish and do not stop the service:
+
+```bash
+systemctl --user is-active xcbenz-coding-server-forecast.service
+systemctl --user is-active xcbenz-coding-server-forecast.timer
+```
+
+Record the complete CH1 and CH2 tags printed by the plan-only command. Keep
+restore enabled so retention is exercised against a realistic prior
+`web_exports` tree. Run the timer pause and candidate in one shell with a trap
+that restarts the timer after success, failure, or interruption:
+
+```bash
+set -e
+timer=xcbenz-coding-server-forecast.timer
+systemctl --user stop "$timer"
+restart_timer() {
+  systemctl --user start "$timer"
+}
+trap restart_timer EXIT
+trap 'exit 129' HUP
+trap 'exit 130' INT
+trap 'exit 143' TERM
+
+ENABLE_VALUE_TILES=true \
+WEB_EXPORT_DATA_ROOT=https://data.xcbenz.com/value-tiles-staging \
+uv run python scripts/run_coding_server_pipeline.py \
+  --skip-deploy \
+  --no-push-data-branch \
+  --ch1-run-tag <pinned-complete-ch1-run> \
+  --ch2-run-tag <pinned-complete-ch2-run>
+
+restart_timer
+trap - EXIT HUP INT TERM
+systemctl --user is-active "$timer"
+```
+
+This pause changes production scheduling and therefore always requires explicit
+approval at execution time. It does not enable the tile flag in the production
+service environment and does not deploy the candidate.
+
+Gate 1 passes only if:
+
+- `scripts/validate_outputs.py` passes;
+- no deployment or data-branch push occurs;
+- the root and tile manifests declare the expected capability and counts;
+- all expected whole-grid files remain present;
+- there are no `.nc` files in `web_exports`;
+- file count, tile bytes, generation time, validation time, peak disk use, and
+  retained-tree traversal time are recorded; and
+- restarting the production timer is verified.
+
+### Gate 2: isolated Infomaniak data staging
+
+The proposed staging namespace is:
+
+```text
+Remote root: sites/data.xcbenz.com/value-tiles-staging
+Public base: https://data.xcbenz.com/value-tiles-staging
+Candidate:   https://data.xcbenz.com/value-tiles-staging/web_exports/
+```
+
+After separate staging-publication approval, run only the dedicated guarded
+staging publisher created in Gate 0:
+
+```bash
+INFOMANIAK_VALUE_TILE_STAGING_ROOT=sites/data.xcbenz.com/value-tiles-staging \
+DATA_HOST_BASE_URL=https://data.xcbenz.com/value-tiles-staging \
+WEB_EXPORT_DIR=web_exports \
+bash scripts/deploy_value_tiles_staging_infomaniak.sh
+```
+
+The host, user, port, and SSH key continue to come from the Coding Server's
+protected environment. The publisher must perform an atomic candidate swap
+inside that staging root and leave `sites/data.xcbenz.com/web_exports`
+untouched. Record rsync traversal time, uploaded bytes, swap time, and retained
+file count.
+
+Validate the staged candidate from the Coding Server:
+
+```bash
+DATA_BASE_URL=https://data.xcbenz.com/value-tiles-staging \
+uv run python scripts/validate_remote_web_exports.py
+```
+
+Also inspect representative responses from a real browser. Ordinary `.xvt`
+chunks are complete objects, so the successful response is `200`, not `206`.
+They may use HTTP gzip or Brotli. Gate 2 requires:
+
+- both manifest files are `no-cache`;
+- revision-scoped metadata and `.xvt` files are immutable for one year;
+- `.xvt` has an approved binary MIME type;
+- browser fetch and XVT parsing succeed with normal content encoding;
+- the fetched bytes match the revision SHA-256 record;
+- the production `web_exports` manifest and a representative production file
+  are unchanged; and
+- an atomic second staging publication never exposes a mixed revision.
+
+Atomic replacement and deletion cost require a second candidate with a
+different value-tile revision. Repeat Gate 1 for the next complete pinned run,
+publish it to the same staging namespace, and record swap time plus deletion
+time for the superseded staging revision. Republishing identical files does not
+satisfy this check.
+
+### Gate 3: beta2 end-to-end frontend test
+
+The website is not needed for Gates 1 and 2. Those gates prove generation,
+retention, publication, host behavior, and remote parsing. Beta2 becomes useful
+only after the frontend tile reader exists.
+
+Build and deploy the beta2 frontend against the staging data base:
+
+```powershell
+.\scripts\deploy-beta2.ps1 `
+  -DataBaseUrl "https://data.xcbenz.com/value-tiles-staging"
+```
+
+The beta2 candidate must retain whole-grid fallback. Measure in a real browser:
+
+- compressed bytes and request count for each initial selector view;
+- nearby-pan cache reuse;
+- incremental zoom-out and All Alps;
+- Wind-level switching;
+- individual Cloud layers, `cloud4`, and Cloud plus Rain;
+- behavior after one tile is unavailable or corrupt; and
+- confirmation that a failed frame uses one complete whole-grid fallback and
+  never mixes tile and whole-grid values.
+
+### Promotion and rollback decision
+
+Review all measurements before production activation. Promotion is two
+separate decisions:
+
+1. Merge the backend, explicitly enable tiles in the production Coding Server
+   environment, and publish the capability while the current frontend continues
+   using whole-grid files.
+2. Promote the tested frontend reader after backend observation is satisfactory.
+
+Rollback must be proven in staging before either decision. Turning the tile
+flag off and publishing the next candidate must remove the root capability,
+leave all whole-grid products working, and make beta2 use its whole-grid reader.
+No production activation is part of this plan.
 
 ## Local acceptance measurements
 
