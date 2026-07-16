@@ -42,6 +42,7 @@ env:
   ENABLE_CLOUD_MAPS: "true"
   ENABLE_CLOUD_MAPS_CH1: "true"
   ENABLE_CLOUD_MAPS_CH2: "true"
+  ENABLE_VALUE_TILES: ${{ vars.ENABLE_VALUE_TILES || 'false' }}
   WIND_MAP_MAX_SECONDS: "0"
 
 jobs:

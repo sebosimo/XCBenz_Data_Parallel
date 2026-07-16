@@ -29,6 +29,7 @@ BASE_URL = os.environ.get("DATA_BASE_URL", "https://data.xcbenz.com").rstrip("/"
 TIMEOUT = float(os.environ.get("REMOTE_VALIDATE_TIMEOUT", "30"))
 RETRIES = int(os.environ.get("REMOTE_VALIDATE_RETRIES", "3"))
 RETRY_DELAY = float(os.environ.get("REMOTE_VALIDATE_RETRY_DELAY", "10"))
+EXPECTED_VALUE_TILES_STATE = os.environ.get("EXPECTED_VALUE_TILES_STATE", "optional").strip().lower()
 
 
 class ValidationError(RuntimeError):
@@ -93,6 +94,21 @@ def fetch_json(path_or_url: str, *, context_url: str | None = None) -> tuple[dic
         return json.loads(result.data.decode("utf-8")), url, result.headers
     except json.JSONDecodeError as exc:
         raise ValidationError(f"{url} is not valid JSON: {exc}") from exc
+
+
+def require_missing(path_or_url: str) -> None:
+    url = resolve_url(path_or_url)
+    request = Request(url, headers={"User-Agent": "xcbenz-remote-validator/1.0"})
+    try:
+        with urlopen(request, timeout=TIMEOUT):
+            pass
+    except HTTPError as exc:
+        if exc.code == 404:
+            return
+        raise ValidationError(f"{url} returned HTTP {exc.code}; expected HTTP 404") from exc
+    except URLError as exc:
+        raise ValidationError(f"{url} could not be checked for absence: {exc}") from exc
+    raise ValidationError(f"{url} is still published; expected HTTP 404")
 
 
 def choose_first(mapping: dict[str, Any], label: str) -> tuple[str, Any]:
@@ -192,6 +208,16 @@ def _require_cache_header(headers: Any, token: str, url: str) -> None:
         raise ValidationError(f"{url} Cache-Control lacks {token!r}: {cache_control!r}")
 
 
+def validate_expected_value_tile_state(manifest: dict[str, Any], expected_state: str) -> None:
+    if expected_state not in {"optional", "enabled", "disabled"}:
+        raise ValidationError("EXPECTED_VALUE_TILES_STATE must be optional, enabled, or disabled")
+    capability = ((manifest.get("capabilities") or {}).get("spatial_value_tiles"))
+    if expected_state == "enabled" and not capability:
+        raise ValidationError("spatial value tiles were expected but the capability is absent")
+    if expected_state == "disabled" and capability:
+        raise ValidationError("spatial value tiles were expected to be disabled but the capability is present")
+
+
 def validate_value_tiles(manifest: dict[str, Any]) -> None:
     capability = ((manifest.get("capabilities") or {}).get("spatial_value_tiles"))
     if not capability:
@@ -258,6 +284,9 @@ def main() -> int:
         fetch_json("web_exports/locations.json")
         if "models" not in manifest or "products" not in manifest:
             raise ValidationError(f"{manifest_url} does not look like a web_exports manifest")
+        validate_expected_value_tile_state(manifest, EXPECTED_VALUE_TILES_STATE)
+        if EXPECTED_VALUE_TILES_STATE == "disabled":
+            require_missing(capability_declaration()["manifest"])
         cors = headers.get("Access-Control-Allow-Origin")
         if cors not in ("*", None):
             raise ValidationError(f"unexpected CORS header on manifest: {cors!r}")

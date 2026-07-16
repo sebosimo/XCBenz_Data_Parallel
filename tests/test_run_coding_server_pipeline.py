@@ -2,6 +2,7 @@ import argparse
 import sys
 import unittest
 from pathlib import Path
+from unittest import mock
 
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
@@ -42,6 +43,30 @@ class RunCodingServerPipelineTests(unittest.TestCase):
         self.assertIn("ch1-profile-H017_H033", names)
         self.assertIn("ch1-profile-H034_H045", names)
         self.assertNotIn("ch1-profile-H017_H045", names)
+
+    def test_resource_monitor_records_filesystem_disk_high_water(self):
+        monitor = runner.ResourceMonitor(
+            sample_seconds=15,
+            max_cpu_percent=88,
+            max_load_percent=110,
+            min_available_mb=4096,
+        )
+        mb = 1024 * 1024
+        disk_samples = [
+            mock.Mock(used=100 * mb, total=1000 * mb),
+            mock.Mock(used=145 * mb, total=1000 * mb),
+            mock.Mock(used=130 * mb, total=1000 * mb),
+        ]
+        with mock.patch.object(monitor, "_read_cpu_percent", return_value=None), mock.patch.object(
+            monitor, "_read_load1", return_value=None
+        ), mock.patch.object(monitor, "_read_memory_mb", return_value=(None, None)), mock.patch.object(
+            runner.shutil, "disk_usage", side_effect=disk_samples
+        ):
+            monitor.sample_once(log_sample=False)
+            monitor.sample_once(log_sample=False)
+            monitor.sample_once(log_sample=False)
+
+        self.assertEqual(monitor.disk_high_water(), (100.0, 145.0, 45.0))
 
 
 if __name__ == "__main__":

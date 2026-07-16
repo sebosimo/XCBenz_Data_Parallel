@@ -384,8 +384,11 @@ class ValueTileGenerationTests(unittest.TestCase):
     def test_staging_host_rules_are_explicit_and_not_deployed(self):
         root = Path(__file__).resolve().parents[1]
         staging = (root / "deploy/infomaniak-value-tiles-staging.htaccess").read_text(encoding="utf-8")
+        production = (root / "deploy/infomaniak-data.htaccess").read_text(encoding="utf-8")
         production_deploy = (root / "scripts/deploy_data_infomaniak.sh").read_text(encoding="utf-8")
         staging_deploy = (root / "scripts/deploy_value_tiles_staging_infomaniak.sh").read_text(encoding="utf-8")
+        workflow = (root / ".github/workflows/daily_plot.yml").read_text(encoding="utf-8")
+        coding_server_env = (root / "deploy/coding-server-pipeline.env.example").read_text(encoding="utf-8")
         self.assertIn("application/octet-stream .bin .xvt", staging)
         self.assertIn("max-age=31536000, immutable", staging)
         cache_block = staging.split('<FilesMatch "\\.(bin|xvt|json|geojson)$">', 1)[1].split(
@@ -396,17 +399,64 @@ class ValueTileGenerationTests(unittest.TestCase):
         self.assertIn("AddOutputFilterByType DEFLATE", staging)
         self.assertIn("AddOutputFilterByType BROTLI_COMPRESS", staging)
         self.assertIn("^/value-tiles-staging/web_exports/value_tiles/v1/", staging)
+        self.assertIn("application/octet-stream .bin .xvt", production)
+        self.assertIn("^/web_exports/value_tiles/v1/", production)
+        production_cache_block = production.split('<FilesMatch "\\.(bin|xvt|json|geojson)$">', 1)[1].split(
+            "</FilesMatch>", 1
+        )[0]
+        self.assertLess(
+            production_cache_block.index("max-age=3600"),
+            production_cache_block.index("max-age=31536000, immutable"),
+        )
         self.assertNotIn("infomaniak-value-tiles-staging.htaccess", production_deploy)
         self.assertIn('EXPECTED_REMOTE_ROOT="sites/data.xcbenz.com/value-tiles-staging"', staging_deploy)
         self.assertIn('EXPECTED_BASE_URL="https://data.xcbenz.com/value-tiles-staging"', staging_deploy)
         self.assertIn("refusing remote root", staging_deploy)
         self.assertIn("refusing data URL", staging_deploy)
         self.assertIn("infomaniak-value-tiles-staging.htaccess", staging_deploy)
+        self.assertIn("EXPECTED_VALUE_TILES_STATE", staging_deploy)
         self.assertIn("PRODUCTION_WEB_EXPORTS", staging_deploy)
         self.assertNotIn("deploy_data_infomaniak.sh", staging_deploy)
+        self.assertIn("ENABLE_VALUE_TILES: ${{ vars.ENABLE_VALUE_TILES || 'false' }}", workflow)
+        self.assertIn("ENABLE_VALUE_TILES=false", coding_server_env)
 
 
 class ValueTileRemoteValidationTests(unittest.TestCase):
+    def test_remote_expected_tile_state_rejects_missing_or_unexpected_capability(self):
+        from scripts import validate_remote_web_exports as remote
+
+        enabled_manifest = {"capabilities": {"spatial_value_tiles": capability_declaration()}}
+        disabled_manifest = {}
+
+        remote.validate_expected_value_tile_state(enabled_manifest, "enabled")
+        remote.validate_expected_value_tile_state(disabled_manifest, "disabled")
+        remote.validate_expected_value_tile_state(enabled_manifest, "optional")
+        with self.assertRaisesRegex(remote.ValidationError, "expected but the capability is absent"):
+            remote.validate_expected_value_tile_state(disabled_manifest, "enabled")
+        with self.assertRaisesRegex(remote.ValidationError, "expected to be disabled"):
+            remote.validate_expected_value_tile_state(enabled_manifest, "disabled")
+        with self.assertRaisesRegex(remote.ValidationError, "must be optional, enabled, or disabled"):
+            remote.validate_expected_value_tile_state(disabled_manifest, "invalid")
+
+    def test_remote_disabled_state_requires_tile_manifest_http_404(self):
+        from urllib.error import HTTPError
+
+        from scripts import validate_remote_web_exports as remote
+
+        url = remote.resolve_url(capability_declaration()["manifest"])
+        with mock.patch.object(remote, "urlopen", side_effect=HTTPError(url, 404, "Not Found", {}, None)):
+            remote.require_missing(capability_declaration()["manifest"])
+
+        with mock.patch.object(remote, "urlopen", side_effect=HTTPError(url, 403, "Forbidden", {}, None)):
+            with self.assertRaisesRegex(remote.ValidationError, "expected HTTP 404"):
+                remote.require_missing(capability_declaration()["manifest"])
+
+        response = mock.MagicMock()
+        response.__enter__.return_value = response
+        with mock.patch.object(remote, "urlopen", return_value=response):
+            with self.assertRaisesRegex(remote.ValidationError, "still published"):
+                remote.require_missing(capability_declaration()["manifest"])
+
     def test_remote_smoke_validates_identity_tile_hash_mime_and_cache(self):
         from scripts import validate_remote_web_exports as remote
 

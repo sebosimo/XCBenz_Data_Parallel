@@ -65,6 +65,8 @@ class ResourceSnapshot:
     load1: float | None
     mem_available_mb: float | None
     mem_total_mb: float | None
+    disk_used_mb: float | None
+    disk_total_mb: float | None
     active_jobs: int
 
 
@@ -169,7 +171,9 @@ class ResourceMonitor:
         self._stop = threading.Event()
         self._thread: threading.Thread | None = None
         self._last_cpu_times: tuple[int, int] | None = None
-        self._snapshot = ResourceSnapshot(None, None, None, None, 0)
+        self._snapshot = ResourceSnapshot(None, None, None, None, None, None, 0)
+        self._disk_baseline_mb: float | None = None
+        self._disk_peak_mb: float | None = None
 
     def start(self) -> None:
         self._thread = threading.Thread(target=self._loop, name="resource-monitor", daemon=True)
@@ -180,6 +184,26 @@ class ResourceMonitor:
         self._stop.set()
         if self._thread is not None:
             self._thread.join(timeout=5)
+        self.sample_once(log_sample=False)
+
+    def disk_high_water(self) -> tuple[float | None, float | None, float | None]:
+        with self._lock:
+            baseline = self._disk_baseline_mb
+            peak = self._disk_peak_mb
+        delta = None if baseline is None or peak is None else max(0.0, peak - baseline)
+        return baseline, peak, delta
+
+    def log_disk_high_water(self) -> None:
+        baseline, peak, delta = self.disk_high_water()
+        if baseline is None or peak is None or delta is None:
+            log("resource high_water filesystem disk measurement unavailable")
+            return
+        log(
+            "resource high_water "
+            f"filesystem_used_baseline={baseline:.0f} MB "
+            f"filesystem_used_peak={peak:.0f} MB "
+            f"filesystem_used_delta={delta:.0f} MB"
+        )
 
     def set_active_jobs(self, count: int) -> None:
         with self._lock:
@@ -213,13 +237,20 @@ class ResourceMonitor:
         cpu_percent = self._read_cpu_percent()
         load1 = self._read_load1()
         mem_available_mb, mem_total_mb = self._read_memory_mb()
+        disk_used_mb, disk_total_mb = self._read_disk_mb()
         with self._lock:
             active_jobs = self._snapshot.active_jobs
+            if disk_used_mb is not None:
+                if self._disk_baseline_mb is None:
+                    self._disk_baseline_mb = disk_used_mb
+                self._disk_peak_mb = max(self._disk_peak_mb or disk_used_mb, disk_used_mb)
             self._snapshot = ResourceSnapshot(
                 cpu_percent=cpu_percent,
                 load1=load1,
                 mem_available_mb=mem_available_mb,
                 mem_total_mb=mem_total_mb,
+                disk_used_mb=disk_used_mb,
+                disk_total_mb=disk_total_mb,
                 active_jobs=active_jobs,
             )
         if log_sample:
@@ -230,6 +261,8 @@ class ResourceMonitor:
                 parts.append(f"load1={load1:.2f}")
             if mem_available_mb is not None and mem_total_mb is not None:
                 parts.append(f"ram_available={mem_available_mb:.0f}/{mem_total_mb:.0f} MB")
+            if disk_used_mb is not None and disk_total_mb is not None:
+                parts.append(f"disk_used={disk_used_mb:.0f}/{disk_total_mb:.0f} MB")
             log("resource " + " ".join(parts))
 
     def _read_cpu_percent(self) -> float | None:
@@ -276,6 +309,15 @@ class ResourceMonitor:
         except Exception:
             return None, None
         return values.get("MemAvailable"), values.get("MemTotal")
+
+    @staticmethod
+    def _read_disk_mb() -> tuple[float | None, float | None]:
+        try:
+            usage = shutil.disk_usage(REPO_ROOT)
+        except OSError:
+            return None, None
+        divisor = 1024.0 * 1024.0
+        return usage.used / divisor, usage.total / divisor
 
 
 def run_checked(
@@ -996,16 +1038,16 @@ def run_pipeline(args: argparse.Namespace) -> int:
             monitor=monitor,
             log_dir=log_dir,
         )
+        if args.restore_web_exports:
+            restore_web_exports(args, base_env, log_dir)
+        serial_publish_steps(args, base_env, log_dir, py)
+        if deploy:
+            deploy_outputs(args, base_env, log_dir, py)
+        if args.push_data_branch:
+            push_data_branch_snapshot(args, base_env, log_dir, run_dir)
     finally:
         monitor.stop()
-
-    if args.restore_web_exports:
-        restore_web_exports(args, base_env, log_dir)
-    serial_publish_steps(args, base_env, log_dir, py)
-    if deploy:
-        deploy_outputs(args, base_env, log_dir, py)
-    if args.push_data_branch:
-        push_data_branch_snapshot(args, base_env, log_dir, run_dir)
+        monitor.log_disk_high_water()
 
     log(f"Complete. Logs: {log_dir}")
     return 0

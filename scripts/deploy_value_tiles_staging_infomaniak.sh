@@ -46,6 +46,7 @@ retry() {
 REMOTE_ROOT="${INFOMANIAK_VALUE_TILE_STAGING_ROOT:-}"
 DATA_HOST_BASE_URL="${DATA_HOST_BASE_URL:-}"
 WEB_EXPORT_DIR="${WEB_EXPORT_DIR:-web_exports}"
+EXPECTED_VALUE_TILES_STATE="${EXPECTED_VALUE_TILES_STATE:-enabled}"
 
 [[ "$REMOTE_ROOT" == "$EXPECTED_REMOTE_ROOT" ]] || \
   fail "refusing remote root '$REMOTE_ROOT'; expected '$EXPECTED_REMOTE_ROOT'"
@@ -53,6 +54,8 @@ WEB_EXPORT_DIR="${WEB_EXPORT_DIR:-web_exports}"
   fail "refusing data URL '$DATA_HOST_BASE_URL'; expected '$EXPECTED_BASE_URL'"
 [[ "$WEB_EXPORT_DIR" == "web_exports" ]] || \
   fail "refusing WEB_EXPORT_DIR '$WEB_EXPORT_DIR'; expected repository web_exports"
+[[ "$EXPECTED_VALUE_TILES_STATE" == "enabled" || "$EXPECTED_VALUE_TILES_STATE" == "disabled" ]] || \
+  fail "EXPECTED_VALUE_TILES_STATE must be enabled or disabled"
 
 require_env INFOMANIAK_HOST
 require_env INFOMANIAK_USER
@@ -74,13 +77,16 @@ log "Validating the complete local candidate"
 EXPECTED_WEB_EXPORT_DATA_ROOT="$EXPECTED_BASE_URL" \
   "$PYTHON_BIN" scripts/validate_outputs.py
 
-"$PYTHON_BIN" - "$WEB_EXPORT_DIR/manifest.json" <<'PY'
+"$PYTHON_BIN" - "$WEB_EXPORT_DIR/manifest.json" "$EXPECTED_VALUE_TILES_STATE" "$WEB_EXPORT_DIR" <<'PY'
 import json
 import sys
+from pathlib import Path
 
 with open(sys.argv[1], "r", encoding="utf-8") as handle:
     manifest = json.load(handle)
-capability = (manifest.get("capabilities") or {}).get("spatial_value_tiles") or {}
+state = sys.argv[2]
+web_export_dir = Path(sys.argv[3])
+capability = (manifest.get("capabilities") or {}).get("spatial_value_tiles")
 expected = {
     "contract": "xcbenz-spatial-value-tiles",
     "contract_version": "1.0.0",
@@ -90,8 +96,16 @@ expected = {
     "fallback": "whole_grid_split_binary_v1",
     "requires_range": False,
 }
-if capability != expected:
-    raise SystemExit("candidate does not advertise the exact spatial value-tile capability")
+if state == "enabled":
+    if capability != expected:
+        raise SystemExit("enabled candidate does not advertise the exact spatial value-tile capability")
+    if not (web_export_dir / "value_tiles" / "v1" / "manifest.json").is_file():
+        raise SystemExit("enabled candidate is missing value_tiles/v1/manifest.json")
+else:
+    if capability is not None:
+        raise SystemExit("disabled candidate still advertises the spatial value-tile capability")
+    if (web_export_dir / "value_tiles").exists():
+        raise SystemExit("disabled candidate still contains a value_tiles tree")
 PY
 
 KEY_FILE=""
@@ -271,8 +285,10 @@ switch_metrics="$(ssh "${SSH_OPTS[@]}" "$SSH_TARGET" "
 switched=true
 log "Staging switch complete: $switch_metrics"
 
-log "Running remote validation against $DATA_HOST_BASE_URL"
-if ! DATA_BASE_URL="$DATA_HOST_BASE_URL" "$PYTHON_BIN" scripts/validate_remote_web_exports.py; then
+log "Running remote validation against $DATA_HOST_BASE_URL with tiles $EXPECTED_VALUE_TILES_STATE"
+if ! EXPECTED_VALUE_TILES_STATE="$EXPECTED_VALUE_TILES_STATE" \
+  DATA_BASE_URL="$DATA_HOST_BASE_URL" \
+  "$PYTHON_BIN" scripts/validate_remote_web_exports.py; then
   rollback_staging
   fail "remote validation failed and the prior staging release was restored"
 fi

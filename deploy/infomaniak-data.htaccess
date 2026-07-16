@@ -9,10 +9,11 @@ Options -Indexes
 
 AddType application/json .json
 AddType application/geo+json .geojson
-AddType application/octet-stream .bin
+AddType application/octet-stream .bin .xvt
 
 <IfModule mod_setenvif.c>
   SetEnvIf Request_URI "^/web_exports/(live_stations/(latest|manifest)\.json|webcams/(latest|catalog)\.json|webcams/history/index\.json|webcams/thumbs/[^/]+\.jpg)$" xcbenz_live_no_cache=1
+  SetEnvIf Request_URI "^/web_exports/value_tiles/v1/[^/]+/[^/]+/[0-9a-f]{12}/" xcbenz_value_tile_immutable=1
 </IfModule>
 
 <IfModule mod_deflate.c>
@@ -26,8 +27,9 @@ AddType application/octet-stream .bin
 <IfModule mod_headers.c>
   Header merge Vary Accept-Encoding
 
-  <FilesMatch "\.(bin|json|geojson)$">
+  <FilesMatch "\.(bin|xvt|json|geojson)$">
     Header set Cache-Control "public, max-age=3600" env=!xcbenz_live_no_cache
+    Header set Cache-Control "public, max-age=31536000, immutable" env=xcbenz_value_tile_immutable
   </FilesMatch>
 
   <FilesMatch "manifest\.json$">

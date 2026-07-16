@@ -58,6 +58,44 @@ staged tile artifacts, removes any previously retained `value_tiles` tree, and
 rebuilds the root manifest without `capabilities.spatial_value_tiles`. This
 makes the next candidate an immediate rollback to whole-grid-only publication.
 
+## WP4 execution sequence
+
+The contract, encoder, dual-generation path, validation, retention, and guarded
+staging publisher are implemented on `codex/value-tiles-backend-v1`. Continue
+WP4 without restarting that work:
+
+1. Finish backend production readiness before merging: add the proven `.xvt`
+   MIME and immutable-cache policy to the production host configuration, pass
+   `ENABLE_VALUE_TILES` through both the Coding Server and GitHub Actions
+   fallback with a default of false, support explicit enabled and disabled
+   staging candidates, and record filesystem disk high-water telemetry.
+2. Close staging acceptance with a second genuinely different revision. Measure
+   upload traversal, superseded-tree deletion, atomic swap, retained files, and
+   new-run visibility. Then publish disabled, prove capability and tile-tree
+   removal with all whole-grid products intact, and republish enabled.
+3. Merge the backend while the feature flag remains false. Production host
+   preparation and production capability activation are separate approvals.
+   Activation must set the Coding Server protected environment and the GitHub
+   Actions repository variable together so either executor publishes the same
+   contract.
+4. Build the frontend reader from merged WP3 behind strict capability and
+   version checks. Whole-grid and tiled readers feed one transport-neutral
+   semantic frame into the existing MapLibre value layer. A tiled frame commits
+   only after every required tile validates; any failure retries the complete
+   step through the existing whole-grid reader without mixing sources.
+5. Deploy the reader only to beta2 against
+   `https://data.xcbenz.com/value-tiles-staging`. Measure selector views, nearby
+   pans, zoom-out, All Alps, Wind levels, Cloud layers, `cloud4`, Cloud plus
+   Rain, request and byte counts, parsing, GPU upload, memory, and mobile.
+6. Production frontend rollout is a later explicit approval. Retain the old
+   reader and whole-grid outputs for at least 48 hours and four successful
+   production publication cycles. Removal requires separate approval.
+
+Backend completion and frontend reader development may proceed in parallel once
+the staging enabled candidate is stable. Neither requires early production
+activation. Live stations, webcams, radar maps, and airspace remain
+independently owned throughout every publication state.
+
 ## Exact staged acceptance plan
 
 This plan has four gates. A gate must pass before the next gate starts. No step
