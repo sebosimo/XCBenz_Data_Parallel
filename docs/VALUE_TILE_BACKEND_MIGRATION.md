@@ -312,6 +312,69 @@ Reproduce the local retained-file measurement with:
 python scripts/benchmark_value_tile_filesystem.py --files 66144 --payload-bytes 1
 ```
 
+## Measured Coding Server and Infomaniak staging acceptance
+
+Measurements from 2026-07-16 use pinned CH1 `20260716_1500` and CH2
+`20260716_1200` runs. The no-deploy Coding Server candidate completed in 9
+minutes 29 seconds at commit `2bde5f6` after all 12 fetch jobs, including the
+run-dependent CH1 `H017_H033` profile chunk, completed successfully.
+
+| Coding Server result | Measurement |
+| --- | ---: |
+| Retained value-tile runs / variants / XVT files | 2 / 30 / 27,876 |
+| Complete value-tile tree, including manifests and indexes | 27,909 files, 355,485,245 bytes |
+| Complete retained `web_exports` tree | 989,506,464 bytes |
+| Value-tile tree traversal | 0.03 seconds |
+| NetCDF files below `web_exports` | 0 |
+| Final isolated worktree footprint | 2,496,302,832 bytes |
+
+The final worktree footprint is an observed final value, not an instrumented
+peak. A future runner telemetry change is still needed if an exact peak disk
+high-water mark is required.
+
+The first staging publication correctly rolled back after the real remote
+validator found that Apache section ordering caused revision metadata to retain
+the generic one-hour cache policy. Commit `aa3d350` moves the immutable override
+inside the same `FilesMatch` section after the generic rule. The retry then
+passed local validation, atomic publication, remote XVT parsing and SHA-256
+validation, and the production-manifest before/after checksum guard.
+
+| Infomaniak staging result | Measurement |
+| --- | ---: |
+| Logical candidate bytes | 989,506,464 |
+| Rsync bytes sent / received | 423,850,998 / 671,902 |
+| Candidate upload | 11 seconds |
+| Atomic staging switch | less than 1 second |
+| Published staging file count, including copied live-owned snapshots | 35,175 |
+| Superseded staging deletion during this publication | less than 1 second |
+
+Observed public response behavior:
+
+| Object/request | Status | Bytes | Relevant headers |
+| --- | ---: | ---: | --- |
+| Root manifest with gzip | 200 | 55,842 | `no-cache`, JSON, CORS `*` |
+| Tile manifest with gzip | 200 | 701 | `no-cache`, JSON, CORS `*` |
+| Revision metadata with gzip | 200 | 2,753 | one-year immutable, JSON, CORS `*` |
+| XVT with identity | 200 | 9,576 | one-year immutable, octet-stream, CORS `*` |
+| XVT with gzip | 200 | 7,463 | one-year immutable, octet-stream, CORS `*` |
+| XVT identity Range `0-63` | 206 | 64 | `Content-Range: bytes 0-63/9576` |
+| XVT gzip Range `0-63` | 206 | 64 | ranges the 7,463-byte HTTP-gzip representation |
+
+The gzip Range result does not qualify a Range archive. Browsers control
+`Accept-Encoding`, and a partial HTTP-gzip representation is not a stable byte
+range into the archive. A future archive path would still have to disable HTTP
+content encoding, use independently compressed internal blocks, and pass a real
+browser `206` test. Ordinary XVT chunks use complete `200` responses and are not
+affected.
+
+The available controlled Chrome and in-app browser surfaces both returned
+client-side `ERR_BLOCKED_BY_CLIENT` for direct navigation to the public staging
+JSON URL. No server request failed, and command-line plus Python HTTPS
+validation passed, but the required real-browser fetch is therefore still open.
+A second publication with a genuinely different revision is also still needed
+to measure deletion of the retained previous staging tree and mixed-revision
+behavior. No production data or production configuration was changed.
+
 ## Host staging
 
 `deploy/infomaniak-value-tiles-staging.htaccess` is a complete staging-only
