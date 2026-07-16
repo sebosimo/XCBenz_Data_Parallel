@@ -160,7 +160,8 @@ runner command. Give this test its own poller state and poller lock:
 ```bash
 ENABLE_VALUE_TILES=true \
 WEB_EXPORT_DATA_ROOT=https://data.xcbenz.com/value-tiles-staging \
-uv run python scripts/poll_coding_server_pipeline.py \
+/home/sebas/projects/XCBenz_Data_Parallel/.venv/bin/python \
+  scripts/poll_coding_server_pipeline.py \
   --plan-only \
   --force-run \
   --state-file .local_pipeline/value-tile-staging-poller-state.json \
@@ -173,8 +174,9 @@ The heavy runner uses the same default lock as production. Running a second
 heavy job concurrently risks resource contention, while a lock-skipped runner
 can be recorded by the poller as successful. Therefore obtain separate
 operational approval for a short timer pause immediately before the test. First
-verify that the production service is inactive. If it is active, wait for it to
-finish and do not stop the service:
+verify that the production service is inactive. Treat `active`, `activating`,
+and `deactivating` as busy states. Wait for every busy state to finish and do
+not stop the service:
 
 ```bash
 systemctl --user is-active xcbenz-coding-server-production.service
@@ -189,18 +191,31 @@ that restarts the timer after success, failure, or interruption:
 ```bash
 set -e
 timer=xcbenz-coding-server-production.timer
-systemctl --user stop "$timer"
+service=xcbenz-coding-server-production.service
 restart_timer() {
   systemctl --user start "$timer"
+}
+wait_for_service() {
+  state="$(systemctl --user is-active "$service" || true)"
+  while [ "$state" != inactive ] && [ "$state" != failed ]; do
+    sleep 15
+    state="$(systemctl --user is-active "$service" || true)"
+  done
 }
 trap restart_timer EXIT
 trap 'exit 129' HUP
 trap 'exit 130' INT
 trap 'exit 143' TERM
 
+wait_for_service
+systemctl --user stop "$timer"
+wait_for_service
+
 ENABLE_VALUE_TILES=true \
 WEB_EXPORT_DATA_ROOT=https://data.xcbenz.com/value-tiles-staging \
-uv run python scripts/run_coding_server_pipeline.py \
+/home/sebas/projects/XCBenz_Data_Parallel/.venv/bin/python \
+  scripts/run_coding_server_pipeline.py \
+  --python-cmd /home/sebas/projects/XCBenz_Data_Parallel/.venv/bin/python \
   --skip-deploy \
   --no-push-data-branch \
   --ch1-run-tag <pinned-complete-ch1-run> \
@@ -408,10 +423,40 @@ affected.
 The available controlled Chrome and in-app browser surfaces both returned
 client-side `ERR_BLOCKED_BY_CLIENT` for direct navigation to the public staging
 JSON URL. No server request failed, and command-line plus Python HTTPS
-validation passed, but the required real-browser fetch is therefore still open.
-A second publication with a genuinely different revision is also still needed
-to measure deletion of the retained previous staging tree and mixed-revision
-behavior. No production data or production configuration was changed.
+validation passed. Browser integration remains a beta2 frontend gate. No
+production data or production configuration was changed.
+
+### Second revision and rollback acceptance
+
+The second isolated run used CH1 `20260716_1800` and CH2 `20260716_1200` at
+commit `da9df46`. It completed in 9 minutes 31 seconds with no deploy and no
+data-branch push. CH1 revision `197c50018692` was genuinely different from the
+retained CH1 `20260716_1500` revision `d4f31ce1c6ca`. CH2 retained revision
+`7d2a80a5046d`.
+
+| Second Coding Server result | Measurement |
+| --- | ---: |
+| Retained value-tile runs / variants / XVT files | 3 / 45 / 33,984 |
+| Complete value-tile tree, including manifests and indexes | 34,033 files, 433,365,462 bytes |
+| Complete candidate tree | 40,178 files, 1,073,666,672 bytes |
+| Existing whole-grid step files retained | 4,400 |
+| NetCDF files below `web_exports` | 0 |
+| Filesystem used baseline / peak / delta | 86,580 / 89,351 / 2,770 MB |
+
+The same validated candidate then passed the complete enabled, disabled, and
+enabled staging sequence:
+
+| Staging state | Upload | Bytes sent / received | Prior-tree deletion | Published files | Remote result |
+| --- | ---: | ---: | ---: | ---: | --- |
+| Enabled second revision | 12 s | 453,531,780 / 794,136 | 0 s | 41,373 | New run, XVT hash, parse, MIME, and cache passed |
+| Disabled rollback | 7 s | 315,331,572 / 122,533 | 3 s | 7,336 | Capability absent, tile manifest HTTP 404, whole grids passed |
+| Enabled restore | 12 s | 453,531,108 / 794,376 | 2 s | 41,373 | Same three immutable revisions passed |
+
+After the final restore, the staging tile manifest returned `200` with
+`no-cache`. A representative gzip-encoded XVT returned `200` with
+`application/octet-stream` and `max-age=31536000, immutable`. The production
+timer was active, the production service was inactive, and the production root
+manifest did not advertise spatial value tiles.
 
 ## Host staging
 
