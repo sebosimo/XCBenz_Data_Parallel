@@ -388,6 +388,11 @@ class ValueTileGenerationTests(unittest.TestCase):
         staging_deploy = (root / "scripts/deploy_value_tiles_staging_infomaniak.sh").read_text(encoding="utf-8")
         self.assertIn("application/octet-stream .bin .xvt", staging)
         self.assertIn("max-age=31536000, immutable", staging)
+        cache_block = staging.split('<FilesMatch "\\.(bin|xvt|json|geojson)$">', 1)[1].split(
+            "</FilesMatch>", 1
+        )[0]
+        self.assertLess(cache_block.index("max-age=3600"), cache_block.index("max-age=31536000, immutable"))
+        self.assertIn("env=xcbenz_value_tile_immutable", cache_block)
         self.assertIn("AddOutputFilterByType DEFLATE", staging)
         self.assertIn("AddOutputFilterByType BROTLI_COMPRESS", staging)
         self.assertIn("^/value-tiles-staging/web_exports/value_tiles/v1/", staging)

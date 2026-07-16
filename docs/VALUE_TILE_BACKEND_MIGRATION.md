@@ -234,6 +234,12 @@ They may use HTTP gzip or Brotli. Gate 2 requires:
   are unchanged; and
 - an atomic second staging publication never exposes a mixed revision.
 
+On Infomaniak, keep the immutable revision-path override inside the same
+`FilesMatch` section as the generic one-hour cache rule, after that generic
+rule. Apache processes file sections after directory-level header directives,
+so an override outside the section is replaced by the generic rule even when
+it appears later in the `.htaccess` source.
+
 Atomic replacement and deletion cost require a second candidate with a
 different value-tile revision. Repeat Gate 1 for the next complete pinned run,
 publish it to the same staging namespace, and record swap time plus deletion
