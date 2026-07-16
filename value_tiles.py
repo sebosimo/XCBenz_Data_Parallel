@@ -540,6 +540,13 @@ def value_tiles_enabled(env: dict[str, str] | None = None) -> bool:
     return str(source.get("ENABLE_VALUE_TILES", "false")).strip().lower() in {"1", "true", "yes", "on"}
 
 
+def remove_value_tile_publication(web_root: Path) -> None:
+    web_root = Path(web_root)
+    value_tiles_root = web_root / "value_tiles"
+    if value_tiles_root.exists():
+        _remove_tree(value_tiles_root, web_root)
+
+
 def _relative_web_url(web_root: Path, path: Path) -> str:
     return (Path("web_exports") / path.relative_to(web_root)).as_posix()
 

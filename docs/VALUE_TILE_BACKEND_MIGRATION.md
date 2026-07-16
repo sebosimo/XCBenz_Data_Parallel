@@ -53,13 +53,10 @@ retains the same model runs as the whole-grid products, deletes unreferenced
 revisions, validates every retained tile, and advertises the capability only
 when the retained index is valid.
 
-Before any remote staging publication, disabled mode must also suppress a
-previously retained tile capability. The current implementation preserves an
-older tile manifest during retention, so simply removing the environment flag
-is not yet an immediate rollback. Add and test authoritative disabled behavior:
-the next candidate must omit `capabilities.spatial_value_tiles` even if older
-tile files remain on disk. Deleting those now-unreferenced files may be a later
-bounded cleanup step.
+Disabled mode is authoritative during retention. It does not copy or merge
+staged tile artifacts, removes any previously retained `value_tiles` tree, and
+rebuilds the root manifest without `capabilities.spatial_value_tiles`. This
+makes the next candidate an immediate rollback to whole-grid-only publication.
 
 ## Exact staged acceptance plan
 
@@ -71,7 +68,7 @@ pause in Gate 1 is a separately approved operational change.
 
 Before connecting to Infomaniak:
 
-1. Implement and test the authoritative disabled behavior described above.
+1. Verify the authoritative disabled behavior described above.
 2. Adjust the staging Apache rules so immutable revision matching works below
    `/value-tiles-staging/web_exports/`, not only `/web_exports/`.
 3. Add `scripts/deploy_value_tiles_staging_infomaniak.sh` as a dedicated

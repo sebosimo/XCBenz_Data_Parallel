@@ -18,7 +18,9 @@ from value_tiles import (
     capability_declaration,
     merge_value_tile_manifests,
     prune_value_tile_manifest,
+    remove_value_tile_publication,
     validate_value_tile_publication,
+    value_tiles_enabled,
 )
 
 
@@ -117,23 +119,34 @@ def resolve_web_url(url: str | None) -> Path | None:
     return path
 
 
-def merge_staging() -> None:
+def merge_staging(*, include_value_tiles: bool = True) -> None:
     if not STAGING_DIR.exists():
         raise FileNotFoundError(f"Missing staged web exports: {STAGING_DIR}")
     existing_tile_manifest_path = WEB_DIR / "value_tiles" / "v1" / "manifest.json"
     staged_tile_manifest_path = STAGING_DIR / "value_tiles" / "v1" / "manifest.json"
-    existing_tile_manifest = load_json(existing_tile_manifest_path) if existing_tile_manifest_path.exists() else {}
-    staged_tile_manifest = load_json(staged_tile_manifest_path) if staged_tile_manifest_path.exists() else {}
+    existing_tile_manifest = (
+        load_json(existing_tile_manifest_path)
+        if include_value_tiles and existing_tile_manifest_path.exists()
+        else {}
+    )
+    staged_tile_manifest = (
+        load_json(staged_tile_manifest_path)
+        if include_value_tiles and staged_tile_manifest_path.exists()
+        else {}
+    )
     WEB_DIR.mkdir(parents=True, exist_ok=True)
     for item in STAGING_DIR.iterdir():
+        if item.name == "value_tiles" and not include_value_tiles:
+            continue
         destination = WEB_DIR / item.name
         if item.is_dir():
             shutil.copytree(item, destination, dirs_exist_ok=True)
         else:
             shutil.copy2(item, destination)
-    merged_tile_manifest = merge_value_tile_manifests(existing_tile_manifest, staged_tile_manifest)
-    if merged_tile_manifest:
-        write_json(existing_tile_manifest_path, merged_tile_manifest)
+    if include_value_tiles:
+        merged_tile_manifest = merge_value_tile_manifests(existing_tile_manifest, staged_tile_manifest)
+        if merged_tile_manifest:
+            write_json(existing_tile_manifest_path, merged_tile_manifest)
     log(f"Merged {STAGING_DIR.as_posix()} into {WEB_DIR.as_posix()}")
 
 
@@ -661,15 +674,22 @@ def rebuild_main_manifest(
 
 
 def main() -> None:
-    merge_staging()
+    tiles_enabled = value_tiles_enabled()
+    merge_staging(include_value_tiles=tiles_enabled)
+    if not tiles_enabled:
+        remove_value_tile_publication(WEB_DIR)
     keep_by_model = apply_retention()
-    value_tile_manifest = prune_value_tile_manifest(WEB_DIR, keep_by_model)
-    if value_tile_manifest:
-        tile_counts = validate_value_tile_publication(WEB_DIR, manifest=value_tile_manifest)
-        log(
-            "Validated retained spatial value tiles: "
-            f"runs={tile_counts['runs']}, variants={tile_counts['variants']}, tiles={tile_counts['tiles']}"
-        )
+    value_tile_manifest = None
+    if tiles_enabled:
+        value_tile_manifest = prune_value_tile_manifest(WEB_DIR, keep_by_model)
+        if value_tile_manifest:
+            tile_counts = validate_value_tile_publication(WEB_DIR, manifest=value_tile_manifest)
+            log(
+                "Validated retained spatial value tiles: "
+                f"runs={tile_counts['runs']}, variants={tile_counts['variants']}, tiles={tile_counts['tiles']}"
+            )
+    else:
+        log("Spatial value tiles are disabled; removed retained tile publication")
     bundle_count = validate_emagram_bundles()
     wind_manifest = rebuild_wind_manifest()
     sunshine_manifest = rebuild_sunshine_manifest()

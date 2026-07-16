@@ -385,11 +385,20 @@ class ValueTileGenerationTests(unittest.TestCase):
         root = Path(__file__).resolve().parents[1]
         staging = (root / "deploy/infomaniak-value-tiles-staging.htaccess").read_text(encoding="utf-8")
         production_deploy = (root / "scripts/deploy_data_infomaniak.sh").read_text(encoding="utf-8")
+        staging_deploy = (root / "scripts/deploy_value_tiles_staging_infomaniak.sh").read_text(encoding="utf-8")
         self.assertIn("application/octet-stream .bin .xvt", staging)
         self.assertIn("max-age=31536000, immutable", staging)
         self.assertIn("AddOutputFilterByType DEFLATE", staging)
         self.assertIn("AddOutputFilterByType BROTLI_COMPRESS", staging)
+        self.assertIn("^/value-tiles-staging/web_exports/value_tiles/v1/", staging)
         self.assertNotIn("infomaniak-value-tiles-staging.htaccess", production_deploy)
+        self.assertIn('EXPECTED_REMOTE_ROOT="sites/data.xcbenz.com/value-tiles-staging"', staging_deploy)
+        self.assertIn('EXPECTED_BASE_URL="https://data.xcbenz.com/value-tiles-staging"', staging_deploy)
+        self.assertIn("refusing remote root", staging_deploy)
+        self.assertIn("refusing data URL", staging_deploy)
+        self.assertIn("infomaniak-value-tiles-staging.htaccess", staging_deploy)
+        self.assertIn("PRODUCTION_WEB_EXPORTS", staging_deploy)
+        self.assertNotIn("deploy_data_infomaniak.sh", staging_deploy)
 
 
 class ValueTileRemoteValidationTests(unittest.TestCase):
@@ -466,6 +475,40 @@ class ValueTileRemoteValidationTests(unittest.TestCase):
 
 
 class ValueTileRetentionIntegrationTests(unittest.TestCase):
+    def test_disabled_retention_removes_existing_and_staged_tile_publications(self):
+        from scripts import apply_web_retention as retention
+
+        workspace = _temp_workspace()
+        try:
+            web_root = workspace / "web_exports"
+            staging_root = workspace / "web_exports_staging"
+            _write_json(web_root / "value_tiles/v1/manifest.json", {"corrupt": "existing"})
+            _write_json(staging_root / "value_tiles/v1/manifest.json", {"corrupt": "staged"})
+            _write_json(staging_root / "locations.json", {})
+
+            def assert_tiles_removed_before_retention():
+                self.assertFalse((web_root / "value_tiles").exists())
+                return {}
+
+            with mock.patch.object(retention, "WEB_DIR", web_root), mock.patch.object(
+                retention, "STAGING_DIR", staging_root
+            ), mock.patch.object(retention, "value_tiles_enabled", return_value=False), mock.patch.object(
+                retention, "apply_retention", side_effect=assert_tiles_removed_before_retention
+            ), mock.patch.object(retention, "validate_emagram_bundles", return_value=0), mock.patch.object(
+                retention, "rebuild_wind_manifest", return_value=None
+            ), mock.patch.object(retention, "rebuild_sunshine_manifest", return_value=None), mock.patch.object(
+                retention, "rebuild_rain_manifest", return_value=None
+            ), mock.patch.object(retention, "rebuild_sunrain_manifest", return_value=None), mock.patch.object(
+                retention, "rebuild_cloud_manifest", return_value=None
+            ):
+                retention.main()
+
+            self.assertFalse((web_root / "value_tiles").exists())
+            root_manifest = json.loads((web_root / "manifest.json").read_text(encoding="utf-8"))
+            self.assertNotIn("capabilities", root_manifest)
+        finally:
+            shutil.rmtree(workspace, ignore_errors=True)
+
     def test_staging_merge_keeps_old_runs_and_rebuilt_root_advertises_capability(self):
         from scripts import apply_web_retention as retention
 
