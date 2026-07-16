@@ -1,6 +1,6 @@
 # Spatial Value Tiles: Packaging Decision and Contract v1
 
-Status: implementation-ready proposal, pending review
+Status: approved for implementation; production rollout is not authorized
 
 Contract name: `xcbenz-spatial-value-tiles`
 

@@ -6,8 +6,20 @@ import datetime as dt
 import json
 import os
 import shutil
+import sys
 from pathlib import Path
 from typing import Any
+
+REPO_ROOT = Path(__file__).resolve().parents[1]
+if str(REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(REPO_ROOT))
+
+from value_tiles import (
+    capability_declaration,
+    merge_value_tile_manifests,
+    prune_value_tile_manifest,
+    validate_value_tile_publication,
+)
 
 
 RUN_FORMAT = "%Y%m%d_%H%M"
@@ -108,6 +120,10 @@ def resolve_web_url(url: str | None) -> Path | None:
 def merge_staging() -> None:
     if not STAGING_DIR.exists():
         raise FileNotFoundError(f"Missing staged web exports: {STAGING_DIR}")
+    existing_tile_manifest_path = WEB_DIR / "value_tiles" / "v1" / "manifest.json"
+    staged_tile_manifest_path = STAGING_DIR / "value_tiles" / "v1" / "manifest.json"
+    existing_tile_manifest = load_json(existing_tile_manifest_path) if existing_tile_manifest_path.exists() else {}
+    staged_tile_manifest = load_json(staged_tile_manifest_path) if staged_tile_manifest_path.exists() else {}
     WEB_DIR.mkdir(parents=True, exist_ok=True)
     for item in STAGING_DIR.iterdir():
         destination = WEB_DIR / item.name
@@ -115,6 +131,9 @@ def merge_staging() -> None:
             shutil.copytree(item, destination, dirs_exist_ok=True)
         else:
             shutil.copy2(item, destination)
+    merged_tile_manifest = merge_value_tile_manifests(existing_tile_manifest, staged_tile_manifest)
+    if merged_tile_manifest:
+        write_json(existing_tile_manifest_path, merged_tile_manifest)
     log(f"Merged {STAGING_DIR.as_posix()} into {WEB_DIR.as_posix()}")
 
 
@@ -129,6 +148,7 @@ def collect_model_runs(model_key: str) -> set[str]:
         WEB_DIR / "rain_maps" / model_key,
         WEB_DIR / "sunrain_maps" / model_key,
         WEB_DIR / "cloud_maps" / model_key,
+        WEB_DIR / "value_tiles" / "v1" / model_key,
     ):
         if not root.exists():
             continue
@@ -147,6 +167,7 @@ def prune_model_runs(model_key: str, keep: set[str]) -> None:
         WEB_DIR / "rain_maps" / model_key,
         WEB_DIR / "sunrain_maps" / model_key,
         WEB_DIR / "cloud_maps" / model_key,
+        WEB_DIR / "value_tiles" / "v1" / model_key,
     ):
         if not root.exists():
             continue
@@ -161,12 +182,15 @@ def prune_model_runs(model_key: str, keep: set[str]) -> None:
     log(f"{model_key}: kept {len(keep)} run(s), removed {removed} product run directorie(s)")
 
 
-def apply_retention() -> None:
+def apply_retention() -> dict[str, set[str]]:
     now = dt.datetime.now(dt.timezone.utc)
+    keep_by_model: dict[str, set[str]] = {}
     for model_key, anchor_hour in ANCHOR_HOURS.items():
         runs = sorted(collect_model_runs(model_key), reverse=True)
         keep = kept_run_tags(runs, anchor_hour=anchor_hour, now=now)
+        keep_by_model[model_key] = keep
         prune_model_runs(model_key, keep)
+    return keep_by_model
 
 
 def bundle_payloads() -> list[tuple[Path, dict[str, Any]]]:
@@ -486,6 +510,7 @@ def rebuild_main_manifest(
     rain_manifest: dict[str, Any] | None,
     sunrain_manifest: dict[str, Any] | None,
     cloud_manifest: dict[str, Any] | None,
+    value_tile_manifest: dict[str, Any] | None,
 ) -> None:
     locations_path = WEB_DIR / "locations.json"
     if not locations_path.exists():
@@ -554,6 +579,8 @@ def rebuild_main_manifest(
             "Radar map exports are live-owned browser-readable metadata JSON plus lazy-loaded uint8 rain-rate slices.",
         ],
     }
+    if value_tile_manifest:
+        manifest.setdefault("capabilities", {})["spatial_value_tiles"] = capability_declaration()
 
     for model_key, label in MODEL_LABELS.items():
         model_manifest: dict[str, Any] = {
@@ -635,14 +662,29 @@ def rebuild_main_manifest(
 
 def main() -> None:
     merge_staging()
-    apply_retention()
+    keep_by_model = apply_retention()
+    value_tile_manifest = prune_value_tile_manifest(WEB_DIR, keep_by_model)
+    if value_tile_manifest:
+        tile_counts = validate_value_tile_publication(WEB_DIR, manifest=value_tile_manifest)
+        log(
+            "Validated retained spatial value tiles: "
+            f"runs={tile_counts['runs']}, variants={tile_counts['variants']}, tiles={tile_counts['tiles']}"
+        )
     bundle_count = validate_emagram_bundles()
     wind_manifest = rebuild_wind_manifest()
     sunshine_manifest = rebuild_sunshine_manifest()
     rain_manifest = rebuild_rain_manifest()
     sunrain_manifest = rebuild_sunrain_manifest()
     cloud_manifest = rebuild_cloud_manifest()
-    rebuild_main_manifest(bundle_count, wind_manifest, sunshine_manifest, rain_manifest, sunrain_manifest, cloud_manifest)
+    rebuild_main_manifest(
+        bundle_count,
+        wind_manifest,
+        sunshine_manifest,
+        rain_manifest,
+        sunrain_manifest,
+        cloud_manifest,
+        value_tile_manifest,
+    )
 
 
 if __name__ == "__main__":

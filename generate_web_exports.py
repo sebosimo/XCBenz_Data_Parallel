@@ -18,6 +18,7 @@ from web_profiles import (
     EMAGRAM_BUNDLE_VARIABLES,
     merge_profile_chunks,
 )
+from value_tiles import capability_declaration, generate_value_tiles, value_tiles_enabled
 
 
 SCHEMA_VERSION = 1
@@ -915,6 +916,20 @@ def export_cloud_maps(source_manifest: dict[str, Any]) -> dict[str, Any] | None:
     return cloud_manifest
 
 
+def export_value_tiles_capability(manifest: dict[str, Any]) -> dict[str, Any] | None:
+    if not value_tiles_enabled():
+        return None
+    tile_manifest = generate_value_tiles(WEB_DIR)
+    manifest.setdefault("capabilities", {})["spatial_value_tiles"] = capability_declaration()
+    log(
+        "Generated validated spatial value tiles: "
+        f"{tile_manifest['counts']['runs']} run(s), "
+        f"{tile_manifest['counts']['variants']} variant(s), "
+        f"{tile_manifest['counts']['tiles']} tile(s)"
+    )
+    return tile_manifest
+
+
 def export_model(model: dict[str, Any], locations: dict[str, Any]) -> dict[str, Any]:
     model_key = model["key"]
     profile_chunk_dir = model.get("profile_chunk_dir")
@@ -1114,6 +1129,8 @@ def main() -> None:
         manifest["counts"]["cloud_map_steps"] = cloud_manifest["counts"]["steps"]
     else:
         manifest["products"]["maps"]["cloud"] = None
+
+    export_value_tiles_capability(manifest)
 
     write_json(WEB_DIR / "manifest.json", manifest, pretty=True)
     validate_manifest(manifest)

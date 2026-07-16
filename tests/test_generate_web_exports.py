@@ -4,8 +4,11 @@ import shutil
 import tempfile
 import unittest
 from pathlib import Path
+from unittest import mock
 
-from generate_web_exports import expected_profile_chunks, scan_profile_chunks
+import generate_web_exports
+from generate_web_exports import expected_profile_chunks, export_value_tiles_capability, scan_profile_chunks
+from value_tiles import capability_declaration
 
 
 def _temp_workspace():
@@ -13,6 +16,26 @@ def _temp_workspace():
 
 
 class GenerateWebExportsTests(unittest.TestCase):
+    def test_value_tile_capability_is_absent_when_feature_is_disabled(self):
+        manifest = {}
+        with mock.patch.object(generate_web_exports, "value_tiles_enabled", return_value=False), mock.patch.object(
+            generate_web_exports, "generate_value_tiles"
+        ) as generator:
+            self.assertIsNone(export_value_tiles_capability(manifest))
+        generator.assert_not_called()
+        self.assertNotIn("capabilities", manifest)
+
+    def test_value_tile_capability_is_added_only_after_generation_returns(self):
+        manifest = {"capabilities": {"existing": {"version": 1}}}
+        generated = {"counts": {"runs": 1, "variants": 8, "tiles": 96}}
+        with mock.patch.object(generate_web_exports, "value_tiles_enabled", return_value=True), mock.patch.object(
+            generate_web_exports, "generate_value_tiles", return_value=generated
+        ) as generator:
+            self.assertEqual(export_value_tiles_capability(manifest), generated)
+        generator.assert_called_once_with(generate_web_exports.WEB_DIR)
+        self.assertEqual(manifest["capabilities"]["existing"], {"version": 1})
+        self.assertEqual(manifest["capabilities"]["spatial_value_tiles"], capability_declaration())
+
     def test_ch1_non_03z_direct_chunks_end_at_h033(self):
         tmp = Path(_temp_workspace())
         try:

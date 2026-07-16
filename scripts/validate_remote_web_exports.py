@@ -7,10 +7,22 @@ import os
 import sys
 import time
 from dataclasses import dataclass
+from pathlib import Path
 from typing import Any
 from urllib.error import HTTPError, URLError
 from urllib.parse import urljoin
 from urllib.request import Request, urlopen
+
+REPO_ROOT = Path(__file__).resolve().parents[1]
+if str(REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(REPO_ROOT))
+
+from value_tiles import (
+    canonical_json_bytes,
+    capability_declaration,
+    parse_xvt,
+    sha256_bytes,
+)
 
 
 BASE_URL = os.environ.get("DATA_BASE_URL", "https://data.xcbenz.com").rstrip("/") + "/"
@@ -174,6 +186,72 @@ def validate_map_product(manifest: dict[str, Any], product: str) -> None:
     log(f"{product} OK: {model_key}/{run_key}/{level_key}/{step.get('step')} bytes={actual}")
 
 
+def _require_cache_header(headers: Any, token: str, url: str) -> None:
+    cache_control = str(headers.get("Cache-Control") or "").lower()
+    if token not in cache_control:
+        raise ValidationError(f"{url} Cache-Control lacks {token!r}: {cache_control!r}")
+
+
+def validate_value_tiles(manifest: dict[str, Any]) -> None:
+    capability = ((manifest.get("capabilities") or {}).get("spatial_value_tiles"))
+    if not capability:
+        return
+    if capability != capability_declaration():
+        raise ValidationError("spatial value-tile capability differs from contract v1")
+    tile_manifest, tile_manifest_url, tile_manifest_headers = fetch_json(str(capability["manifest"]))
+    _require_cache_header(tile_manifest_headers, "no-cache", tile_manifest_url)
+    if (
+        tile_manifest.get("contract") != capability["contract"]
+        or tile_manifest.get("contract_version") != capability["contract_version"]
+        or tile_manifest.get("package") != capability["package"]
+    ):
+        raise ValidationError(f"{tile_manifest_url} contract declaration is invalid")
+    model_key, model_entry = choose_first(tile_manifest.get("models") or {}, "value-tile models")
+    run_key, run_entry = choose_first(model_entry.get("runs") or {}, "value-tile runs")
+    revision, revision_url, _revision_headers = fetch_json(str(run_entry.get("revision_record") or ""))
+    record = revision.get("record") or {}
+    digest = sha256_bytes(canonical_json_bytes(record))
+    if (
+        run_entry.get("revision") != digest[:12]
+        or run_entry.get("revision_sha256") != digest
+        or revision.get("revision") != digest[:12]
+        or revision.get("revision_sha256") != digest
+    ):
+        raise ValidationError(f"{revision_url} revision digest is invalid")
+    variant_key, variant_entry = choose_first(run_entry.get("variants") or {}, "value-tile variants")
+    metadata, metadata_url, metadata_headers = fetch_json(str(variant_entry.get("metadata") or ""))
+    _require_cache_header(metadata_headers, "immutable", metadata_url)
+    steps = metadata.get("steps") or []
+    if not steps:
+        raise ValidationError(f"{metadata_url} has no steps")
+    step = steps[0]
+    tile_matrix = metadata.get("tile_matrix") or {}
+    template = str(tile_matrix.get("url_template") or "")
+    if not template:
+        raise ValidationError(f"{metadata_url} has no tile URL template")
+    relative_tile = template.format(step=step["step"], tile_y=0, tile_x=0)
+    tile_url = resolve_url(relative_tile, context_url=metadata_url)
+    tile_result = fetch(tile_url)
+    _require_cache_header(tile_result.headers, "immutable", tile_url)
+    content_type = str(tile_result.headers.get("Content-Type") or "").split(";", 1)[0].strip().lower()
+    if content_type not in {"application/octet-stream", "application/vnd.xcbenz.xvt"}:
+        raise ValidationError(f"{tile_url} has unexpected Content-Type {content_type!r}")
+    parse_xvt(tile_result.data)
+    logical_path = f"{variant_key}/{step['step']}/t0_0.xvt"
+    tile_record = next(
+        (item for item in (record.get("tiles") or []) if item.get("logical_path") == logical_path),
+        None,
+    )
+    if not tile_record:
+        raise ValidationError(f"{revision_url} does not record {logical_path}")
+    if (
+        int(tile_record.get("byte_length") or -1) != len(tile_result.data)
+        or tile_record.get("sha256") != sha256_bytes(tile_result.data)
+    ):
+        raise ValidationError(f"{tile_url} differs from its revision record")
+    log(f"value tiles OK: {model_key}/{run_key}/{variant_key}/{step['step']} bytes={len(tile_result.data)}")
+
+
 def main() -> int:
     try:
         manifest, manifest_url, headers = fetch_json("web_exports/manifest.json")
@@ -189,6 +267,7 @@ def main() -> int:
         validate_map_product(manifest, "sunshine")
         validate_map_product(manifest, "rain")
         validate_map_product(manifest, "sunrain")
+        validate_value_tiles(manifest)
     except Exception as exc:  # noqa: BLE001 - CI smoke guard.
         return fail(str(exc))
 

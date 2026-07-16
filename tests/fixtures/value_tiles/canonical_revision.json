@@ -1,0 +1,34 @@
+{
+  "revision": "f7de9818f389",
+  "revision_sha256": "f7de9818f38919e396c5902bf8c6b8740fd6b016750abbf838def197fba2026d",
+  "record": {
+    "contract": "xcbenz-spatial-value-tiles",
+    "contract_version": "1.0.0",
+    "package": "immutable-chunks-cloud-dual-v1",
+    "model": "icon-ch1",
+    "run": "20260716_0300",
+    "grids": {},
+    "encodings": [],
+    "metadata": [
+      {
+        "logical_path": "rain/surface/metadata.json",
+        "content": {
+          "contract": "xcbenz-spatial-value-tiles",
+          "contract_version": "1.0.0",
+          "package": "immutable-chunks-cloud-dual-v1",
+          "model": "icon-ch1",
+          "run": "20260716_0300",
+          "product": "rain",
+          "variant": "surface"
+        }
+      }
+    ],
+    "tiles": [
+      {
+        "logical_path": "rain/surface/H00/t0_0.xvt",
+        "byte_length": 80,
+        "sha256": "52801fd21560668497786d81fede2334347b8f373b974926eb090d2dc98215b4"
+      }
+    ]
+  }
+}
