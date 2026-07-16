@@ -1,6 +1,8 @@
 # Spatial Value Tiles v1 Backend Migration
 
-Status: implementation branch only. Production rollout is not authorized.
+Status: production dual publication active since 2026-07-16. Whole-grid files
+remain the supported fallback and must not be removed before the observation
+gate passes and removal is separately approved.
 
 The backend derives spatial value tiles from the existing whole-grid browser
 files after those files have been generated. This keeps Wind, Sun/Rain, Rain,
@@ -58,43 +60,29 @@ staged tile artifacts, removes any previously retained `value_tiles` tree, and
 rebuilds the root manifest without `capabilities.spatial_value_tiles`. This
 makes the next candidate an immediate rollback to whole-grid-only publication.
 
-## WP4 execution sequence
+## WP4 execution record
 
-The contract, encoder, dual-generation path, validation, retention, and guarded
-staging publisher are implemented on `codex/value-tiles-backend-v1`. Continue
-WP4 without restarting that work:
+The reviewed WP4 sequence is complete through production activation:
 
-1. Finish backend production readiness before merging: add the proven `.xvt`
-   MIME and immutable-cache policy to the production host configuration, pass
-   `ENABLE_VALUE_TILES` through both the Coding Server and GitHub Actions
-   fallback with a default of false, support explicit enabled and disabled
-   staging candidates, and record filesystem disk high-water telemetry.
-2. Close staging acceptance with a second genuinely different revision. Measure
-   upload traversal, superseded-tree deletion, atomic swap, retained files, and
-   new-run visibility. Then publish disabled, prove capability and tile-tree
-   removal with all whole-grid products intact, and republish enabled.
-3. Merge the backend while the feature flag remains false. Production host
-   preparation and production capability activation are separate approvals.
-   Activation must set the Coding Server protected environment and the GitHub
-   Actions repository variable together so either executor publishes the same
-   contract.
-4. Build the frontend reader from merged WP3 behind strict capability and
-   version checks. Whole-grid and tiled readers feed one transport-neutral
-   semantic frame into the existing MapLibre value layer. A tiled frame commits
-   only after every required tile validates; any failure retries the complete
-   step through the existing whole-grid reader without mixing sources.
-5. Deploy the reader only to beta2 against
-   `https://data.xcbenz.com/value-tiles-staging`. Measure selector views, nearby
-   pans, zoom-out, All Alps, Wind levels, Cloud layers, `cloud4`, Cloud plus
-   Rain, request and byte counts, parsing, GPU upload, memory, and mobile.
-6. Production frontend rollout is a later explicit approval. Retain the old
-   reader and whole-grid outputs for at least 48 hours and four successful
-   production publication cycles. Removal requires separate approval.
+1. The contract, encoder, dual-generation path, validation, retention, guarded
+   publisher, production MIME/cache rules, and disk high-water telemetry are on
+   `main`.
+2. Staging proved a second revision, enabled publication, disabled rollback,
+   enabled restoration, atomic swaps, deletion, and whole-grid coexistence.
+3. The frontend reader passed beta2 desktop and mobile acceptance with strict
+   capability/version checks and complete-frame whole-grid fallback.
+4. The capability-aware frontend was deployed to `https://xcbenz.com` at commit
+   `ffd2904` on 2026-07-16.
+5. `ENABLE_VALUE_TILES=true` was set in both the Coding Server protected
+   production environment and the GitHub Actions repository variable.
+6. The first production dual-publication run completed for CH1 and CH2
+   `20260716_1800`, followed by local validation, guarded Infomaniak publication,
+   remote validation, and real-browser rendering.
 
-Backend completion and frontend reader development may proceed in parallel once
-the staging enabled candidate is stable. Neither requires early production
-activation. Live stations, webcams, radar maps, and airspace remain
-independently owned throughout every publication state.
+Live stations, webcams, radar maps, and airspace remain independently owned.
+Keep the legacy reader and whole-grid outputs for at least 48 hours and four
+successful production publication cycles. Their removal requires fresh review
+and explicit approval.
 
 ## Exact staged acceptance plan
 
@@ -458,6 +446,45 @@ After the final restore, the staging tile manifest returned `200` with
 timer was active, the production service was inactive, and the production root
 manifest did not advertise spatial value tiles.
 
+## Production activation evidence
+
+Production activation was explicitly approved and completed on 2026-07-16.
+The Coding Server used the official `main` checkout at commit `2d81026`; the
+recurring timer was restored before the forced publication completed. The run
+started at `21:23:11Z` and succeeded at `21:36:37Z` for CH1 and CH2
+`20260716_1800`.
+
+| Production result | Measurement |
+| --- | ---: |
+| Retained value-tile runs / variants / XVT files | 8 / 120 / 115,824 |
+| Existing retained whole-grid steps | Wind 5,152; Sunshine 636; Rain 644; Sun/Rain 636; Cloud 2,576 |
+| Filesystem used baseline / peak / delta | 87,132 / 92,083 / 4,951 MB |
+| Pipeline duration | 13 minutes 26 seconds |
+| Guarded Infomaniak upload | 44 seconds |
+| Remote validation | 3 seconds |
+
+The public root manifest advertises contract `xcbenz-spatial-value-tiles`
+`1.0.0`, package `immutable-chunks-cloud-dual-v1`, status `dual_publish`,
+fallback `whole_grid_split_binary_v1`, and `requires_range=false`. Both
+manifests return `200` with `no-cache`. Representative revision metadata and an
+XVT return `200` with `application/octet-stream` for the tile and one-year
+immutable caching. The exact legacy Wind H000 fallback also returns `200` with
+91,396 bytes.
+
+A fresh production browser session requested six CH1 Wind H03 tiles for the
+Switzerland view and six H04 tiles for prefetch, with no whole-grid step
+request. Cloud/Rain requested six `cloud4` and six Rain tiles per foreground
+step plus prefetch, again with no `.bin` request. Both products rendered
+continuously without visible seams or application errors.
+
+Rollback remains publication-based and is not a frontend redeploy. Set
+`ENABLE_VALUE_TILES=false` in both executor configurations and publish the next
+validated candidate. Retention then removes the tile capability and tile tree,
+while the deployed frontend automatically uses the still-published whole-grid
+reader. Do not remove either fallback until at least 48 hours and four
+successful production publication cycles have passed and removal is separately
+approved.
+
 ## Host staging
 
 `deploy/infomaniak-value-tiles-staging.htaccess` is a complete staging-only
@@ -482,6 +509,6 @@ manifest. It uses tiles only for supported contract major version 1 and package
 existing whole-grid reader active. A failed tile frame must fall back as a
 whole frame and must not mix tiled and whole-grid values.
 
-The capability can remain disabled while backend artifacts are exercised in a
-local or separately approved staging environment. Production capability
-activation and frontend rollout are separate reviewed changes.
+Production currently advertises this capability and the frontend uses it.
+Disabled mode remains the tested rollback path, and the whole-grid files remain
+published as the automatic frontend fallback during the observation window.
