@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import struct
 import sys
 from pathlib import Path
 
@@ -91,3 +92,13 @@ def test_hybrid_cloud_group_preserves_single_layer_bytes_and_reduces_stack_reque
     hybrid_low = candidate["hybrid_cloud_channels"]["cloud_low"]["views"]["alps"]
     assert hybrid_stack["requests"] < ordinary_stack["requests"]
     assert hybrid_low["compressed_bytes"] == ordinary_low["compressed_bytes"]
+
+
+def test_edge_padding_flag_covers_domain_halo_but_not_interior_tiles():
+    source = dataset("rain", 6, 6, bytes(range(36)))
+    edge = MODULE.tile_container((source,), (2, 2), 0, 1)
+    interior = MODULE.tile_container((source,), (2, 2), 1, 1)
+    edge_flags = struct.unpack_from("<H", edge, 8)[0]
+    interior_flags = struct.unpack_from("<H", interior, 8)[0]
+    assert edge_flags & 1
+    assert not interior_flags & 1

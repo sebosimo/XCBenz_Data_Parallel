@@ -23,6 +23,9 @@ from typing import Iterable, Sequence
 FINE_GRID_STEP = 0.02
 HALO = 1
 
+# Pinned copy of XCBenz_Web/web/src/mapViews.ts at
+# 47d4ca530b03560208652d132039c20b7cdc4e89, verified 2026-07-16.
+# Re-verify this list before using the analyzer for a later contract decision.
 SELECTORS: dict[str, tuple[float, float, float, float]] = {
     "switzerland": (5.5, 45.5, 11.0, 48.2),
     "alps": (4.0, 43.0, 16.5, 48.8),
@@ -252,13 +255,17 @@ def make_container(
     header_bytes = 48 + 16 * len(sections)
     payload = b"".join(sections)
     valid_width, valid_height = _valid_core_size(grid, core, tx, ty)
-    touches_domain_edge = (
-        tx == 0
-        or ty == 0
-        or tx * core[0] + core[0] >= grid.width
-        or ty * core[1] + core[1] >= grid.height
+    payload_x_start = tx * core[0] - HALO
+    payload_y_start = ty * core[1] - HALO
+    payload_x_end = payload_x_start + payload_width
+    payload_y_end = payload_y_start + payload_height
+    has_outside_domain_padding = (
+        payload_x_start < 0
+        or payload_y_start < 0
+        or payload_x_end > grid.width
+        or payload_y_end > grid.height
     )
-    flags = 1 if touches_domain_edge else 0
+    flags = 1 if has_outside_domain_padding else 0
     if len(sections) > 1:
         flags |= 2
     base = struct.pack(

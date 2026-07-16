@@ -84,12 +84,21 @@ an exact view crop compressed in the same controlled run. Negative overfetch
 can occur when a grouped file compresses better than the same channels in
 separate files.
 
+The selector copy is pinned to `XCBenz_Web` commit
+`47d4ca530b03560208652d132039c20b7cdc4e89` and was verified on 2026-07-16.
+The analyzer source repeats that provenance beside `SELECTORS`. A later
+measurement must re-verify the copy against `mapViews.ts` and update the pin if
+the frontend selector list or any bounding box changes.
+
 ### Package comparison at the chosen tile size
 
-`Files/run` counts payload files for one model and one run using 8 Wind levels,
-46 Wind steps, 45 Sun/Rain steps, 46 Rain steps, and 46 steps for each Cloud
-layer. `Retained` assumes four runs for each of two models. Manifest and metadata
-files are excluded from both counts.
+`Files/run` counts payload files for one model and one run using the observed
+production sample shape: 8 Wind levels, 46 Wind steps, 45 Sun/Rain steps, 46
+Rain steps, and 46 steps for each Cloud layer. `Retained` models the current
+maximum policy of four retained runs for each of two models. Manifest and
+metadata files are excluded from both counts. These are benchmark inputs, not
+fixed contract cardinalities. An implementation acceptance report must record
+the actual step and retained-run counts it observed.
 
 | Package | Switzerland Wind | Switzerland Sun/Rain | Switzerland Cloud single + Rain | Switzerland Cloud stack + Rain | All Alps Cloud stack + Rain | Files/run | Retained | Result |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | --- |
@@ -203,10 +212,19 @@ compare the full supported major version, not merely test that `manifest` is
 present. Minor additions must be backward compatible. A major version change
 uses a new path and a new reader.
 
+`whole_grid_split_binary_v1` is an informational name assigned by this contract
+to the existing Wind, Sun/Rain, Rain, and Cloud `metadata.json` plus
+`steps/{step}.bin` outputs documented in the repository pipeline contract. It
+is not a separately declared capability and the frontend must not try to
+resolve or version-check that string. Fallback uses the existing root product
+manifest URLs and current whole-grid readers. A future machine-validated
+fallback contract requires its own capability declaration and identifier.
+
 ### Immutable path structure
 
 ```text
 web_exports/value_tiles/v1/manifest.json
+web_exports/value_tiles/v1/{model}/{run}/{revision}/revision.json
 web_exports/value_tiles/v1/{model}/{run}/{revision}/{product}/{variant}/metadata.json
 web_exports/value_tiles/v1/{model}/{run}/{revision}/{product}/{variant}/{step}/t{tile_y}_{tile_x}.xvt
 ```
@@ -225,14 +243,34 @@ web_exports/value_tiles/v1/icon-ch1/20260716_0300/7f4c2a91d0e3/rain/surface/H02/
 canonical revision record. The record is UTF-8 JSON serialized with sorted
 object keys, no insignificant whitespace, integer numeric fields, and arrays
 sorted by `logical_path`. It contains `contract`, `contract_version`, `model`,
-`run`, the complete grid and encoding declarations, step labels, horizons and
-valid times, and one entry for every revision-scoped metadata or tile file:
-`{"logical_path": string, "byte_length": integer, "sha256": lowercase hex}`.
+`run`, the complete grid and encoding declarations, and two arrays:
+
+- `tiles`: one entry for every `.xvt` file as
+  `{"logical_path": string, "byte_length": integer, "sha256": lowercase hex}`.
+  `byte_length` and `sha256` refer to the exact published, decoded HTTP entity
+  bytes beginning with `XVT1`.
+- `metadata`: one entry per variant as
+  `{"logical_path": string, "content": object}`. `content` is the complete
+  canonical metadata object before adding the derived `revision` and
+  `revision_sha256` fields. It includes step labels, horizons, valid times, grid,
+  encodings, matrix shape, URL templates, and full-grid CRC values.
+
 Logical paths start below the revision directory and therefore do not contain
-the revision itself. Metadata is hashed in canonical form without its derived
-`revision` and `revision_sha256` fields. The full revision SHA-256 is stored in
-the run index. If any tile value, header, metadata field, grid, encoding, step,
-or file set changes, the revision changes. Retained runs keep their existing
+the revision itself. Metadata files are deliberately not represented by a
+published-byte hash or byte length, which removes the digest circularity. After
+the revision digest is computed, the publisher adds `revision` and
+`revision_sha256` to each metadata file without changing its canonical content
+entry.
+
+The immutable `revision.json` file is a wrapper with exactly
+`{"revision": string, "revision_sha256": string, "record": object}`. The
+wrapper itself is not part of `record`. A validator hashes canonical `record`,
+checks both derived fields, then strips `revision` and `revision_sha256` from
+each published metadata file and compares the re-canonicalized object with its
+`metadata[].content`. It can validate selected tile files against the matching
+`tiles` entries remotely; local publication validation must validate all tile
+entries. If any tile value, header, metadata field, grid, encoding, step, or
+file set changes, the revision changes. Retained runs keep their existing
 revision paths, so a new publication does not rename old runs.
 
 The v1 manifest is an index of models, runs, revisions, and variant metadata
@@ -249,6 +287,7 @@ Minimum v1 manifest run entry:
   "run": "20260716_0300",
   "revision": "7f4c2a91d0e3",
   "revision_sha256": "7f4c2a91d0e3...64 hex characters total...",
+  "revision_record": "web_exports/value_tiles/v1/icon-ch1/20260716_0300/7f4c2a91d0e3/revision.json",
   "variants": {
     "wind/800m_AGL": {
       "metadata": "web_exports/value_tiles/v1/icon-ch1/20260716_0300/7f4c2a91d0e3/wind/800m_AGL/metadata.json"
@@ -387,7 +426,7 @@ container. The base header is 48 bytes.
 | 4 | 1 | major version, `1` |
 | 5 | 1 | minor version, `0` |
 | 6 | 2 | total header bytes, including section directory |
-| 8 | 2 | flags: bit 0 edge padding present, bit 1 grouped sections |
+| 8 | 2 | flags: bit 0 outside-domain padding present, bit 1 grouped sections |
 | 10 | 2 | tile x |
 | 12 | 2 | tile y |
 | 14 | 1 | halo cells, `1` |
@@ -420,6 +459,12 @@ non-overlapping, and exactly cover `payload_bytes`. The reader validates magic,
 supported major version, header length, tile coordinates, grid dimensions,
 section declarations, byte lengths, and CRC before exposing values.
 
+Flag bit 0 is set if and only if at least one stored payload coordinate maps
+outside `[0, grid_width)` or `[0, grid_height)` and was therefore filled with
+the channel missing code. This includes west, south, east, or north halo cells
+outside the domain and unused cells in a partial east or north core. A stored
+missing code originating from valid source data does not by itself set bit 0.
+
 ### Encodings and missing values
 
 | Channel id | Channel | Encoding id | Exact v1 representation |
@@ -449,7 +494,11 @@ Validation is layered:
 2. Every `.xvt` header has exact dimensions, section lengths, and payload CRC-32.
 3. Every metadata step has per-channel `full_grid_crc32` values computed over
    the existing whole-grid encoded bytes. Reassembling tile cores must reproduce
-   these values exactly.
+   these values exactly. Cloud validation must decode each tile-local nibble
+   stream to cell codes, place core cells by global `(x, y)`, and repack the
+   complete grid with the whole-grid even-low, odd-high rule before computing
+   CRC. It must not splice packed tile bytes because halo offsets change local
+   nibble parity.
 4. Generator validation must compare every reassembled cell, including missing
    values, and must check adjacent core and halo equality on every seam.
 5. Publication validation must reject a capability manifest that references a
@@ -462,14 +511,18 @@ Validation is layered:
   must-revalidate`.
 - Revision-scoped metadata and `.xvt` files: `Cache-Control: public,
   max-age=31536000, immutable`.
-- `.xvt` is a whole-file resource and may use HTTP gzip or Brotli. The browser
-  parses the decoded response.
+- `.xvt` must have an explicit `application/octet-stream` or dedicated binary
+  media type mapping and must be included in the host's gzip or Brotli
+  compression filter. It is a whole-file resource and the browser parses the
+  decoded response.
 - `.xva` is reserved for a possible future Range archive and is not part of v1.
   If introduced, outer HTTP gzip and Brotli must both be disabled.
 
-The current host's one-hour cache rule is not sufficient for revision-scoped
-tiles. The implementation task must add and test the immutable path rule in a
-non-production environment before rollout.
+The current host's `manifest.json` rule already gives the new manifest the
+required no-cache behavior. Its one-hour file rule and MIME mappings do not
+match `.xvt`, so they are insufficient for tiles. The implementation task must
+add and test the `.xvt` MIME mapping, compression inclusion, and immutable path
+rule in a non-production environment before rollout.
 
 ### Atomic publication and retention
 
@@ -537,10 +590,11 @@ decompression, application-owned partial caching, and special host behavior.
    the smallest initial response. The contract supports both.
 2. Set the frontend request-concurrency and decoded-tile LRU byte limits after
    desktop and mobile measurement. The contract does not prescribe cache size.
-3. Benchmark the 66,144-file maximum retained set on the Coding Server and
+3. Benchmark the modeled 66,144-file maximum retained set on the Coding Server and
    Infomaniak staging path, including deletion and rsync traversal. If the host
    has a practical inode or operation limit, revisit the 160 by 112 size before
-   production rollout, not the lossless contract or selector independence.
+   production rollout, not the lossless contract or selector independence. The
+   acceptance report must also state the actual step and retained-run counts.
 4. Decide whether CRC validation runs on every production tile fetch or only on
    first cache insertion. Generator and publication validation remain required
    in either case.
@@ -580,14 +634,17 @@ Required implementation:
    58. Longitude and latitude both increase; storage is row-major y then x.
 3. Copy a one-cell halo from neighboring global cells. Fill only outside-domain
    and unused edge-core cells with each channel's existing missing code. Keep
-   payload dimensions fixed. Validate every interior seam in both directions.
+   payload dimensions fixed. Set flag bit 0 exactly when any payload coordinate
+   lies outside the global grid, including a border halo. Validate every
+   interior seam in both directions.
 4. Publish individual variants for Wind level, Sun/Rain surface, Rain surface,
    and Cloud total/low/mid/high. Also publish Cloud cloud4 with sections ordered
    total, low, mid, high. Do not group Wind levels or adjacent spatial tiles.
-5. Use revision-scoped immutable paths exactly as specified. Add a canonical
-   revision-record fixture, derive full SHA-256 and 12-character path revision,
-   and prove that any payload, metadata, grid, encoding, step, or file-set
-   change changes the revision.
+5. Use revision-scoped immutable paths and the non-circular `revision.json`
+   record exactly as specified. Add a canonical record fixture, derive full
+   SHA-256 and 12-character path revision, strip derived metadata fields during
+   validation, and prove that any payload, metadata, grid, encoding, step, or
+   file-set change changes the revision.
 6. Generate value_tiles/v1/manifest.json and per-variant metadata with complete
    rectangular tile matrices, deterministic templates, step metadata, and
    measured full-grid CRC values. Do not advertise partial variants or steps.
@@ -596,9 +653,10 @@ Required implementation:
    scripts/validate_remote_web_exports.py as appropriate. Keep the existing
    output contract unchanged and add the root capability only when the complete
    tiled contract validates.
-8. Add a non-production host configuration for revision-scoped immutable cache
-   headers. XVT files are whole-file resources and may use HTTP gzip or Brotli.
-   Do not implement a Range archive or rely on Range behavior.
+8. Add a non-production host configuration with an explicit `.xvt` binary MIME
+   mapping, gzip or Brotli filter inclusion, and revision-scoped immutable cache
+   headers. XVT files are whole-file resources. Do not implement a Range
+   archive or rely on Range behavior.
 9. Preserve the current atomic staging, freshness guard, shared remote lock,
    whole-directory swap, _previous_web_exports rollback, and live-subtree copy.
 10. Add focused unit and integration tests for header parsing, exact bytes,
@@ -609,7 +667,8 @@ Required implementation:
 Required validation:
 - Reassemble every tile core for representative Wind, Sun/Rain, Rain, and all
   four Cloud layers and assert byte-for-byte equality with existing whole-grid
-  steps.
+  steps. For Cloud, decode tile nibbles to cell codes and repack by global flat
+  index before comparing bytes or CRC; never splice tile-packed byte ranges.
 - Assert neighboring halos equal the adjacent core values and cover domain
   edges and odd Cloud nibble counts.
 - Run the narrow tests first, then the proportionate generator, manifest,
@@ -618,7 +677,8 @@ Required validation:
   production.
 - Measure generation time, compressed bytes, payload-file count, rsync/file-list
   traversal, retention deletion, and validation time. Specifically test the
-  66,144-payload maximum retained shape or a faithful filesystem fixture.
+  modeled 66,144-payload maximum retained shape or a faithful filesystem
+  fixture, and record the actual per-product step and retained-run counts used.
 - If staging publication is separately approved, prove cache headers, atomic
   new-revision visibility, fallback coexistence, and preserved live-owned
   subtrees. Do not switch the production capability status.
