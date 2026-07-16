@@ -139,8 +139,8 @@ verify that the production service is inactive. If it is active, wait for it to
 finish and do not stop the service:
 
 ```bash
-systemctl --user is-active xcbenz-coding-server-forecast.service
-systemctl --user is-active xcbenz-coding-server-forecast.timer
+systemctl --user is-active xcbenz-coding-server-production.service
+systemctl --user is-active xcbenz-coding-server-production.timer
 ```
 
 Record the complete CH1 and CH2 tags printed by the plan-only command. Keep
@@ -150,7 +150,7 @@ that restarts the timer after success, failure, or interruption:
 
 ```bash
 set -e
-timer=xcbenz-coding-server-forecast.timer
+timer=xcbenz-coding-server-production.timer
 systemctl --user stop "$timer"
 restart_timer() {
   systemctl --user start "$timer"

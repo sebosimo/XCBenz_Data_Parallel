@@ -394,6 +394,12 @@ def ch1_chunks(run_tag: str, chunk_size: int) -> list[tuple[int, int]]:
     return horizon_chunks(end, chunk_size)
 
 
+def ch1_profile_chunks(run_tag: str) -> list[tuple[int, int]]:
+    if run_hour(run_tag) == 3:
+        return [(0, 16), (17, 33), (34, 45)]
+    return [(0, 16), (17, 33)]
+
+
 def ch2_chunks(chunk_size: int) -> list[tuple[int, int]]:
     if chunk_size <= 0:
         return [(0, 30), (31, 60), (61, 90), (91, 120)]
@@ -539,7 +545,7 @@ def build_jobs(
         )
         jobs.append(Job(name, [*py, "fetch_data.py"], env))
 
-    for start, end in [(0, 16), (17, 45)]:
+    for start, end in ch1_profile_chunks(latest_ch1):
         cid = chunk_id(start, end)
         name = f"ch1-profile-{cid}"
         env = job_env(base, run_dir, name)
