@@ -141,7 +141,7 @@ def parse_startup_config(
             f"{prefix}_RUN_TAG conflicts with {prefix}_REFERENCE_TIME; provide one run"
         )
 
-    chunk_default = f"H{horizon_start:03d}_H{horizon_end:03d}"
+    chunk_default = policy.profile_chunk_id(horizon_start, horizon_end)
     tmp_raw = str(env.get("XCBENZ_FETCH_TMP_DIR", "")).strip()
     products = ProductSelection(
         wind=_enabled(env, "WIND", model, False),

@@ -28,6 +28,22 @@ class FetchEntrypointTests(unittest.TestCase):
             fetch_data_ch2.CH2_POLICY.static_assets,
         )
 
+    def test_supported_wrappers_parse_the_legacy_environment_then_delegate(self):
+        for module, policy in (
+            (fetch_data, fetch_data.CH1_POLICY),
+            (fetch_data_ch2, fetch_data_ch2.CH2_POLICY),
+        ):
+            with self.subTest(module=module.__name__), mock.patch.dict(
+                os.environ,
+                {},
+                clear=True,
+            ), mock.patch.object(module, "execute_fetch") as execute:
+                module.main()
+                runtime, startup = execute.call_args.args
+                self.assertIs(runtime.policy, policy)
+                self.assertEqual(startup.model, policy.model)
+                self.assertIs(runtime.fetch_variable_files, module.fetch_variable_files)
+
 
 if __name__ == "__main__":
     unittest.main()
