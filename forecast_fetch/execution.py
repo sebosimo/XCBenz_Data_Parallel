@@ -374,6 +374,8 @@ def execute_fetch(runtime: FetchRuntime, startup: FetchStartupConfig) -> None:
             )
 
             rain_scalars: dict[str, Any] = {}
+            rain_fields: dict[str, Any] = {}
+            downloaded_rain: dict[str, str] = {}
             rain_sample_field = None
             if plan.rain:
                 downloaded_rain = (
@@ -408,6 +410,8 @@ def execute_fetch(runtime: FetchRuntime, startup: FetchStartupConfig) -> None:
                     sample_field = rain_sample_field
 
             cloud_scalars: dict[str, Any] = {}
+            cloud_fields: dict[str, Any] = {}
+            downloaded_cloud: dict[str, str] = {}
             cloud_sample_field = None
             if plan.cloud:
                 downloaded_cloud = (
@@ -442,6 +446,10 @@ def execute_fetch(runtime: FetchRuntime, startup: FetchStartupConfig) -> None:
                     sample_field = cloud_sample_field
 
             radiation_scalars: dict[str, Any] = {}
+            downloaded_radiation: dict[str, str] = {}
+            raw_data = None
+            previous_raw = None
+            deaccumulated = None
             if horizon > 0 and plan.radiation and sample_field is not None:
                 downloaded_radiation = (
                     {
@@ -549,6 +557,28 @@ def execute_fetch(runtime: FetchRuntime, startup: FetchStartupConfig) -> None:
                 horizon_prefix = "CH2 " if model == "ch2" else ""
                 log(f"{horizon_prefix}H+{horizon:0{policy.step_digits}d} done")
                 any_success = True
+
+            # Keep only the accumulator-owned/profile-buffer copies between
+            # horizons. Without explicit release, loop locals retain the prior
+            # horizon's complete decoded fields while the next batch downloads.
+            fields.clear()
+            decoded_fields.clear()
+            rain_fields.clear()
+            cloud_fields.clear()
+            rain_scalars.clear()
+            cloud_scalars.clear()
+            radiation_scalars.clear()
+            downloaded_fields.clear()
+            downloaded_rain.clear()
+            downloaded_cloud.clear()
+            downloaded_radiation.clear()
+            downloaded_all.clear()
+            sample_field = None
+            rain_sample_field = None
+            cloud_sample_field = None
+            raw_data = None
+            previous_raw = None
+            deaccumulated = None
 
         if prefetch_executor is not None:
             prefetch_executor.shutdown(wait=True)
