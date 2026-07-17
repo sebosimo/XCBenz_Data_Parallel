@@ -105,6 +105,13 @@ class PipelineContractTests(unittest.TestCase):
             self.assertIn(f"run: uv run python {script}", workflow)
             self.assertNotIn(f"run: python {script}", workflow)
 
+    def test_ephemeral_data_branch_publish_has_no_invalid_main_cleanup(self):
+        workflow = WORKFLOW_PATH.read_text(encoding="utf-8")
+        self.assertIn('git commit --quiet -m "Web export snapshot:', workflow)
+        self.assertIn('git push --quiet origin HEAD:"$DATA_BRANCH" --force', workflow)
+        self.assertNotIn("git checkout -f main", workflow)
+        self.assertNotIn("git branch -D data-temp", workflow)
+
 
 if __name__ == "__main__":
     unittest.main()

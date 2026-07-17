@@ -481,13 +481,11 @@ jobs:
           git rm -rf --cached . 2>/dev/null || true
           git add -f web_exports/
           if ! git diff --cached --quiet; then
-            git commit -m "Web export snapshot: $(date -u +'%Y-%m-%d %H:%M') UTC"
-            git push origin HEAD:"$DATA_BRANCH" --force
+            git commit --quiet -m "Web export snapshot: $(date -u +'%Y-%m-%d %H:%M') UTC"
+            git push --quiet origin HEAD:"$DATA_BRANCH" --force
           else
             echo "No data to push to $DATA_BRANCH"
           fi
-          git checkout -f main
-          git branch -D data-temp
 
   noop:
     needs: preflight
