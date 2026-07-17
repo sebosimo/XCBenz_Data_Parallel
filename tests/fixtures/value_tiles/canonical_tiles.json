@@ -1,0 +1,77 @@
+{
+  "fixture_schema_version": 1,
+  "contract": "xcbenz-spatial-value-tiles",
+  "contract_version": "1.0.0",
+  "cases": [
+    {
+      "name": "rain_single_channel_domain_edge",
+      "sha256": "52801fd21560668497786d81fede2334347b8f373b974926eb090d2dc98215b4",
+      "payload_hex": "58565431010040000100000000000101020002000200020004000400030000000200000010000000dc3cbb920000000003000301000000001000000010000000ffffffffff000102ff030405ffffffff",
+      "expected": {
+        "flags": 1,
+        "tile": [0, 0],
+        "core": [2, 2],
+        "valid_core": [2, 2],
+        "payload": [4, 4],
+        "grid": [3, 2],
+        "sections": [
+          {
+            "channel": "rain",
+            "decoded_values": [255, 255, 255, 255, 255, 0, 1, 2, 255, 3, 4, 5, 255, 255, 255, 255]
+          }
+        ]
+      }
+    },
+    {
+      "name": "grouped_cloud_section_order",
+      "sha256": "f093a0d91febafe9488327510a93897ebeee12250c8c562883cbdbf3ecf1fe8b",
+      "payload_hex": "5856543101005000030000000000010202000100020001000400030002000000010000000c000000699dfa5e000000000400040100000000060000000c0000000500040106000000060000000c000000ffff0ff1ffffffff9ffaffff",
+      "expected": {
+        "flags": 3,
+        "tile": [0, 0],
+        "core": [2, 1],
+        "valid_core": [2, 1],
+        "payload": [4, 3],
+        "grid": [2, 1],
+        "sections": [
+          {
+            "channel": "cloud_total",
+            "decoded_values": [15, 15, 15, 15, 15, 0, 1, 15, 15, 15, 15, 15]
+          },
+          {
+            "channel": "cloud_low",
+            "decoded_values": [15, 15, 15, 15, 15, 9, 10, 15, 15, 15, 15, 15]
+          }
+        ]
+      }
+    },
+    {
+      "name": "odd_cell_cloud_nibble_padding",
+      "sha256": "593b342aa8a346a60eb49068976ea708a8823e9850dfc95db8180c9107ccef8a",
+      "payload_hex": "58565431010040000100000000000101010001000100010003000300010000000100000005000000ca41eedc0000000004000401000000000500000009000000fffff7ffff",
+      "expected": {
+        "flags": 1,
+        "tile": [0, 0],
+        "core": [1, 1],
+        "valid_core": [1, 1],
+        "payload": [3, 3],
+        "grid": [1, 1],
+        "sections": [
+          {
+            "channel": "cloud_total",
+            "decoded_values": [15, 15, 15, 15, 7, 15, 15, 15, 15]
+          }
+        ]
+      }
+    }
+  ],
+  "corruption_cases": [
+    {
+      "name": "rain_crc_corruption",
+      "source_case": "rain_single_channel_domain_edge",
+      "byte_offset_from_end": 1,
+      "xor": 1,
+      "error": "CRC-32"
+    }
+  ]
+}
