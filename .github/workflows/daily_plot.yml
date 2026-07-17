@@ -57,6 +57,7 @@ jobs:
       reason: ${{ steps.preflight.outputs.reason }}
       latest_ch1: ${{ steps.preflight.outputs.latest_ch1 }}
       latest_ch2: ${{ steps.preflight.outputs.latest_ch2 }}
+      ch1_profile_matrix: ${{ steps.preflight.outputs.ch1_profile_matrix }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v6
@@ -100,9 +101,9 @@ jobs:
       - name: Restore CH1 cache from sandbox data branch
         run: |
           git fetch --depth=1 origin "$DATA_BRANCH" 2>/dev/null || echo "$DATA_BRANCH branch not found yet - starting fresh"
-          git checkout FETCH_HEAD -- cache_wind_packed/ch1/ cache_sunshine_maps/ch1/ cache_rain_maps/ch1/ cache_sunrain_maps/ch1/ cache_cloud_maps/ch1/ 2>/dev/null || true
-          git reset HEAD -- cache_wind_packed/ cache_sunshine_maps/ cache_rain_maps/ cache_sunrain_maps/ cache_cloud_maps/ manifest.json 2>/dev/null || true
-          echo "Packed CH1 wind-map .nc files: $(find cache_wind_packed/ch1 -name '*.nc' 2>/dev/null | wc -l)"
+          git checkout FETCH_HEAD -- cache_wind_maps/ch1/ cache_sunshine_maps/ch1/ cache_rain_maps/ch1/ cache_sunrain_maps/ch1/ cache_cloud_maps/ch1/ 2>/dev/null || true
+          git reset HEAD -- cache_wind_maps/ cache_sunshine_maps/ cache_rain_maps/ cache_sunrain_maps/ cache_cloud_maps/ manifest.json 2>/dev/null || true
+          echo "CH1 wind-map step binaries: $(find cache_wind_maps/ch1 -name '*.bin' 2>/dev/null | wc -l)"
           echo "CH1 cloud map step binaries: $(find cache_cloud_maps/ch1 -name '*.bin' 2>/dev/null | wc -l)"
 
       - name: Fetch CH1 map data
@@ -129,7 +130,7 @@ jobs:
           if-no-files-found: ignore
           retention-days: 1
           path: |
-            cache_wind_packed/ch1/
+            cache_wind_maps/ch1/
             cache_sunshine_maps/ch1/
             cache_rain_maps/ch1/
             cache_sunrain_maps/ch1/
@@ -143,14 +144,7 @@ jobs:
       contents: read
     strategy:
       fail-fast: false
-      matrix:
-        chunk:
-          - id: H000_H016
-            start: "0"
-            end: "16"
-          - id: H017_H045
-            start: "17"
-            end: "45"
+      matrix: ${{ fromJSON(needs.preflight.outputs.ch1_profile_matrix) }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v6
@@ -449,14 +443,14 @@ jobs:
         run: |
           echo "CH1 .nc files: $(find cache_data -name '*.nc' 2>/dev/null | wc -l)"
           echo "CH2 .nc files: $(find cache_data_ch2 -name '*.nc' 2>/dev/null | wc -l)"
-          echo "Packed wind-map .nc files: $(find cache_wind_packed -name '*.nc' 2>/dev/null | wc -l)"
+          echo "Wind-map step binaries: $(find cache_wind_maps -name '*.bin' 2>/dev/null | wc -l)"
           echo "Sunshine map step binaries: $(find cache_sunshine_maps -name '*.bin' 2>/dev/null | wc -l)"
           echo "Rain map step binaries: $(find cache_rain_maps -name '*.bin' 2>/dev/null | wc -l)"
           echo "Sun+Rain map step binaries: $(find cache_sunrain_maps -name '*.bin' 2>/dev/null | wc -l)"
           echo "Cloud map step binaries: $(find cache_cloud_maps -name '*.bin' 2>/dev/null | wc -l)"
           echo "web_exports files: $(find web_exports -type f 2>/dev/null | wc -l)"
           echo "web_exports .nc files: $(find web_exports -name '*.nc' 2>/dev/null | wc -l)"
-          du -sh cache_data cache_data_ch2 cache_data_packed cache_data_ch2_packed cache_wind_packed cache_sunshine_maps cache_rain_maps cache_sunrain_maps cache_cloud_maps web_exports 2>/dev/null || true
+          du -sh cache_data cache_data_ch2 cache_data_packed cache_data_ch2_packed cache_wind_maps cache_sunshine_maps cache_rain_maps cache_sunrain_maps cache_cloud_maps web_exports 2>/dev/null || true
 
       - name: Deploy web exports to Infomaniak data host
         if: ${{ env.DEPLOY_DATA_HOST == 'true' }}

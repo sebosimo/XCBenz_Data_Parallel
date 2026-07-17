@@ -75,6 +75,26 @@ def expected_horizon_count(model: str, run_tag: str) -> int:
     return 46 if run_hour == 3 else 34
 
 
+def ch1_profile_matrix(run_tag: str) -> dict[str, list[dict[str, str]]]:
+    chunks = [(0, 16), (17, 33)]
+    try:
+        run_hour = int(run_tag.split("_", 1)[1][:2])
+    except (IndexError, ValueError):
+        run_hour = -1
+    if run_hour == 3:
+        chunks.append((34, 45))
+    return {
+        "chunk": [
+            {
+                "id": f"H{start:03d}_H{end:03d}",
+                "start": str(start),
+                "end": str(end),
+            }
+            for start, end in chunks
+        ]
+    }
+
+
 def has_profile_horizon(model: str, reference_datetime: dt.datetime, horizon: int) -> bool:
     cfg = COLLECTIONS[model]
     ref = reference_datetime.strftime("%Y-%m-%dT%H:%M:%SZ")
@@ -199,6 +219,10 @@ def write_output(name: str, value: str) -> None:
 def main() -> int:
     force_refresh = os.environ.get("FORCE_REFRESH", "").strip().lower() in {"1", "true", "yes", "on"}
     latest = {model: latest_run(model) for model in COLLECTIONS}
+    write_output(
+        "ch1_profile_matrix",
+        json.dumps(ch1_profile_matrix(latest.get("ch1") or ""), separators=(",", ":")),
+    )
     if force_refresh:
         write_output("should_run", "true")
         write_output("should_run_ch1", "true")

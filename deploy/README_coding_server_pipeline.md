@@ -89,6 +89,25 @@ The pipeline produces these local cache roots before export:
 - wind maps: `metadata.json` plus `steps/*.bin`
 - rain, Sun+Rain, cloud, and sunshine maps: existing split binary metadata plus step binaries
 
+The GitHub fallback uses `cache_wind_packed` only as the isolated per-chunk
+CH2 Wind staging directory under `map_chunk_outputs/`. The map-merge step
+explicitly consumes that staging name and writes the canonical
+`cache_wind_maps/` tree above. CH1 fallback restore, generation, inspection,
+and upload use `cache_wind_maps/` directly. `cache_wind_packed/` is not a final
+generation, manifest, retention, or publication root.
+
+Fetcher policy differences are explicit until the shared fetch-engine work:
+
+- Both CH1 and CH2 honor `XCBENZ_FETCH_TMP_DIR`. CH2 previously ignored it;
+  that was a defect because isolated Coding Server jobs leaked temporary files
+  into the checkout.
+- CH2 retains its 90-second whole-download deadline and deletes a partial file
+  after a failed attempt. This bounds larger CH2 asset downloads and is an
+  intentional model policy for the current baseline.
+- CH1 retains its request timeout without a separate whole-download deadline
+  and its legacy retry cleanup behavior. WP1 characterization must lock both
+  policies before WP2A decides whether they can safely converge.
+
 ## Retired Paths
 
 The pipeline no longer supports hourly profile NetCDF files, packed profile
@@ -96,7 +115,7 @@ NetCDF files, packed wind NetCDF files, or any NetCDF-derived web export
 fallback. GitHub Actions uses the same direct web-export contract when fallback
 publication is required.
 
-Do not reintroduce these cache roots as generation or publication inputs:
+Do not reintroduce these cache roots as final generation or publication inputs:
 
 - `cache_data/`
 - `cache_data_ch2/`
