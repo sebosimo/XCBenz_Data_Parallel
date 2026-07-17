@@ -17,8 +17,6 @@ jobs:
   quality:
     name: backend-quality
     runs-on: ubuntu-latest
-    env:
-      TEST_TMPDIR: ${{ runner.temp }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v6
@@ -39,6 +37,8 @@ jobs:
           uv pip install -r requirements.txt
 
       - name: Run unit and contract tests
+        env:
+          TEST_TMPDIR: ${{ runner.temp }}
         run: uv run python -m unittest discover -s tests -v
 
       - name: Validate Python sources
