@@ -3,10 +3,10 @@
 This repository is `sebosimo/XCBenz_Data_Parallel`, the public XCBenz forecast
 fetch, export, and publication repository.
 
-Related repository:
+Related repositories:
 
-- `sebosimo/XCBenz_Temps`: private Streamlit app repository. It contains app/UI
-  code and private thermal-model code.
+- `sebosimo/XCBenz_Web`: static Vite/React frontend for `https://xcbenz.com`.
+- `sebosimo/XCBenz_Temps`: private legacy Streamlit backup/reference only.
 
 ## Production Ownership
 
@@ -26,7 +26,7 @@ Rules of thumb:
 
 - Production fetcher, `locations.json`, manifest, cache layout, direct web
   exports, and publication safety changes belong here.
-- UI and rendering changes belong in `XCBenz_Temps`.
+- UI and rendering changes belong in `XCBenz_Web`.
 - If a change affects both generated data and app reading or display, update
   both repositories together.
 - Keep private app code and thermal-model code out of this public repository.
