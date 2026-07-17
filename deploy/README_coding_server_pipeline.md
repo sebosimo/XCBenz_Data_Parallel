@@ -5,9 +5,9 @@ generate or publish NetCDF intermediates.
 
 ## Current Production Status
 
-As of 2026-07-14:
-
-- `main` commit `cf582c9` is deployed on the Coding Server.
+- The Coding Server runs the `main` checkout. This document deliberately does
+  not pin a deployed commit because that value becomes stale after every
+  update. Verify the live revision on the server when needed.
 - `xcbenz-coding-server-forecast.timer` is enabled and active.
 - The staging timer is disabled.
 - A manual production publish passed local and remote validation on 2026-07-13.
@@ -17,12 +17,11 @@ As of 2026-07-14:
   GitHub Actions only after two consecutive stale observations.
 - GitHub Actions retains its independent six-hour schedule as a last resort.
 
-Coding Server checkout:
+Coding Server checkout and live revision check:
 
-```text
-/home/sebas/projects/XCBenz_Data_Parallel
-branch: main
-validated commit: cf582c9
+```bash
+git -C /home/sebas/projects/XCBenz_Data_Parallel status --short --branch
+git -C /home/sebas/projects/XCBenz_Data_Parallel rev-parse --short HEAD
 ```
 
 Installed user systemd units:
@@ -110,8 +109,20 @@ Do not reintroduce these cache roots as generation or publication inputs:
 Run the direct pipeline without deploy or data-branch push:
 
 ```bash
-uv run python scripts/run_coding_server_pipeline.py   --skip-deploy   --no-push-data-branch   --ch1-run-tag 20260628_0300   --ch2-run-tag 20260628_0000
+uv run python scripts/run_coding_server_pipeline.py \
+  --skip-deploy \
+  --no-push-data-branch \
+  --ch1-run-tag 20260628_0300 \
+  --ch2-run-tag 20260628_0000
 ```
+
+Historical split-workflow trials recorded CH1 at about 16 minutes and CH2 at
+about 23 minutes. A later successful full workflow with six download workers
+completed in about 16 minutes end to end. These measurements are historical
+context, not an operating budget: source availability, selected runs, and host
+load can change the result. Current worker defaults and run-completeness rules
+live in the pipeline code and configuration, while the production poller pins
+complete CH1 and CH2 run tags before starting the heavy runner.
 
 The publish stage runs:
 

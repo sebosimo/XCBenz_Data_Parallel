@@ -4,6 +4,10 @@ Status: production dual publication active since 2026-07-16. Whole-grid files
 remain the supported fallback and must not be removed before the observation
 gate passes and removal is separately approved.
 
+The implemented package contract is defined by `value_tiles.py` and verified by
+`tests/test_value_tiles.py`. This document records the durable migration,
+rollout, and acceptance context rather than duplicating the implementation.
+
 The backend derives spatial value tiles from the existing whole-grid browser
 files after those files have been generated. This keeps Wind, Sun/Rain, Rain,
 and Cloud values byte-for-byte compatible and leaves every existing path in
