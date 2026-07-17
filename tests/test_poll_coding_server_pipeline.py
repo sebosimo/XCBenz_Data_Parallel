@@ -16,7 +16,7 @@ import poll_coding_server_pipeline as poller  # noqa: E402
 
 
 def _temp_workspace():
-    return tempfile.mkdtemp(prefix="xcb_poller_", dir=os.getenv("TEST_TMPDIR", r"C:\tmp"))
+    return tempfile.mkdtemp(prefix="xcb_poller_", dir=os.getenv("TEST_TMPDIR") or tempfile.gettempdir())
 
 
 def _args(state_file, **overrides):
@@ -120,6 +120,88 @@ class PollCodingServerPipelineTests(unittest.TestCase):
             self.assertEqual(state["last_attempt"]["status"], "succeeded")
             self.assertEqual(state["last_success"]["runs"]["ch1"], "20260628_2100")
             self.assertFalse(state["last_success"]["published"])
+        finally:
+            shutil.rmtree(tmp, ignore_errors=True)
+
+    def test_incomplete_pair_waits_without_starting_runner(self):
+        tmp = _temp_workspace()
+        try:
+            state_path = Path(tmp) / "state.json"
+            with mock.patch.object(
+                poller,
+                "latest_complete_run",
+                side_effect=[("20260628_2100", []), (None, [{"status": "incomplete"}])],
+            ), mock.patch.object(poller.subprocess, "run") as run_mock:
+                rc = poller.run_poller(_args(str(state_path)))
+            self.assertEqual(rc, 0)
+            run_mock.assert_not_called()
+            state = json.loads(state_path.read_text(encoding="utf-8"))
+            self.assertEqual(state["last_poll"]["decision"], "wait_for_complete_pair")
+        finally:
+            shutil.rmtree(tmp, ignore_errors=True)
+
+    def test_force_run_bypasses_success_and_retry_guards(self):
+        tmp = _temp_workspace()
+        try:
+            state_path = Path(tmp) / "state.json"
+            state_path.write_text(
+                json.dumps(
+                    {
+                        "last_success": {"runs": {"ch1": "20260628_2100", "ch2": "20260628_1800"}},
+                        "last_attempt": {
+                            "pair": "ch1=20260628_2100;ch2=20260628_1800",
+                            "status": "failed",
+                            "finished_at": dt.datetime.now(dt.timezone.utc).isoformat(),
+                        },
+                    }
+                ),
+                encoding="utf-8",
+            )
+            with mock.patch.object(
+                poller,
+                "latest_complete_run",
+                side_effect=[("20260628_2100", []), ("20260628_1800", [])],
+            ), mock.patch.object(
+                poller.subprocess,
+                "run",
+                return_value=subprocess_completed(0),
+            ) as run_mock:
+                rc = poller.run_poller(_args(str(state_path), force_run=True))
+            self.assertEqual(rc, 0)
+            run_mock.assert_called_once()
+        finally:
+            shutil.rmtree(tmp, ignore_errors=True)
+
+    def test_expired_failed_attempt_retries_same_pair_from_a_clean_runner_start(self):
+        tmp = _temp_workspace()
+        try:
+            state_path = Path(tmp) / "state.json"
+            state_path.write_text(
+                json.dumps(
+                    {
+                        "last_attempt": {
+                            "pair": "ch1=20260628_2100;ch2=20260628_1800",
+                            "status": "failed",
+                            "finished_at": "2020-01-01T00:00:00Z",
+                        }
+                    }
+                ),
+                encoding="utf-8",
+            )
+            with mock.patch.object(
+                poller,
+                "latest_complete_run",
+                side_effect=[("20260628_2100", []), ("20260628_1800", [])],
+            ), mock.patch.object(
+                poller.subprocess,
+                "run",
+                return_value=subprocess_completed(0),
+            ) as run_mock:
+                rc = poller.run_poller(_args(str(state_path), retry_minutes=10))
+            self.assertEqual(rc, 0)
+            run_mock.assert_called_once()
+            state = json.loads(state_path.read_text(encoding="utf-8"))
+            self.assertEqual(state["last_attempt"]["status"], "succeeded")
         finally:
             shutil.rmtree(tmp, ignore_errors=True)
 

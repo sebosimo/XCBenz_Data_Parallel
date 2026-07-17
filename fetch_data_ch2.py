@@ -28,37 +28,30 @@ from cloud_maps import (
     CACHE_DIR_CLOUD_MAPS,
     CloudMapAccumulator,
     cleanup_old_cloud_runs,
-    is_cloud_maps_enabled,
-    is_cloud_run_complete,
 )
 from rain_maps import (
     CACHE_DIR_RAIN_MAPS,
     RainMapAccumulator,
     cleanup_old_rain_runs,
-    is_rain_maps_enabled,
-    is_rain_run_complete,
 )
 from sunshine_maps import (
     CACHE_DIR_SUNSHINE_MAPS,
     SunshineMapAccumulator,
     cleanup_old_sunshine_runs,
-    is_sunshine_maps_enabled,
-    is_sunshine_run_complete,
 )
 from sunrain_maps import (
     CACHE_DIR_SUNRAIN_MAPS,
     SunRainMapAccumulator,
     cleanup_old_sunrain_runs,
-    is_sunrain_maps_enabled,
-    is_sunrain_run_complete,
 )
 from wind_maps import (
     CACHE_DIR_WIND_MAPS,
     WindMapAccumulator,
     cleanup_old_wind_runs,
-    is_wind_maps_enabled,
     load_config as load_wind_map_config,
 )
+from forecast_fetch.config import OutputRoots, parse_startup_config
+from forecast_fetch.planning import CH2_POLICY, ProductSelection
 from web_profiles import (
     SURFACE_RADIATION_KEYS,
     build_bundle_step_values,
@@ -69,9 +62,8 @@ from web_profiles import (
 warnings.filterwarnings("ignore")
 
 # --- Configuration ---
-COLLECTION_CH2   = "ogd-forecasting-icon-ch2"
-HHL_FILENAME     = "vertical_constants_icon-ch2-eps.grib2"
-HGRID_FILENAME   = "horizontal_constants_icon-ch2-eps.grib2"
+COLLECTION_CH2   = CH2_POLICY.collection
+HHL_FILENAME, HGRID_FILENAME = CH2_POLICY.static_assets
 CACHE_DIR_MAPS_PACKED = CACHE_DIR_WIND_MAPS
 PROFILE_CHUNK_DIR = "web_profile_chunks"
 STATIC_DIR       = "static_data"
@@ -91,14 +83,6 @@ SURFACE_SCALAR_UNITS = {
 
 STAC_BASE_URL  = "https://data.geo.admin.ch/api/stac/v1/collections/ch.meteoschweiz.ogd-forecasting-icon-ch2"
 STAC_ASSETS_URL = f"{STAC_BASE_URL}/assets"
-
-os.makedirs(CACHE_DIR_MAPS_PACKED, exist_ok=True)
-os.makedirs(CACHE_DIR_SUNSHINE_MAPS, exist_ok=True)
-os.makedirs(CACHE_DIR_RAIN_MAPS, exist_ok=True)
-os.makedirs(CACHE_DIR_CLOUD_MAPS, exist_ok=True)
-os.makedirs(PROFILE_CHUNK_DIR, exist_ok=True)
-os.makedirs(STATIC_DIR, exist_ok=True)
-
 
 def get_iso_horizon(total_hours):
     days = total_hours // 24
@@ -569,18 +553,36 @@ def seed_previous_rain(collection, ref_time, tag, start_h):
 
 
 def main():
+    startup = parse_startup_config(
+        "ch2",
+        os.environ,
+        default_output_roots=OutputRoots(
+            wind=CACHE_DIR_WIND_MAPS,
+            sunshine=CACHE_DIR_SUNSHINE_MAPS,
+            rain=CACHE_DIR_RAIN_MAPS,
+            sunrain=CACHE_DIR_SUNRAIN_MAPS,
+            cloud=CACHE_DIR_CLOUD_MAPS,
+        ),
+    )
+    for directory in (
+        CACHE_DIR_MAPS_PACKED,
+        CACHE_DIR_SUNSHINE_MAPS,
+        CACHE_DIR_RAIN_MAPS,
+        CACHE_DIR_CLOUD_MAPS,
+        PROFILE_CHUNK_DIR,
+        STATIC_DIR,
+    ):
+        os.makedirs(directory, exist_ok=True)
     log("=== CH2 Data Fetcher Start ===")
-    force_refresh = env_flag("FORCE_REFRESH", default=False)
-    profile_mode = env_choice("CH2_PROFILE_MODE", "direct-chunk", {"direct-chunk", "none"})
-    horizon_start = env_int("CH2_HORIZON_START", default=0, minimum=0, maximum=MAX_HORIZON)
-    horizon_end = env_int("CH2_HORIZON_END", default=MAX_HORIZON, minimum=0, maximum=MAX_HORIZON)
-    if horizon_end < horizon_start:
-        horizon_start, horizon_end = horizon_end, horizon_start
-    chunk_id = os.getenv("CH2_PROFILE_CHUNK_ID") or f"H{horizon_start:03d}_H{horizon_end:03d}"
-    pinned_run = env_run_tag("CH2_RUN_TAG") or env_run_tag("CH2_REFERENCE_TIME")
-    horizon_fetch_batch = env_flag("XCBENZ_FETCH_HORIZON_BATCH", default=False)
+    force_refresh = startup.force_refresh
+    profile_mode = startup.profile_mode
+    horizon_start = startup.horizon_start
+    horizon_end = startup.horizon_end
+    chunk_id = startup.profile_chunk_id
+    pinned_run = startup.pinned_run
+    horizon_fetch_batch = startup.horizon_fetch_batch
     if force_refresh:
-        log("FORCE_REFRESH enabled: existing CH2 run/horizon-complete checks will be ignored.", "NOTICE")
+        log("FORCE_REFRESH was selected by orchestration; regenerating the requested CH2 range.", "NOTICE")
     log(
         f"CH2 profile mode: {profile_mode}; horizon range H{horizon_start:03d}-H{horizon_end:03d}; "
         f"chunk_id={chunk_id}",
@@ -590,17 +592,17 @@ def main():
         log(f"CH2 pinned run: {pinned_run.strftime('%Y%m%d_%H%M')}", "NOTICE")
 
     wind_config = None
-    wind_map_out_root = os.getenv("CH2_WIND_MAP_OUT_ROOT", CACHE_DIR_WIND_MAPS)
-    sunshine_map_out_root = os.getenv("CH2_SUNSHINE_MAP_OUT_ROOT", CACHE_DIR_SUNSHINE_MAPS)
-    rain_map_out_root = os.getenv("CH2_RAIN_MAP_OUT_ROOT", CACHE_DIR_RAIN_MAPS)
-    sunrain_map_out_root = os.getenv("CH2_SUNRAIN_MAP_OUT_ROOT", CACHE_DIR_SUNRAIN_MAPS)
-    cloud_map_out_root = os.getenv("CH2_CLOUD_MAP_OUT_ROOT", CACHE_DIR_CLOUD_MAPS)
-    require_full_horizon_run = env_flag("CH2_REQUIRE_FULL_HORIZON_RUN", profile_mode == "direct-chunk")
-    wind_enabled = is_wind_maps_enabled("ch2")
-    sunshine_enabled = is_sunshine_maps_enabled("ch2")
-    rain_enabled = is_rain_maps_enabled("ch2")
-    sunrain_enabled = is_sunrain_maps_enabled("ch2")
-    cloud_enabled = is_cloud_maps_enabled("ch2")
+    wind_map_out_root = startup.output_roots.wind
+    sunshine_map_out_root = startup.output_roots.sunshine
+    rain_map_out_root = startup.output_roots.rain
+    sunrain_map_out_root = startup.output_roots.sunrain
+    cloud_map_out_root = startup.output_roots.cloud
+    require_full_horizon_run = startup.require_full_horizon_run
+    wind_enabled = startup.products.wind
+    sunshine_enabled = startup.products.sunshine
+    rain_enabled = startup.products.rain
+    sunrain_enabled = startup.products.sunrain
+    cloud_enabled = startup.products.cloud
     if wind_enabled or sunshine_enabled or rain_enabled or sunrain_enabled or cloud_enabled:
         try:
             wind_config = load_wind_map_config(log=log)
@@ -623,6 +625,13 @@ def main():
             log(f"CH2 map generation disabled: {e}", "WARNING")
     else:
         log("CH2 wind/sunshine/rain/sunrain/cloud map generation disabled by flags.")
+    runtime_products = ProductSelection(
+        wind=wind_enabled,
+        sunshine=sunshine_enabled,
+        rain=rain_enabled,
+        sunrain=sunrain_enabled,
+        cloud=cloud_enabled,
+    )
 
     download_static_files()
 
@@ -632,7 +641,9 @@ def main():
     with open("locations.json", "r", encoding="utf-8") as f:
         locations = json.load(f)
 
-    runs = [pinned_run] if pinned_run is not None else get_latest_available_runs(limit=2)
+    runs = [pinned_run] if pinned_run is not None else get_latest_available_runs(
+        limit=CH2_POLICY.processing_candidate_limit
+    )
     if not runs:
         log("No CH2 runs found.")
         return
@@ -652,10 +663,6 @@ def main():
 
     for ref_time in runs:
         tag = ref_time.strftime('%Y%m%d_%H%M')
-        sunshine_missing = sunshine_enabled and not is_sunshine_run_complete("ch2", tag, root=sunshine_map_out_root)
-        rain_missing = rain_enabled and not is_rain_run_complete("ch2", tag, root=rain_map_out_root)
-        sunrain_missing = sunrain_enabled and not is_sunrain_run_complete("ch2", tag, root=sunrain_map_out_root)
-        cloud_missing = cloud_enabled and not is_cloud_run_complete("ch2", tag, root=cloud_map_out_root)
         if require_full_horizon_run and not has_profile_horizon(ref_time, MAX_HORIZON):
             log(f"CH2 run {tag} does not expose H{MAX_HORIZON:03d} yet; trying next available run.")
             continue
@@ -665,7 +672,7 @@ def main():
         profile_buffers = {} if profile_mode == "direct-chunk" else None
         location_indices_cache = None
         height_cache = {} if profile_mode == "direct-chunk" else None
-        release_profile_only_fields = env_flag("XCBENZ_RELEASE_PROFILE_ONLY_FIELDS", default=False)
+        release_profile_only_fields = startup.release_profile_only_fields
         wind_accumulator = (
             WindMapAccumulator(
                 "ch2",
@@ -700,31 +707,16 @@ def main():
         )
         # Cache previous raw radiation values for de-accumulation (running mean to hourly mean)
         prev_rad_raw = seed_previous_radiation(COLLECTION_CH2, ref_time, tag, horizon_start)
-        prefetch_next_horizon = horizon_fetch_batch and env_flag("XCBENZ_PREFETCH_NEXT_HORIZON", default=False)
+        prefetch_next_horizon = horizon_fetch_batch and startup.prefetch_next_horizon
         prefetch_executor = ThreadPoolExecutor(max_workers=1) if prefetch_next_horizon else None
         prefetch_future = None
         prefetch_horizon = None
 
         def fetch_horizon_batch(h_value):
-            profile_variables = VARS if profile_mode == "direct-chunk" else []
-            map_variables = ["U", "V", *VARS_NATIVE_10M_WIND] if (wind_enabled or sunshine_enabled) else []
-            variables_to_fetch = list(dict.fromkeys([*profile_variables, *map_variables]))
-            rain_needed = rain_accumulator is not None or sunrain_accumulator is not None
-            cloud_needed = cloud_accumulator is not None
-            radiation_needed = (
-                profile_mode == "direct-chunk"
-                or sunshine_accumulator is not None
-                or sunrain_accumulator is not None
-            )
-            batch_variables = list(dict.fromkeys([
-                *variables_to_fetch,
-                *(VARS_RAIN_ACCUM if rain_needed else []),
-                *(VARS_CLOUD_MAPS if cloud_needed else []),
-                *(VARS_SUNSHINE_MAPS if h_value > 0 and radiation_needed else []),
-            ]))
+            plan = CH2_POLICY.horizon_plan(h_value, profile_mode=profile_mode, products=runtime_products)
             return fetch_variable_files(
                 COLLECTION_CH2,
-                batch_variables,
+                plan.batch,
                 ref_time,
                 get_iso_horizon(h_value),
                 tag,
@@ -748,16 +740,11 @@ def main():
 
             fields = {"HHL": hhl} if hhl is not None else {}
             has_new_data = False
-            profile_variables = VARS if profile_mode == "direct-chunk" else []
-            map_variables = ["U", "V", *VARS_NATIVE_10M_WIND] if (wind_enabled or sunshine_enabled) else []
-            variables_to_fetch = list(dict.fromkeys([*profile_variables, *map_variables]))
-            rain_needed = rain_accumulator is not None or sunrain_accumulator is not None
-            cloud_needed = cloud_accumulator is not None
-            radiation_needed = (
-                profile_mode == "direct-chunk"
-                or sunshine_accumulator is not None
-                or sunrain_accumulator is not None
-            )
+            plan = CH2_POLICY.horizon_plan(h, profile_mode=profile_mode, products=runtime_products)
+            variables_to_fetch = plan.primary
+            rain_needed = bool(plan.rain)
+            cloud_needed = bool(plan.cloud)
+            radiation_needed = bool(plan.radiation)
 
             downloaded_all = {}
             if horizon_fetch_batch:

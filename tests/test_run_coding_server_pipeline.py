@@ -1,5 +1,6 @@
 import argparse
 import sys
+import tempfile
 import unittest
 from pathlib import Path
 from unittest import mock
@@ -67,6 +68,50 @@ class RunCodingServerPipelineTests(unittest.TestCase):
             monitor.sample_once(log_sample=False)
 
         self.assertEqual(monitor.disk_high_water(), (100.0, 145.0, 45.0))
+
+    def test_manual_run_tags_bypass_network_preflight_with_structured_outputs(self):
+        args = argparse.Namespace(
+            ch1_run_tag="20260716_1500",
+            ch2_run_tag="20260716_1200",
+        )
+        with mock.patch.object(runner, "run_checked") as run_checked:
+            outputs = runner.run_preflight(args, {}, Path("logs"), ["python"])
+        run_checked.assert_not_called()
+        self.assertEqual(outputs["reason"], "manual_run_tags")
+        self.assertEqual(outputs["latest_ch1"], "20260716_1500")
+        self.assertEqual(outputs["latest_ch2"], "20260716_1200")
+
+    def test_already_complete_preflight_stops_before_fetch_or_publish(self):
+        with tempfile.TemporaryDirectory(prefix="xcb_runner_") as tmp:
+            args = argparse.Namespace(
+                python_cmd="python",
+                run_mode="standard",
+                skip_deploy=False,
+                push_data_branch=False,
+                run_dir=tmp,
+                repository="sebosimo/XCBenz_Data_Parallel",
+                data_branch="data-web",
+                data_host_base_url="https://data.example/",
+                web_export_data_root="",
+                ch1_run_tag=None,
+                ch2_run_tag=None,
+                plan_only=False,
+                download_workers=4,
+                prefetch_next_horizon=False,
+                release_profile_only_fields=False,
+            )
+            with mock.patch.object(
+                runner,
+                "run_preflight",
+                return_value={"should_run": "false", "reason": "latest_runs_already_published"},
+            ), mock.patch.object(runner, "build_jobs") as build_jobs, mock.patch.object(
+                runner,
+                "run_parallel_jobs",
+            ) as run_jobs:
+                rc = runner.run_pipeline(args)
+            self.assertEqual(rc, 0)
+            build_jobs.assert_not_called()
+            run_jobs.assert_not_called()
 
 
 if __name__ == "__main__":
