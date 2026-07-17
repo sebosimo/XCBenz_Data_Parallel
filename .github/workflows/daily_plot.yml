@@ -415,7 +415,7 @@ jobs:
         run: uv run python scripts/merge_map_chunks.py
 
       - name: Apply data retention
-        run: python scripts/apply_retention.py
+        run: uv run python scripts/apply_retention.py
 
       - name: Generate combined manifest
         run: uv run python generate_combined_manifest.py
@@ -432,12 +432,12 @@ jobs:
           WEB_EXPORT_STAGING_DIR: web_exports_staging
           WEB_EXPORT_DIR: web_exports
           WEB_EXPORT_DATA_ROOT: ${{ env.WEB_EXPORT_DATA_ROOT }}
-        run: python scripts/apply_web_retention.py
+        run: uv run python scripts/apply_web_retention.py
 
       - name: Validate publish outputs
         env:
           EXPECTED_WEB_EXPORT_DATA_ROOT: ${{ env.WEB_EXPORT_DATA_ROOT }}
-        run: python scripts/validate_outputs.py
+        run: uv run python scripts/validate_outputs.py
 
       - name: Measure output
         run: |
@@ -467,7 +467,7 @@ jobs:
         if: ${{ env.DEPLOY_DATA_HOST == 'true' }}
         env:
           DATA_BASE_URL: ${{ env.DATA_HOST_BASE_URL }}
-        run: python scripts/validate_remote_web_exports.py
+        run: uv run python scripts/validate_remote_web_exports.py
 
       - name: Commit and push sandbox data
         run: |

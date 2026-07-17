@@ -93,6 +93,18 @@ class PipelineContractTests(unittest.TestCase):
         self.assertIn('temp_dir = os.getenv("XCBENZ_FETCH_TMP_DIR")', source)
         self.assertIn("os.path.join(temp_dir,", source)
 
+    def test_publish_python_steps_use_the_installed_uv_environment(self):
+        workflow = WORKFLOW_PATH.read_text(encoding="utf-8")
+        scripts = (
+            "scripts/apply_retention.py",
+            "scripts/apply_web_retention.py",
+            "scripts/validate_outputs.py",
+            "scripts/validate_remote_web_exports.py",
+        )
+        for script in scripts:
+            self.assertIn(f"run: uv run python {script}", workflow)
+            self.assertNotIn(f"run: python {script}", workflow)
+
 
 if __name__ == "__main__":
     unittest.main()
