@@ -229,10 +229,15 @@ def has_profile_horizon(reference_datetime, horizon):
 
 def fetch_variable_files(collection, variables, reference_datetime, horizon, tag, horizon_label, prefix):
     workers = env_int("DOWNLOAD_WORKERS", default=4, minimum=1, maximum=8)
+    temp_dir = os.getenv("XCBENZ_FETCH_TMP_DIR")
+    if temp_dir:
+        os.makedirs(temp_dir, exist_ok=True)
     jobs = [
         (
             variable,
-            f"{prefix}_{variable}_{tag}_{horizon_label}.grib2",
+            os.path.join(temp_dir, f"{prefix}_{variable}_{tag}_{horizon_label}.grib2")
+            if temp_dir
+            else f"{prefix}_{variable}_{tag}_{horizon_label}.grib2",
         )
         for variable in variables
     ]

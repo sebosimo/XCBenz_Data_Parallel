@@ -14,6 +14,7 @@ SUNSHINE_ROOT = Path("cache_sunshine_maps")
 RAIN_ROOT = Path("cache_rain_maps")
 SUNRAIN_ROOT = Path("cache_sunrain_maps")
 CLOUD_ROOT = Path("cache_cloud_maps")
+WIND_CHUNK_CACHE_NAMES = ("cache_wind_maps", "cache_wind_packed")
 
 
 def log(message: str) -> None:
@@ -33,7 +34,11 @@ def write_json(path: Path, payload: dict[str, Any]) -> None:
 
 
 def merge_direct_wind_chunks() -> None:
-    for (model, run_tag, level), paths in sorted(split_binary_sources("cache_wind_maps").items()):
+    groups: dict[tuple[str, str, str], list[Path]] = {}
+    for cache_name in WIND_CHUNK_CACHE_NAMES:
+        for key, paths in split_binary_sources(cache_name).items():
+            groups.setdefault(key, []).extend(paths)
+    for (model, run_tag, level), paths in sorted(groups.items()):
         merge_split_binary_group("wind", WIND_WEB_ROOT, model, run_tag, level, paths)
 
 
