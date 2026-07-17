@@ -188,9 +188,55 @@ def _write_complete_whole_grid(web_root: Path, *, include_high: bool = True) -> 
 
 
 class ValueTileContainerTests(unittest.TestCase):
+    def test_canonical_tile_fixtures_lock_bytes_and_decoded_contract(self):
+        fixture_path = Path(__file__).parent / "fixtures/value_tiles/canonical_tiles.json"
+        fixture = json.loads(fixture_path.read_text(encoding="utf-8"))
+        self.assertEqual(fixture["fixture_schema_version"], 1)
+        self.assertEqual(fixture["contract"], CONTRACT)
+        self.assertEqual(fixture["contract_version"], CONTRACT_VERSION)
+
+        cases = {case["name"]: case for case in fixture["cases"]}
+        for name, case in cases.items():
+            with self.subTest(case=name):
+                payload = bytes.fromhex(case["payload_hex"])
+                self.assertEqual(sha256_bytes(payload), case["sha256"])
+                parsed = parse_xvt(payload)
+                expected = case["expected"]
+                self.assertEqual(parsed.flags, expected["flags"])
+                self.assertEqual((parsed.tile_x, parsed.tile_y), tuple(expected["tile"]))
+                self.assertEqual((parsed.core_width, parsed.core_height), tuple(expected["core"]))
+                self.assertEqual(
+                    (parsed.valid_core_width, parsed.valid_core_height),
+                    tuple(expected["valid_core"]),
+                )
+                self.assertEqual(
+                    (parsed.payload_width, parsed.payload_height),
+                    tuple(expected["payload"]),
+                )
+                self.assertEqual((parsed.grid_width, parsed.grid_height), tuple(expected["grid"]))
+                self.assertEqual(
+                    [section.channel.name for section in parsed.sections],
+                    [section["channel"] for section in expected["sections"]],
+                )
+                for parsed_section, expected_section in zip(parsed.sections, expected["sections"]):
+                    decoded = (
+                        unpack_cloud_codes(parsed_section.payload, parsed_section.decoded_cell_count)
+                        if parsed_section.channel.is_cloud
+                        else parsed_section.payload
+                    )
+                    self.assertEqual(list(decoded), expected_section["decoded_values"])
+
+        for corruption in fixture["corruption_cases"]:
+            with self.subTest(case=corruption["name"]):
+                payload = bytearray.fromhex(cases[corruption["source_case"]]["payload_hex"])
+                payload[-corruption["byte_offset_from_end"]] ^= corruption["xor"]
+                with self.assertRaisesRegex(ValueError, corruption["error"]):
+                    parse_xvt(bytes(payload))
+
     def test_canonical_revision_fixture_locks_digest_and_path_revision(self):
         fixture_path = Path(__file__).parent / "fixtures/value_tiles/canonical_revision.json"
         fixture = json.loads(fixture_path.read_text(encoding="utf-8"))
+        self.assertEqual(fixture["fixture_schema_version"], 1)
         digest = sha256_bytes(canonical_json_bytes(fixture["record"]))
         self.assertEqual(digest, fixture["revision_sha256"])
         self.assertEqual(digest[:12], fixture["revision"])
