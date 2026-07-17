@@ -89,9 +89,11 @@ class PipelineContractTests(unittest.TestCase):
             self.assertEqual(json.loads(output_metadata.read_text(encoding="utf-8"))["steps"][0]["byte_length"], 4)
 
     def test_ch2_fetcher_honors_the_isolated_download_root(self):
-        source = (REPO_ROOT / "fetch_data_ch2.py").read_text(encoding="utf-8")
-        self.assertIn('temp_dir = os.getenv("XCBENZ_FETCH_TMP_DIR")', source)
-        self.assertIn("os.path.join(temp_dir,", source)
+        wrapper = (REPO_ROOT / "fetch_data_ch2.py").read_text(encoding="utf-8")
+        shared_stac = (REPO_ROOT / "forecast_fetch/stac.py").read_text(encoding="utf-8")
+        self.assertIn('temporary_root=os.getenv("XCBENZ_FETCH_TMP_DIR")', wrapper)
+        self.assertIn("temp_dir = str(temporary_root) if temporary_root else None", shared_stac)
+        self.assertIn("os.path.join(temp_dir,", shared_stac)
 
     def test_publish_python_steps_use_the_installed_uv_environment(self):
         workflow = WORKFLOW_PATH.read_text(encoding="utf-8")

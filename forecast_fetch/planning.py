@@ -89,6 +89,7 @@ def completion_operation_trace(
 class ModelFetchPolicy:
     model: str
     collection: str
+    stac_base_url: str
     static_assets: tuple[str, str]
     profile_variables: tuple[str, ...]
     native_wind_variables: tuple[str, ...]
@@ -102,6 +103,16 @@ class ModelFetchPolicy:
     discovery_limit: int
     processing_candidate_limit: int
     step_digits: int
+    temp_prefix: str
+    cleanup_anchor_hour: int
+    full_horizon_probe: int | None
+    request_timeout_seconds: int
+    discovery_request_timeout_seconds: int
+    static_request_timeout_seconds: int
+    download_retry_limit: int
+    download_deadline_seconds: int | None
+    remove_partial_downloads: bool
+    supports_temporary_root: bool
 
     @property
     def sunshine_variables(self) -> tuple[str, ...]:
@@ -114,6 +125,28 @@ class ModelFetchPolicy:
 
     def step_label(self, horizon: int) -> str:
         return f"H{horizon:0{self.step_digits}d}"
+
+    @property
+    def stac_assets_url(self) -> str:
+        return f"{self.stac_base_url}/assets"
+
+    @property
+    def model_key(self) -> str:
+        return f"icon-{self.model}"
+
+    @property
+    def discovery_lookback_hours(self) -> int:
+        return self.run_interval_hours * self.discovery_slots
+
+    def required_probe_horizon(self, run_horizon_end: int) -> int:
+        return self.full_horizon_probe if self.full_horizon_probe is not None else run_horizon_end
+
+    def temporary_prefix(self, owner: str) -> str:
+        suffix = "" if owner == "primary" else f"_{owner}"
+        return f"{self.temp_prefix}{suffix}"
+
+    def profile_chunk_id(self, horizon_start: int, horizon_end: int) -> str:
+        return f"H{horizon_start:03d}_H{horizon_end:03d}"
 
     def horizon_plan(
         self,
@@ -156,6 +189,7 @@ _COMMON = {
 CH1_POLICY = ModelFetchPolicy(
     model="ch1",
     collection="ogd-forecasting-icon-ch1",
+    stac_base_url="https://data.geo.admin.ch/api/stac/v1/collections/ch.meteoschweiz.ogd-forecasting-icon-ch1",
     static_assets=(
         "vertical_constants_icon-ch1-eps.grib2",
         "horizontal_constants_icon-ch1-eps.grib2",
@@ -166,12 +200,23 @@ CH1_POLICY = ModelFetchPolicy(
     discovery_limit=1,
     processing_candidate_limit=3,
     step_digits=2,
+    temp_prefix="temp",
+    cleanup_anchor_hour=3,
+    full_horizon_probe=None,
+    request_timeout_seconds=30,
+    discovery_request_timeout_seconds=10,
+    static_request_timeout_seconds=10,
+    download_retry_limit=3,
+    download_deadline_seconds=None,
+    remove_partial_downloads=False,
+    supports_temporary_root=True,
     **_COMMON,
 )
 
 CH2_POLICY = ModelFetchPolicy(
     model="ch2",
     collection="ogd-forecasting-icon-ch2",
+    stac_base_url="https://data.geo.admin.ch/api/stac/v1/collections/ch.meteoschweiz.ogd-forecasting-icon-ch2",
     static_assets=(
         "vertical_constants_icon-ch2-eps.grib2",
         "horizontal_constants_icon-ch2-eps.grib2",
@@ -182,6 +227,16 @@ CH2_POLICY = ModelFetchPolicy(
     discovery_limit=2,
     processing_candidate_limit=2,
     step_digits=3,
+    temp_prefix="temp_ch2",
+    cleanup_anchor_hour=0,
+    full_horizon_probe=120,
+    request_timeout_seconds=30,
+    discovery_request_timeout_seconds=15,
+    static_request_timeout_seconds=15,
+    download_retry_limit=3,
+    download_deadline_seconds=90,
+    remove_partial_downloads=True,
+    supports_temporary_root=True,
     **_COMMON,
 )
 
