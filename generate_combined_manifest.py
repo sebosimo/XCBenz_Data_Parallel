@@ -9,6 +9,14 @@ import os
 import json
 import datetime
 
+from web_export_support import (
+    CLOUD_MAPS,
+    RAIN_MAPS,
+    SUNRAIN_MAPS,
+    SUNSHINE_MAPS,
+    scan_split_binary_maps,
+)
+
 PROFILE_CHUNK_DIR = "web_profile_chunks"
 CACHE_DIR_WIND_MAPS = "cache_wind_maps"
 CACHE_DIR_SUNSHINE_MAPS = "cache_sunshine_maps"
@@ -128,208 +136,19 @@ def scan_direct_wind_maps(cache_dir=CACHE_DIR_WIND_MAPS):
 
 
 def scan_sunshine_maps(cache_dir=CACHE_DIR_SUNSHINE_MAPS):
-    """
-    Scan browser-ready sunshine-map files.
-
-    Layout:
-      cache_sunshine_maps/{model}/{run}/surface/metadata.json
-      cache_sunshine_maps/{model}/{run}/surface/steps/{step}.bin
-    """
-    sunshine_maps = {}
-    if not os.path.exists(cache_dir):
-        return sunshine_maps
-
-    for model in ("ch1", "ch2"):
-        model_dir = os.path.join(cache_dir, model)
-        if not os.path.isdir(model_dir):
-            continue
-        model_runs = {}
-        for run in sorted(os.listdir(model_dir), reverse=True):
-            metadata_path = os.path.join(model_dir, run, "surface", "metadata.json")
-            if not os.path.exists(metadata_path):
-                continue
-            rel_metadata = os.path.relpath(metadata_path, ".").replace(os.sep, "/")
-            try:
-                with open(metadata_path, "r", encoding="utf-8") as f:
-                    metadata = json.load(f)
-                steps = metadata.get("steps") or []
-                if not steps:
-                    continue
-                if not all(os.path.exists((step.get("path") or "").replace("/", os.sep)) for step in steps):
-                    continue
-                model_runs[run] = {
-                    "layout": "browser_ready_split_binary_by_step",
-                    "products": {
-                        "surface": {
-                            "metadata": rel_metadata,
-                            "components": metadata.get("encoding", {}).get("components", []),
-                            "steps": steps,
-                            "step_count": len(steps),
-                            "bytes": sum(int(step.get("byte_length") or 0) for step in steps),
-                        }
-                    },
-                }
-            except Exception as exc:
-                log(f"Skipping invalid sunshine-map metadata {rel_metadata}: {exc}")
-        if model_runs:
-            sunshine_maps[model] = model_runs
-
-    return sunshine_maps
+    return scan_split_binary_maps(cache_dir, SUNSHINE_MAPS, log=log)
 
 
 def scan_rain_maps(cache_dir=CACHE_DIR_RAIN_MAPS):
-    """
-    Scan browser-ready rain-map files.
-
-    Layout:
-      cache_rain_maps/{model}/{run}/surface/metadata.json
-      cache_rain_maps/{model}/{run}/surface/steps/{step}.bin
-    """
-    rain_maps = {}
-    if not os.path.exists(cache_dir):
-        return rain_maps
-
-    for model in ("ch1", "ch2"):
-        model_dir = os.path.join(cache_dir, model)
-        if not os.path.isdir(model_dir):
-            continue
-        model_runs = {}
-        for run in sorted(os.listdir(model_dir), reverse=True):
-            metadata_path = os.path.join(model_dir, run, "surface", "metadata.json")
-            if not os.path.exists(metadata_path):
-                continue
-            rel_metadata = os.path.relpath(metadata_path, ".").replace(os.sep, "/")
-            try:
-                with open(metadata_path, "r", encoding="utf-8") as f:
-                    metadata = json.load(f)
-                steps = metadata.get("steps") or []
-                if not steps:
-                    continue
-                if not all(os.path.exists((step.get("path") or "").replace("/", os.sep)) for step in steps):
-                    continue
-                model_runs[run] = {
-                    "layout": "browser_ready_split_binary_by_step",
-                    "products": {
-                        "surface": {
-                            "metadata": rel_metadata,
-                            "components": metadata.get("encoding", {}).get("components", []),
-                            "steps": steps,
-                            "step_count": len(steps),
-                            "bytes": sum(int(step.get("byte_length") or 0) for step in steps),
-                        }
-                    },
-                }
-            except Exception as exc:
-                log(f"Skipping invalid rain-map metadata {rel_metadata}: {exc}")
-        if model_runs:
-            rain_maps[model] = model_runs
-
-    return rain_maps
+    return scan_split_binary_maps(cache_dir, RAIN_MAPS, log=log)
 
 
 def scan_sunrain_maps(cache_dir=CACHE_DIR_SUNRAIN_MAPS):
-    """
-    Scan browser-ready Sun+Rain map files.
-
-    Layout:
-      cache_sunrain_maps/{model}/{run}/surface/metadata.json
-      cache_sunrain_maps/{model}/{run}/surface/steps/{step}.bin
-    """
-    sunrain_maps = {}
-    if not os.path.exists(cache_dir):
-        return sunrain_maps
-
-    for model in ("ch1", "ch2"):
-        model_dir = os.path.join(cache_dir, model)
-        if not os.path.isdir(model_dir):
-            continue
-        model_runs = {}
-        for run in sorted(os.listdir(model_dir), reverse=True):
-            metadata_path = os.path.join(model_dir, run, "surface", "metadata.json")
-            if not os.path.exists(metadata_path):
-                continue
-            rel_metadata = os.path.relpath(metadata_path, ".").replace(os.sep, "/")
-            try:
-                with open(metadata_path, "r", encoding="utf-8") as f:
-                    metadata = json.load(f)
-                steps = metadata.get("steps") or []
-                if not steps:
-                    continue
-                if not all(os.path.exists((step.get("path") or "").replace("/", os.sep)) for step in steps):
-                    continue
-                model_runs[run] = {
-                    "layout": "browser_ready_split_binary_by_step",
-                    "products": {
-                        "surface": {
-                            "metadata": rel_metadata,
-                            "components": metadata.get("encoding", {}).get("components", []),
-                            "steps": steps,
-                            "step_count": len(steps),
-                            "bytes": sum(int(step.get("byte_length") or 0) for step in steps),
-                        }
-                    },
-                }
-            except Exception as exc:
-                log(f"Skipping invalid Sun+Rain map metadata {rel_metadata}: {exc}")
-        if model_runs:
-            sunrain_maps[model] = model_runs
-
-    return sunrain_maps
+    return scan_split_binary_maps(cache_dir, SUNRAIN_MAPS, log=log)
 
 
 def scan_cloud_maps(cache_dir=CACHE_DIR_CLOUD_MAPS):
-    """
-    Scan browser-ready cloud-map files.
-
-    Layout:
-      cache_cloud_maps/{model}/{run}/{layer}/metadata.json
-      cache_cloud_maps/{model}/{run}/{layer}/steps/{step}.bin
-    """
-    cloud_maps = {}
-    if not os.path.exists(cache_dir):
-        return cloud_maps
-
-    for model in ("ch1", "ch2"):
-        model_dir = os.path.join(cache_dir, model)
-        if not os.path.isdir(model_dir):
-            continue
-        model_runs = {}
-        for run in sorted(os.listdir(model_dir), reverse=True):
-            run_path = os.path.join(model_dir, run)
-            if not os.path.isdir(run_path):
-                continue
-            products = {}
-            for product in ("total", "low", "mid", "high"):
-                metadata_path = os.path.join(run_path, product, "metadata.json")
-                if not os.path.exists(metadata_path):
-                    continue
-                rel_metadata = os.path.relpath(metadata_path, ".").replace(os.sep, "/")
-                try:
-                    with open(metadata_path, "r", encoding="utf-8") as f:
-                        metadata = json.load(f)
-                    steps = metadata.get("steps") or []
-                    if not steps:
-                        continue
-                    if not all(os.path.exists((step.get("path") or "").replace("/", os.sep)) for step in steps):
-                        continue
-                    products[product] = {
-                        "metadata": rel_metadata,
-                        "components": metadata.get("encoding", {}).get("components", []),
-                        "steps": steps,
-                        "step_count": len(steps),
-                        "bytes": sum(int(step.get("byte_length") or 0) for step in steps),
-                    }
-                except Exception as exc:
-                    log(f"Skipping invalid cloud-map metadata {rel_metadata}: {exc}")
-            if products:
-                model_runs[run] = {
-                    "layout": "browser_ready_split_binary_by_step",
-                    "products": products,
-                }
-        if model_runs:
-            cloud_maps[model] = model_runs
-
-    return cloud_maps
+    return scan_split_binary_maps(cache_dir, CLOUD_MAPS, log=log)
 
 
 def main():

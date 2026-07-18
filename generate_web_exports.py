@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import datetime as dt
-import json
 import math
 import os
 import re
@@ -20,6 +19,18 @@ from web_profiles import (
     merge_profile_chunks,
 )
 from value_tiles import capability_declaration, generate_value_tiles, value_tiles_enabled
+from web_export_support import (
+    CLOUD_MAPS as CLOUD_MAP_SPEC,
+    RAIN_MAPS as RAIN_MAP_SPEC,
+    SUNRAIN_MAPS as SUNRAIN_MAP_SPEC,
+    SUNSHINE_MAPS as SUNSHINE_MAP_SPEC,
+    export_split_binary_maps,
+    export_split_binary_product,
+    load_json as load_web_json,
+    publication_url,
+    source_model_to_web,
+    write_json as write_web_json,
+)
 
 
 SCHEMA_VERSION = 1
@@ -104,13 +115,7 @@ def now_iso() -> str:
 
 
 def rel(path: Path) -> str:
-    try:
-        local_path = path.relative_to(WEB_DIR)
-    except ValueError:
-        return path.as_posix()
-    if WEB_URL_PREFIX:
-        return (Path(WEB_URL_PREFIX) / local_path).as_posix()
-    return local_path.as_posix()
+    return publication_url(WEB_DIR, path, prefix=WEB_URL_PREFIX)
 
 
 def ensure_clean_web_dir() -> None:
@@ -127,10 +132,7 @@ def remove_readonly(func: Any, path: str, _exc_info: Any) -> None:
 
 
 def load_json(path: Path) -> dict[str, Any]:
-    if not path.exists():
-        return {}
-    with path.open("r", encoding="utf-8") as f:
-        return json.load(f)
+    return load_web_json(path, missing_ok=True)
 
 
 def radar_map_manifest_path() -> Path:
@@ -148,13 +150,7 @@ def radar_map_layer_count() -> int:
 
 
 def write_json(path: Path, payload: Any, *, pretty: bool = False) -> None:
-    path.parent.mkdir(parents=True, exist_ok=True)
-    with path.open("w", encoding="utf-8") as f:
-        if pretty:
-            json.dump(payload, f, ensure_ascii=False, indent=2, allow_nan=False)
-            f.write("\n")
-        else:
-            json.dump(payload, f, ensure_ascii=False, separators=(",", ":"), allow_nan=False)
+    write_web_json(path, payload, pretty=pretty)
 
 
 def clean_number(value: Any, precision: int | None = None) -> float | int | bool | None:
@@ -338,7 +334,7 @@ def write_region_forecast(
 
 
 def wind_model_key(source_key: str) -> str:
-    return "icon-ch1" if source_key == "ch1" else "icon-ch2"
+    return source_model_to_web(source_key)
 
 
 def wind_axis_payload(values: np.ndarray, precision: int = 5) -> dict[str, Any]:
@@ -478,7 +474,7 @@ def export_wind_maps(source_manifest: dict[str, Any]) -> dict[str, Any] | None:
 
 
 def sunshine_model_key(source_key: str) -> str:
-    return "icon-ch1" if source_key == "ch1" else "icon-ch2"
+    return source_model_to_web(source_key)
 
 
 def export_sunshine_surface(
@@ -486,105 +482,30 @@ def export_sunshine_surface(
     run_tag: str,
     source_metadata_path: Path,
 ) -> dict[str, Any]:
-    with source_metadata_path.open("r", encoding="utf-8") as f:
-        source_metadata = json.load(f)
-
-    output_dir = SUNSHINE_WEB_DIR / model_key / run_tag / "surface"
-    steps_dir = output_dir / "steps"
-    output_steps: list[dict[str, Any]] = []
-
-    for source_step in source_metadata.get("steps") or []:
-        source_path = Path(str(source_step.get("path", "")))
-        if not source_path.exists():
-            raise FileNotFoundError(f"sunshine step missing: {source_path}")
-        step_label = str(source_step["step"])
-        step_path = steps_dir / f"{step_label}.bin"
-        step_path.parent.mkdir(parents=True, exist_ok=True)
-        shutil.copyfile(source_path, step_path)
-        output_step = dict(source_step)
-        output_step.pop("path", None)
-        output_step["url"] = rel(step_path)
-        output_step["byte_length"] = int(step_path.stat().st_size)
-        output_steps.append(output_step)
-
-    metadata_path = output_dir / "metadata.json"
-    metadata = dict(source_metadata)
-    metadata["model"] = model_key
-    metadata["run"] = run_tag
-    metadata["source"] = rel(source_metadata_path)
-    metadata["steps"] = output_steps
-    write_json(metadata_path, metadata, pretty=True)
-
-    return {
-        "metadata": rel(metadata_path),
-        "source": rel(source_metadata_path),
-        "components": metadata.get("encoding", {}).get("components", []),
-        "grid": {
-            "width": metadata.get("grid", {}).get("width"),
-            "height": metadata.get("grid", {}).get("height"),
-        },
-        "steps": output_steps,
-        "step_count": len(output_steps),
-        "bytes": sum(step["byte_length"] for step in output_steps),
-    }
+    return export_split_binary_product(
+        model_key=model_key,
+        run_tag=run_tag,
+        product_name="surface",
+        source_metadata_path=source_metadata_path,
+        output_root=SUNSHINE_WEB_DIR,
+        path_url=rel,
+        missing_label="sunshine",
+    )
 
 
 def export_sunshine_maps(source_manifest: dict[str, Any]) -> dict[str, Any] | None:
-    source_sunshine = source_manifest.get("sunshine_maps") or {}
-    if not source_sunshine:
-        return None
-
-    sunshine_manifest: dict[str, Any] = {
-        "schema_version": SCHEMA_VERSION,
-        "product": "sunshine_maps",
-        "default_product": "surface",
-        "models": {},
-        "counts": {
-            "runs": 0,
-            "products": 0,
-            "steps": 0,
-            "bytes": 0,
-        },
-    }
-
-    for source_key, source_runs in source_sunshine.items():
-        model_key = sunshine_model_key(source_key)
-        model_manifest = {"runs": {}}
-        for run_tag, run_entry in source_runs.items():
-            run_manifest = {"layout": "split_binary_by_step", "products": {}}
-            for product_name, product_entry in (run_entry.get("products") or {}).items():
-                source_metadata_path = Path(product_entry.get("metadata", ""))
-                if not source_metadata_path.exists():
-                    log(f"WARN sunshine source metadata missing for {model_key} {run_tag}: {source_metadata_path}")
-                    continue
-                try:
-                    exported_product = export_sunshine_surface(model_key, run_tag, source_metadata_path)
-                except Exception as exc:
-                    log(f"WARN sunshine export failed for {source_metadata_path}: {exc}")
-                    continue
-                run_manifest["products"][product_name] = exported_product
-                sunshine_manifest["counts"]["products"] += 1
-                sunshine_manifest["counts"]["steps"] += exported_product["step_count"]
-                sunshine_manifest["counts"]["bytes"] += exported_product["bytes"]
-
-            if run_manifest["products"]:
-                model_manifest["runs"][run_tag] = run_manifest
-                sunshine_manifest["counts"]["runs"] += 1
-
-        if model_manifest["runs"]:
-            sunshine_manifest["models"][model_key] = model_manifest
-
-    if not sunshine_manifest["models"]:
-        return None
-
-    manifest_path = SUNSHINE_WEB_DIR / "manifest.json"
-    write_json(manifest_path, sunshine_manifest, pretty=True)
-    sunshine_manifest["url"] = rel(manifest_path)
-    return sunshine_manifest
+    return export_split_binary_maps(
+        source_manifest,
+        SUNSHINE_MAP_SPEC,
+        output_root=SUNSHINE_WEB_DIR,
+        path_url=rel,
+        log=log,
+        schema_version=SCHEMA_VERSION,
+    )
 
 
 def rain_model_key(source_key: str) -> str:
-    return "icon-ch1" if source_key == "ch1" else "icon-ch2"
+    return source_model_to_web(source_key)
 
 
 def export_rain_surface(
@@ -592,105 +513,30 @@ def export_rain_surface(
     run_tag: str,
     source_metadata_path: Path,
 ) -> dict[str, Any]:
-    with source_metadata_path.open("r", encoding="utf-8") as f:
-        source_metadata = json.load(f)
-
-    output_dir = RAIN_WEB_DIR / model_key / run_tag / "surface"
-    steps_dir = output_dir / "steps"
-    output_steps: list[dict[str, Any]] = []
-
-    for source_step in source_metadata.get("steps") or []:
-        source_path = Path(str(source_step.get("path", "")))
-        if not source_path.exists():
-            raise FileNotFoundError(f"rain step missing: {source_path}")
-        step_label = str(source_step["step"])
-        step_path = steps_dir / f"{step_label}.bin"
-        step_path.parent.mkdir(parents=True, exist_ok=True)
-        shutil.copyfile(source_path, step_path)
-        output_step = dict(source_step)
-        output_step.pop("path", None)
-        output_step["url"] = rel(step_path)
-        output_step["byte_length"] = int(step_path.stat().st_size)
-        output_steps.append(output_step)
-
-    metadata_path = output_dir / "metadata.json"
-    metadata = dict(source_metadata)
-    metadata["model"] = model_key
-    metadata["run"] = run_tag
-    metadata["source"] = rel(source_metadata_path)
-    metadata["steps"] = output_steps
-    write_json(metadata_path, metadata, pretty=True)
-
-    return {
-        "metadata": rel(metadata_path),
-        "source": rel(source_metadata_path),
-        "components": metadata.get("encoding", {}).get("components", []),
-        "grid": {
-            "width": metadata.get("grid", {}).get("width"),
-            "height": metadata.get("grid", {}).get("height"),
-        },
-        "steps": output_steps,
-        "step_count": len(output_steps),
-        "bytes": sum(step["byte_length"] for step in output_steps),
-    }
+    return export_split_binary_product(
+        model_key=model_key,
+        run_tag=run_tag,
+        product_name="surface",
+        source_metadata_path=source_metadata_path,
+        output_root=RAIN_WEB_DIR,
+        path_url=rel,
+        missing_label="rain",
+    )
 
 
 def export_rain_maps(source_manifest: dict[str, Any]) -> dict[str, Any] | None:
-    source_rain = source_manifest.get("rain_maps") or {}
-    if not source_rain:
-        return None
-
-    rain_manifest: dict[str, Any] = {
-        "schema_version": SCHEMA_VERSION,
-        "product": "rain_maps",
-        "default_product": "surface",
-        "models": {},
-        "counts": {
-            "runs": 0,
-            "products": 0,
-            "steps": 0,
-            "bytes": 0,
-        },
-    }
-
-    for source_key, source_runs in source_rain.items():
-        model_key = rain_model_key(source_key)
-        model_manifest = {"runs": {}}
-        for run_tag, run_entry in source_runs.items():
-            run_manifest = {"layout": "split_binary_by_step", "products": {}}
-            for product_name, product_entry in (run_entry.get("products") or {}).items():
-                source_metadata_path = Path(product_entry.get("metadata", ""))
-                if not source_metadata_path.exists():
-                    log(f"WARN rain source metadata missing for {model_key} {run_tag}: {source_metadata_path}")
-                    continue
-                try:
-                    exported_product = export_rain_surface(model_key, run_tag, source_metadata_path)
-                except Exception as exc:
-                    log(f"WARN rain export failed for {source_metadata_path}: {exc}")
-                    continue
-                run_manifest["products"][product_name] = exported_product
-                rain_manifest["counts"]["products"] += 1
-                rain_manifest["counts"]["steps"] += exported_product["step_count"]
-                rain_manifest["counts"]["bytes"] += exported_product["bytes"]
-
-            if run_manifest["products"]:
-                model_manifest["runs"][run_tag] = run_manifest
-                rain_manifest["counts"]["runs"] += 1
-
-        if model_manifest["runs"]:
-            rain_manifest["models"][model_key] = model_manifest
-
-    if not rain_manifest["models"]:
-        return None
-
-    manifest_path = RAIN_WEB_DIR / "manifest.json"
-    write_json(manifest_path, rain_manifest, pretty=True)
-    rain_manifest["url"] = rel(manifest_path)
-    return rain_manifest
+    return export_split_binary_maps(
+        source_manifest,
+        RAIN_MAP_SPEC,
+        output_root=RAIN_WEB_DIR,
+        path_url=rel,
+        log=log,
+        schema_version=SCHEMA_VERSION,
+    )
 
 
 def sunrain_model_key(source_key: str) -> str:
-    return "icon-ch1" if source_key == "ch1" else "icon-ch2"
+    return source_model_to_web(source_key)
 
 
 def export_sunrain_surface(
@@ -698,105 +544,30 @@ def export_sunrain_surface(
     run_tag: str,
     source_metadata_path: Path,
 ) -> dict[str, Any]:
-    with source_metadata_path.open("r", encoding="utf-8") as f:
-        source_metadata = json.load(f)
-
-    output_dir = SUNRAIN_WEB_DIR / model_key / run_tag / "surface"
-    steps_dir = output_dir / "steps"
-    output_steps: list[dict[str, Any]] = []
-
-    for source_step in source_metadata.get("steps") or []:
-        source_path = Path(str(source_step.get("path", "")))
-        if not source_path.exists():
-            raise FileNotFoundError(f"Sun+Rain step missing: {source_path}")
-        step_label = str(source_step["step"])
-        step_path = steps_dir / f"{step_label}.bin"
-        step_path.parent.mkdir(parents=True, exist_ok=True)
-        shutil.copyfile(source_path, step_path)
-        output_step = dict(source_step)
-        output_step.pop("path", None)
-        output_step["url"] = rel(step_path)
-        output_step["byte_length"] = int(step_path.stat().st_size)
-        output_steps.append(output_step)
-
-    metadata_path = output_dir / "metadata.json"
-    metadata = dict(source_metadata)
-    metadata["model"] = model_key
-    metadata["run"] = run_tag
-    metadata["source"] = rel(source_metadata_path)
-    metadata["steps"] = output_steps
-    write_json(metadata_path, metadata, pretty=True)
-
-    return {
-        "metadata": rel(metadata_path),
-        "source": rel(source_metadata_path),
-        "components": metadata.get("encoding", {}).get("components", []),
-        "grid": {
-            "width": metadata.get("grid", {}).get("width"),
-            "height": metadata.get("grid", {}).get("height"),
-        },
-        "steps": output_steps,
-        "step_count": len(output_steps),
-        "bytes": sum(step["byte_length"] for step in output_steps),
-    }
+    return export_split_binary_product(
+        model_key=model_key,
+        run_tag=run_tag,
+        product_name="surface",
+        source_metadata_path=source_metadata_path,
+        output_root=SUNRAIN_WEB_DIR,
+        path_url=rel,
+        missing_label="Sun+Rain",
+    )
 
 
 def export_sunrain_maps(source_manifest: dict[str, Any]) -> dict[str, Any] | None:
-    source_sunrain = source_manifest.get("sunrain_maps") or {}
-    if not source_sunrain:
-        return None
-
-    sunrain_manifest: dict[str, Any] = {
-        "schema_version": SCHEMA_VERSION,
-        "product": "sunrain_maps",
-        "default_product": "surface",
-        "models": {},
-        "counts": {
-            "runs": 0,
-            "products": 0,
-            "steps": 0,
-            "bytes": 0,
-        },
-    }
-
-    for source_key, source_runs in source_sunrain.items():
-        model_key = sunrain_model_key(source_key)
-        model_manifest = {"runs": {}}
-        for run_tag, run_entry in source_runs.items():
-            run_manifest = {"layout": "split_binary_by_step", "products": {}}
-            for product_name, product_entry in (run_entry.get("products") or {}).items():
-                source_metadata_path = Path(product_entry.get("metadata", ""))
-                if not source_metadata_path.exists():
-                    log(f"WARN Sun+Rain source metadata missing for {model_key} {run_tag}: {source_metadata_path}")
-                    continue
-                try:
-                    exported_product = export_sunrain_surface(model_key, run_tag, source_metadata_path)
-                except Exception as exc:
-                    log(f"WARN Sun+Rain export failed for {source_metadata_path}: {exc}")
-                    continue
-                run_manifest["products"][product_name] = exported_product
-                sunrain_manifest["counts"]["products"] += 1
-                sunrain_manifest["counts"]["steps"] += exported_product["step_count"]
-                sunrain_manifest["counts"]["bytes"] += exported_product["bytes"]
-
-            if run_manifest["products"]:
-                model_manifest["runs"][run_tag] = run_manifest
-                sunrain_manifest["counts"]["runs"] += 1
-
-        if model_manifest["runs"]:
-            sunrain_manifest["models"][model_key] = model_manifest
-
-    if not sunrain_manifest["models"]:
-        return None
-
-    manifest_path = SUNRAIN_WEB_DIR / "manifest.json"
-    write_json(manifest_path, sunrain_manifest, pretty=True)
-    sunrain_manifest["url"] = rel(manifest_path)
-    return sunrain_manifest
+    return export_split_binary_maps(
+        source_manifest,
+        SUNRAIN_MAP_SPEC,
+        output_root=SUNRAIN_WEB_DIR,
+        path_url=rel,
+        log=log,
+        schema_version=SCHEMA_VERSION,
+    )
 
 
 def cloud_model_key(source_key: str) -> str:
-    return "icon-ch1" if source_key == "ch1" else "icon-ch2"
+    return source_model_to_web(source_key)
 
 
 def export_cloud_layer(
@@ -805,106 +576,26 @@ def export_cloud_layer(
     product_name: str,
     source_metadata_path: Path,
 ) -> dict[str, Any]:
-    with source_metadata_path.open("r", encoding="utf-8") as f:
-        source_metadata = json.load(f)
-
-    output_dir = CLOUD_WEB_DIR / model_key / run_tag / product_name
-    steps_dir = output_dir / "steps"
-    output_steps: list[dict[str, Any]] = []
-
-    for source_step in source_metadata.get("steps") or []:
-        source_path = Path(str(source_step.get("path", "")))
-        if not source_path.exists():
-            raise FileNotFoundError(f"cloud step missing: {source_path}")
-        step_label = str(source_step["step"])
-        step_path = steps_dir / f"{step_label}.bin"
-        step_path.parent.mkdir(parents=True, exist_ok=True)
-        shutil.copyfile(source_path, step_path)
-        output_step = dict(source_step)
-        output_step.pop("path", None)
-        output_step["url"] = rel(step_path)
-        output_step["byte_length"] = int(step_path.stat().st_size)
-        output_steps.append(output_step)
-
-    metadata_path = output_dir / "metadata.json"
-    metadata = dict(source_metadata)
-    metadata["model"] = model_key
-    metadata["run"] = run_tag
-    metadata["source"] = rel(source_metadata_path)
-    metadata["steps"] = output_steps
-    write_json(metadata_path, metadata, pretty=True)
-
-    return {
-        "metadata": rel(metadata_path),
-        "source": rel(source_metadata_path),
-        "components": metadata.get("encoding", {}).get("components", []),
-        "grid": {
-            "width": metadata.get("grid", {}).get("width"),
-            "height": metadata.get("grid", {}).get("height"),
-        },
-        "steps": output_steps,
-        "step_count": len(output_steps),
-        "bytes": sum(step["byte_length"] for step in output_steps),
-    }
+    return export_split_binary_product(
+        model_key=model_key,
+        run_tag=run_tag,
+        product_name=product_name,
+        source_metadata_path=source_metadata_path,
+        output_root=CLOUD_WEB_DIR,
+        path_url=rel,
+        missing_label="cloud",
+    )
 
 
 def export_cloud_maps(source_manifest: dict[str, Any]) -> dict[str, Any] | None:
-    source_cloud = source_manifest.get("cloud_maps") or {}
-    if not source_cloud:
-        return None
-
-    cloud_manifest: dict[str, Any] = {
-        "schema_version": SCHEMA_VERSION,
-        "product": "cloud_maps",
-        "default_product": "total",
-        "models": {},
-        "counts": {
-            "runs": 0,
-            "products": 0,
-            "steps": 0,
-            "bytes": 0,
-        },
-    }
-
-    for source_key, source_runs in source_cloud.items():
-        model_key = cloud_model_key(source_key)
-        model_manifest = {"runs": {}}
-        for run_tag, run_entry in source_runs.items():
-            run_manifest = {"layout": "split_binary_by_step", "products": {}}
-            for product_name, product_entry in (run_entry.get("products") or {}).items():
-                source_metadata_path = Path(product_entry.get("metadata", ""))
-                if not source_metadata_path.exists():
-                    log(f"WARN cloud source metadata missing for {model_key} {run_tag}: {source_metadata_path}")
-                    continue
-                try:
-                    exported_product = export_cloud_layer(
-                        model_key,
-                        run_tag,
-                        product_name,
-                        source_metadata_path,
-                    )
-                except Exception as exc:
-                    log(f"WARN cloud export failed for {source_metadata_path}: {exc}")
-                    continue
-                run_manifest["products"][product_name] = exported_product
-                cloud_manifest["counts"]["products"] += 1
-                cloud_manifest["counts"]["steps"] += exported_product["step_count"]
-                cloud_manifest["counts"]["bytes"] += exported_product["bytes"]
-
-            if run_manifest["products"]:
-                model_manifest["runs"][run_tag] = run_manifest
-                cloud_manifest["counts"]["runs"] += 1
-
-        if model_manifest["runs"]:
-            cloud_manifest["models"][model_key] = model_manifest
-
-    if not cloud_manifest["models"]:
-        return None
-
-    manifest_path = CLOUD_WEB_DIR / "manifest.json"
-    write_json(manifest_path, cloud_manifest, pretty=True)
-    cloud_manifest["url"] = rel(manifest_path)
-    return cloud_manifest
+    return export_split_binary_maps(
+        source_manifest,
+        CLOUD_MAP_SPEC,
+        output_root=CLOUD_WEB_DIR,
+        path_url=rel,
+        log=log,
+        schema_version=SCHEMA_VERSION,
+    )
 
 
 def export_value_tiles_capability(manifest: dict[str, Any]) -> dict[str, Any] | None:

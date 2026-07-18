@@ -1,0 +1,22 @@
+{
+  "schema_version": 1,
+  "product": "fixture_map",
+  "encoding": {
+    "format": "uint8-interleaved-components",
+    "dtype": "uint8",
+    "components": [
+      "fixture_value"
+    ]
+  },
+  "grid": {
+    "width": 2,
+    "height": 1
+  },
+  "steps": [
+    {
+      "step": "H00",
+      "path": "__STEP_PATH__",
+      "byte_length": 2
+    }
+  ]
+}
