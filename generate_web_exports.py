@@ -14,6 +14,7 @@ from pathlib import Path
 from typing import Any
 
 import numpy as np
+from pipeline_orchestration.job_plan import profile_chunk_ids
 from web_profiles import (
     EMAGRAM_BUNDLE_VARIABLES,
     merge_profile_chunks,
@@ -237,17 +238,7 @@ def location_payload(location_id: str, meta: dict[str, Any]) -> dict[str, Any]:
 
 
 def expected_profile_chunks(model_key: str, run_tag: str) -> set[str]:
-    if model_key == "icon-ch1":
-        try:
-            run_hour = int(run_tag.split("_", 1)[1][:2])
-        except (IndexError, ValueError):
-            run_hour = 3
-        if run_hour == 3:
-            return {"H000_H016", "H017_H033", "H034_H045"}
-        return {"H000_H016", "H017_H033"}
-    if model_key == "icon-ch2":
-        return {"H000_H030", "H031_H060", "H061_H090", "H091_H120"}
-    return set()
+    return set(profile_chunk_ids(model_key, run_tag))
 
 
 def scan_profile_chunks(root: Path, locations: dict[str, Any]) -> dict[str, dict[str, list[Path]]]:

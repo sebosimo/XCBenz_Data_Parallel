@@ -1,4 +1,6 @@
 import argparse
+import json
+import subprocess
 import sys
 import tempfile
 import unittest
@@ -80,6 +82,29 @@ class RunCodingServerPipelineTests(unittest.TestCase):
         self.assertEqual(outputs["reason"], "manual_run_tags")
         self.assertEqual(outputs["latest_ch1"], "20260716_1500")
         self.assertEqual(outputs["latest_ch2"], "20260716_1200")
+
+    def test_fixed_plan_only_is_deterministic_and_has_no_runtime_side_effects(self):
+        command = [
+            sys.executable,
+            "scripts/run_coding_server_pipeline.py",
+            "--plan-only",
+            "--ch1-run-tag",
+            "20260716_0300",
+            "--ch2-run-tag",
+            "20260716_1200",
+        ]
+        run_options = {
+            "cwd": Path(__file__).resolve().parents[1],
+            "text": True,
+            "capture_output": True,
+            "check": False,
+        }
+        first = subprocess.run(command, **run_options)
+        second = subprocess.run(command, **run_options)
+        self.assertEqual(first.returncode, 0, first.stderr)
+        self.assertEqual(first.stdout, second.stdout)
+        payload = json.loads(first.stdout)
+        self.assertEqual(payload["models"]["ch1"]["expected_horizon_count"], 46)
 
     def test_already_complete_preflight_stops_before_fetch_or_publish(self):
         with tempfile.TemporaryDirectory(prefix="xcb_runner_") as tmp:
