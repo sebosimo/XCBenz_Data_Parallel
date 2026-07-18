@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import datetime as dt
-import json
 import os
 import shutil
 import sys
@@ -21,6 +20,16 @@ from value_tiles import (
     remove_value_tile_publication,
     validate_value_tile_publication,
     value_tiles_enabled,
+)
+from web_export_support import (
+    CLOUD_MAPS,
+    RAIN_MAPS,
+    SUNRAIN_MAPS,
+    SUNSHINE_MAPS,
+    load_json as load_web_json,
+    rebuild_split_binary_manifest,
+    resolve_publication_url,
+    write_json as write_web_json,
 )
 
 
@@ -78,18 +87,11 @@ def kept_run_tags(run_tags: list[str], *, anchor_hour: int, now: dt.datetime) ->
 
 
 def load_json(path: Path) -> dict[str, Any]:
-    with path.open("r", encoding="utf-8") as handle:
-        return json.load(handle)
+    return load_web_json(path)
 
 
 def write_json(path: Path, payload: Any, *, pretty: bool = True) -> None:
-    path.parent.mkdir(parents=True, exist_ok=True)
-    with path.open("w", encoding="utf-8") as handle:
-        if pretty:
-            json.dump(payload, handle, ensure_ascii=False, indent=2, allow_nan=False)
-            handle.write("\n")
-        else:
-            json.dump(payload, handle, ensure_ascii=False, separators=(",", ":"), allow_nan=False)
+    write_web_json(path, payload, pretty=pretty)
 
 
 def web_path(path: Path) -> str:
@@ -111,12 +113,7 @@ def radar_map_layer_count() -> int:
 
 
 def resolve_web_url(url: str | None) -> Path | None:
-    if not url:
-        return None
-    path = Path(url)
-    if path.parts and path.parts[0] == WEB_DIR.name:
-        return WEB_DIR.joinpath(*path.parts[1:])
-    return path
+    return resolve_publication_url(WEB_DIR, url)
 
 
 def merge_staging(*, include_value_tiles: bool = True) -> None:
@@ -309,211 +306,19 @@ def rebuild_wind_manifest() -> dict[str, Any] | None:
 
 
 def rebuild_sunshine_manifest() -> dict[str, Any] | None:
-    root = WEB_DIR / "sunshine_maps"
-    if not root.exists():
-        return None
-
-    manifest: dict[str, Any] = {
-        "schema_version": 1,
-        "product": "sunshine_maps",
-        "default_product": "surface",
-        "models": {},
-        "counts": {"runs": 0, "products": 0, "steps": 0, "bytes": 0},
-    }
-
-    for model_dir in sorted(path for path in root.iterdir() if path.is_dir()):
-        model_manifest = {"runs": {}}
-        for run_dir in sorted((path for path in model_dir.iterdir() if path.is_dir()), reverse=True):
-            run_manifest = {"layout": "split_binary_by_step", "products": {}}
-            for product_dir in sorted(path for path in run_dir.iterdir() if path.is_dir()):
-                metadata_path = product_dir / "metadata.json"
-                if not metadata_path.exists():
-                    continue
-                metadata = load_json(metadata_path)
-                steps = metadata.get("steps") or []
-                byte_count = sum(int(step.get("byte_length") or 0) for step in steps)
-                grid = metadata.get("grid") or {}
-                run_manifest["products"][product_dir.name] = {
-                    "metadata": web_path(metadata_path),
-                    "source": metadata.get("source"),
-                    "components": (metadata.get("encoding") or {}).get("components", []),
-                    "grid": {
-                        "width": grid.get("width"),
-                        "height": grid.get("height"),
-                    },
-                    "steps": steps,
-                    "step_count": len(steps),
-                    "bytes": byte_count,
-                }
-                manifest["counts"]["products"] += 1
-                manifest["counts"]["steps"] += len(steps)
-                manifest["counts"]["bytes"] += byte_count
-            if run_manifest["products"]:
-                model_manifest["runs"][run_dir.name] = run_manifest
-                manifest["counts"]["runs"] += 1
-        if model_manifest["runs"]:
-            manifest["models"][model_dir.name] = model_manifest
-
-    if not manifest["models"]:
-        return None
-    write_json(root / "manifest.json", manifest)
-    return manifest
+    return rebuild_split_binary_manifest(WEB_DIR / "sunshine_maps", SUNSHINE_MAPS, path_url=web_path)
 
 
 def rebuild_rain_manifest() -> dict[str, Any] | None:
-    root = WEB_DIR / "rain_maps"
-    if not root.exists():
-        return None
-
-    manifest: dict[str, Any] = {
-        "schema_version": 1,
-        "product": "rain_maps",
-        "default_product": "surface",
-        "models": {},
-        "counts": {"runs": 0, "products": 0, "steps": 0, "bytes": 0},
-    }
-
-    for model_dir in sorted(path for path in root.iterdir() if path.is_dir()):
-        model_manifest = {"runs": {}}
-        for run_dir in sorted((path for path in model_dir.iterdir() if path.is_dir()), reverse=True):
-            run_manifest = {"layout": "split_binary_by_step", "products": {}}
-            for product_dir in sorted(path for path in run_dir.iterdir() if path.is_dir()):
-                metadata_path = product_dir / "metadata.json"
-                if not metadata_path.exists():
-                    continue
-                metadata = load_json(metadata_path)
-                steps = metadata.get("steps") or []
-                byte_count = sum(int(step.get("byte_length") or 0) for step in steps)
-                grid = metadata.get("grid") or {}
-                run_manifest["products"][product_dir.name] = {
-                    "metadata": web_path(metadata_path),
-                    "source": metadata.get("source"),
-                    "components": (metadata.get("encoding") or {}).get("components", []),
-                    "grid": {
-                        "width": grid.get("width"),
-                        "height": grid.get("height"),
-                    },
-                    "steps": steps,
-                    "step_count": len(steps),
-                    "bytes": byte_count,
-                }
-                manifest["counts"]["products"] += 1
-                manifest["counts"]["steps"] += len(steps)
-                manifest["counts"]["bytes"] += byte_count
-            if run_manifest["products"]:
-                model_manifest["runs"][run_dir.name] = run_manifest
-                manifest["counts"]["runs"] += 1
-        if model_manifest["runs"]:
-            manifest["models"][model_dir.name] = model_manifest
-
-    if not manifest["models"]:
-        return None
-    write_json(root / "manifest.json", manifest)
-    return manifest
+    return rebuild_split_binary_manifest(WEB_DIR / "rain_maps", RAIN_MAPS, path_url=web_path)
 
 
 def rebuild_sunrain_manifest() -> dict[str, Any] | None:
-    root = WEB_DIR / "sunrain_maps"
-    if not root.exists():
-        return None
-
-    manifest: dict[str, Any] = {
-        "schema_version": 1,
-        "product": "sunrain_maps",
-        "default_product": "surface",
-        "models": {},
-        "counts": {"runs": 0, "products": 0, "steps": 0, "bytes": 0},
-    }
-
-    for model_dir in sorted(path for path in root.iterdir() if path.is_dir()):
-        model_manifest = {"runs": {}}
-        for run_dir in sorted((path for path in model_dir.iterdir() if path.is_dir()), reverse=True):
-            run_manifest = {"layout": "split_binary_by_step", "products": {}}
-            for product_dir in sorted(path for path in run_dir.iterdir() if path.is_dir()):
-                metadata_path = product_dir / "metadata.json"
-                if not metadata_path.exists():
-                    continue
-                metadata = load_json(metadata_path)
-                steps = metadata.get("steps") or []
-                byte_count = sum(int(step.get("byte_length") or 0) for step in steps)
-                grid = metadata.get("grid") or {}
-                run_manifest["products"][product_dir.name] = {
-                    "metadata": web_path(metadata_path),
-                    "source": metadata.get("source"),
-                    "components": (metadata.get("encoding") or {}).get("components", []),
-                    "grid": {
-                        "width": grid.get("width"),
-                        "height": grid.get("height"),
-                    },
-                    "steps": steps,
-                    "step_count": len(steps),
-                    "bytes": byte_count,
-                }
-                manifest["counts"]["products"] += 1
-                manifest["counts"]["steps"] += len(steps)
-                manifest["counts"]["bytes"] += byte_count
-            if run_manifest["products"]:
-                model_manifest["runs"][run_dir.name] = run_manifest
-                manifest["counts"]["runs"] += 1
-        if model_manifest["runs"]:
-            manifest["models"][model_dir.name] = model_manifest
-
-    if not manifest["models"]:
-        return None
-    write_json(root / "manifest.json", manifest)
-    return manifest
+    return rebuild_split_binary_manifest(WEB_DIR / "sunrain_maps", SUNRAIN_MAPS, path_url=web_path)
 
 
 def rebuild_cloud_manifest() -> dict[str, Any] | None:
-    root = WEB_DIR / "cloud_maps"
-    if not root.exists():
-        return None
-
-    manifest: dict[str, Any] = {
-        "schema_version": 1,
-        "product": "cloud_maps",
-        "default_product": "total",
-        "models": {},
-        "counts": {"runs": 0, "products": 0, "steps": 0, "bytes": 0},
-    }
-
-    for model_dir in sorted(path for path in root.iterdir() if path.is_dir()):
-        model_manifest = {"runs": {}}
-        for run_dir in sorted((path for path in model_dir.iterdir() if path.is_dir()), reverse=True):
-            run_manifest = {"layout": "split_binary_by_step", "products": {}}
-            for product_dir in sorted(path for path in run_dir.iterdir() if path.is_dir()):
-                metadata_path = product_dir / "metadata.json"
-                if not metadata_path.exists():
-                    continue
-                metadata = load_json(metadata_path)
-                steps = metadata.get("steps") or []
-                byte_count = sum(int(step.get("byte_length") or 0) for step in steps)
-                grid = metadata.get("grid") or {}
-                run_manifest["products"][product_dir.name] = {
-                    "metadata": web_path(metadata_path),
-                    "source": metadata.get("source"),
-                    "components": (metadata.get("encoding") or {}).get("components", []),
-                    "grid": {
-                        "width": grid.get("width"),
-                        "height": grid.get("height"),
-                    },
-                    "steps": steps,
-                    "step_count": len(steps),
-                    "bytes": byte_count,
-                }
-                manifest["counts"]["products"] += 1
-                manifest["counts"]["steps"] += len(steps)
-                manifest["counts"]["bytes"] += byte_count
-            if run_manifest["products"]:
-                model_manifest["runs"][run_dir.name] = run_manifest
-                manifest["counts"]["runs"] += 1
-        if model_manifest["runs"]:
-            manifest["models"][model_dir.name] = model_manifest
-
-    if not manifest["models"]:
-        return None
-    write_json(root / "manifest.json", manifest)
-    return manifest
+    return rebuild_split_binary_manifest(WEB_DIR / "cloud_maps", CLOUD_MAPS, path_url=web_path)
 
 
 def rebuild_main_manifest(

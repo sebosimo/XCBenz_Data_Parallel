@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import json
 import os
 import sys
 from pathlib import Path
@@ -12,6 +11,7 @@ if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
 from value_tiles import capability_declaration, validate_value_tile_publication
+from web_export_support import load_json as load_web_json, resolve_publication_url
 
 
 WEB_MANIFEST = Path("web_exports/manifest.json")
@@ -33,8 +33,7 @@ EMAGRAM_BUNDLE_VARIABLES = (
 def load_json(path: Path) -> dict:
     if not path.exists():
         raise FileNotFoundError(f"Missing required file: {path}")
-    with path.open("r", encoding="utf-8") as handle:
-        return json.load(handle)
+    return load_web_json(path)
 
 
 def fail(message: str) -> int:
@@ -43,12 +42,7 @@ def fail(message: str) -> int:
 
 
 def resolve_web_url(url: str | None) -> Path | None:
-    if not url:
-        return None
-    path = Path(url)
-    if path.parts and path.parts[0] == "web_exports":
-        return path
-    return path
+    return resolve_publication_url(Path("web_exports"), url)
 
 
 def validate_bundles() -> tuple[int, int]:
