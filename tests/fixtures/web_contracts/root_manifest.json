@@ -1,0 +1,75 @@
+{
+  "schema_version": 1,
+  "generated_at": "2026-07-18T00:00:00+00:00",
+  "source": {
+    "source_manifest": "manifest.json",
+    "source_manifest_generated_at": "20260718_0000",
+    "data_root": "https://data.xcbenz.com"
+  },
+  "urls": {
+    "locations": "web_exports/locations.json",
+    "regions": "web_exports/regions.geojson"
+  },
+  "products": {
+    "region_forecasts": "web_exports/region_forecasts/{model}/{run}/{location_id}.json",
+    "emagrams": null,
+    "emagram_bundles": "web_exports/emagrams/{model}/{run}/{location_id}/bundle.json",
+    "thermal_panels": "web_exports/thermal_panels/{model}/{run}/{location_id}.json",
+    "maps": {
+      "wind": "web_exports/wind_maps/manifest.json",
+      "rain": "web_exports/rain_maps/manifest.json",
+      "sunrain": "web_exports/sunrain_maps/manifest.json",
+      "cloud": "web_exports/cloud_maps/manifest.json"
+    }
+  },
+  "models": {
+    "icon-ch1": {
+      "label": "ICON-CH1",
+      "profile_chunk_dir": "web_profile_chunks/ch1",
+      "profile_source": "direct_chunks",
+      "latest_run": "20260718_0000",
+      "runs": {
+        "20260718_0000": {
+          "locations": {
+            "bern": {
+              "type": "region",
+              "display_name": "Bern",
+              "steps": ["H00"],
+              "valid_times": ["2026-07-18T00:00:00+00:00"],
+              "region_forecast": "web_exports/region_forecasts/icon-ch1/20260718_0000/bern.json",
+              "thermal_panel": null,
+              "emagram_template": null,
+              "emagram_bundle": "web_exports/emagrams/icon-ch1/20260718_0000/bern/bundle.json"
+            }
+          }
+        }
+      },
+      "counts": {
+        "runs": 1,
+        "locations": 1,
+        "profiles": 1,
+        "emagram_bundles": 1,
+        "thermal_panels": 0,
+        "region_forecasts": 1
+      }
+    }
+  },
+  "counts": {
+    "locations": 1,
+    "region_locations": 1,
+    "legacy_locations": 0,
+    "profiles": 1,
+    "emagram_bundles": 1,
+    "thermal_panels": 0,
+    "region_forecasts": 1,
+    "wind_map_levels": 1,
+    "wind_map_steps": 1,
+    "rain_map_products": 1,
+    "rain_map_steps": 1,
+    "sunrain_map_products": 1,
+    "sunrain_map_steps": 1,
+    "cloud_map_products": 4,
+    "cloud_map_steps": 4
+  },
+  "notes": ["Canonical cross-repository contract fixture."]
+}
