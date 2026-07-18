@@ -25,8 +25,13 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
-
 REPO_ROOT = Path(__file__).resolve().parents[1]
+if str(REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(REPO_ROOT))
+
+from pipeline_orchestration.job_plan import PlannedChunk, build_job_plan  # noqa: E402
+
+
 DEFAULT_REPOSITORY = "sebosimo/XCBenz_Data_Parallel"
 DEFAULT_DATA_BRANCH = "data-web"
 DEFAULT_DATA_HOST_BASE_URL = "https://data.xcbenz.com"
@@ -400,70 +405,21 @@ def run_preflight(args: argparse.Namespace, env: dict[str, str], log_dir: Path, 
     return parse_output_file(output_file)
 
 
-def chunk_id(start: int, end: int) -> str:
-    return f"H{start:03d}_H{end:03d}"
-
-
-def run_hour(run_tag: str) -> int:
-    try:
-        return int(run_tag.split("_", 1)[1][:2])
-    except Exception as exc:
-        raise SystemExit(f"Invalid run tag {run_tag!r}; expected YYYYMMDD_HHMM") from exc
-
-
-def horizon_chunks(end: int, chunk_size: int) -> list[tuple[int, int]]:
-    size = max(1, chunk_size)
-    chunks = []
-    start = 0
-    while start <= end:
-        chunk_end = min(end, start + size - 1)
-        chunks.append((start, chunk_end))
-        start = chunk_end + 1
-    if len(chunks) > 1:
-        last_start, last_end = chunks[-1]
-        if last_end - last_start + 1 < max(2, size // 2):
-            prev_start, _prev_end = chunks[-2]
-            chunks[-2:] = [(prev_start, last_end)]
-    return chunks
-
-
-def ch1_chunks(run_tag: str, chunk_size: int) -> list[tuple[int, int]]:
-    end = 45 if run_hour(run_tag) == 3 else 33
-    if chunk_size <= 0:
-        if end == 45:
-            return [(0, 16), (17, 33), (34, 45)]
-        return [(0, 16), (17, 33)]
-    return horizon_chunks(end, chunk_size)
-
-
-def ch1_profile_chunks(run_tag: str) -> list[tuple[int, int]]:
-    if run_hour(run_tag) == 3:
-        return [(0, 16), (17, 33), (34, 45)]
-    return [(0, 16), (17, 33)]
-
-
-def ch2_chunks(chunk_size: int) -> list[tuple[int, int]]:
-    if chunk_size <= 0:
-        return [(0, 30), (31, 60), (61, 90), (91, 120)]
-    return horizon_chunks(120, chunk_size)
-
-
 def order_combined_jobs(ch1_jobs: list[Job], ch2_jobs: list[Job], order: str) -> list[Job]:
     if order == "interleave":
         return [*ch1_jobs[:2], *ch2_jobs[:2], *ch1_jobs[2:], *ch2_jobs[2:]]
     return [*ch1_jobs, *ch2_jobs]
 
 
-def map_output_roots(model: str, cid: str) -> dict[str, str]:
-    root = Path("map_chunks") / model / cid
+def map_output_roots(model: str, chunk: PlannedChunk) -> dict[str, str]:
     prefix = "CH1" if model == "ch1" else "CH2"
-    wind_cache = "cache_wind_maps"
+    roots = chunk.roots()
     return {
-        f"{prefix}_WIND_MAP_OUT_ROOT": str(root / wind_cache),
-        f"{prefix}_SUNSHINE_MAP_OUT_ROOT": str(root / "cache_sunshine_maps"),
-        f"{prefix}_RAIN_MAP_OUT_ROOT": str(root / "cache_rain_maps"),
-        f"{prefix}_SUNRAIN_MAP_OUT_ROOT": str(root / "cache_sunrain_maps"),
-        f"{prefix}_CLOUD_MAP_OUT_ROOT": str(root / "cache_cloud_maps"),
+        f"{prefix}_WIND_MAP_OUT_ROOT": roots["wind_root"],
+        f"{prefix}_SUNSHINE_MAP_OUT_ROOT": roots["sunshine_root"],
+        f"{prefix}_RAIN_MAP_OUT_ROOT": roots["rain_root"],
+        f"{prefix}_SUNRAIN_MAP_OUT_ROOT": roots["sunrain_root"],
+        f"{prefix}_CLOUD_MAP_OUT_ROOT": roots["cloud_root"],
     }
 
 
@@ -531,12 +487,18 @@ def build_jobs(
     latest_ch2: str,
 ) -> list[Job]:
     jobs: list[Job] = []
+    plan = build_job_plan(
+        latest_ch1,
+        latest_ch2,
+        ch1_chunk_size=args.ch1_chunk_size,
+        ch2_chunk_size=args.ch2_chunk_size,
+    )
 
     if args.job_layout == "combined":
         ch1_jobs: list[Job] = []
         ch2_jobs: list[Job] = []
-        for start, end in ch1_chunks(latest_ch1, args.ch1_chunk_size):
-            cid = chunk_id(start, end)
+        for chunk in plan.ch1.coding_server.map_chunks:
+            start, end, cid = chunk.start, chunk.end, chunk.id
             name = f"ch1-combined-{cid}"
             env = job_env(base, run_dir, name)
             env.update(
@@ -547,13 +509,13 @@ def build_jobs(
                     "CH1_HORIZON_START": str(start),
                     "CH1_HORIZON_END": str(end),
                     "CH1_REQUIRE_FULL_HORIZON_RUN": "true",
-                    **map_output_roots("ch1", cid),
+                    **map_output_roots("ch1", chunk),
                 }
             )
             ch1_jobs.append(Job(name, [*py, "fetch_data.py"], env))
 
-        for start, end in ch2_chunks(args.ch2_chunk_size):
-            cid = chunk_id(start, end)
+        for chunk in plan.ch2.coding_server.map_chunks:
+            start, end, cid = chunk.start, chunk.end, chunk.id
             name = f"ch2-combined-{cid}"
             env = job_env(base, run_dir, name)
             env.update(
@@ -564,15 +526,15 @@ def build_jobs(
                     "CH2_HORIZON_START": str(start),
                     "CH2_HORIZON_END": str(end),
                     "CH2_REQUIRE_FULL_HORIZON_RUN": "true",
-                    **map_output_roots("ch2", cid),
+                    **map_output_roots("ch2", chunk),
                 }
             )
             ch2_jobs.append(Job(name, [*py, "fetch_data_ch2.py"], env))
 
         return order_combined_jobs(ch1_jobs, ch2_jobs, args.combined_job_order)
 
-    for start, end in ch1_chunks(latest_ch1, args.ch1_chunk_size):
-        cid = chunk_id(start, end)
+    for chunk in plan.ch1.coding_server.map_chunks:
+        start, end, cid = chunk.start, chunk.end, chunk.id
         name = f"ch1-map-{cid}"
         env = job_env(base, run_dir, name)
         env.update(
@@ -582,13 +544,13 @@ def build_jobs(
                 "CH1_HORIZON_START": str(start),
                 "CH1_HORIZON_END": str(end),
                 "CH1_REQUIRE_FULL_HORIZON_RUN": "true",
-                **map_output_roots("ch1", cid),
+                **map_output_roots("ch1", chunk),
             }
         )
         jobs.append(Job(name, [*py, "fetch_data.py"], env))
 
-    for start, end in ch1_profile_chunks(latest_ch1):
-        cid = chunk_id(start, end)
+    for chunk in plan.ch1.coding_server.profile_chunks:
+        start, end, cid = chunk.start, chunk.end, chunk.id
         name = f"ch1-profile-{cid}"
         env = job_env(base, run_dir, name)
         env.update(
@@ -604,9 +566,8 @@ def build_jobs(
         disable_maps(env, "CH1")
         jobs.append(Job(name, [*py, "fetch_data.py"], env))
 
-    ch2_ranges = ch2_chunks(args.ch2_chunk_size)
-    for start, end in ch2_ranges:
-        cid = chunk_id(start, end)
+    for chunk in plan.ch2.coding_server.map_chunks:
+        start, end, cid = chunk.start, chunk.end, chunk.id
         name = f"ch2-map-{cid}"
         env = job_env(base, run_dir, name)
         env.update(
@@ -616,13 +577,13 @@ def build_jobs(
                 "CH2_HORIZON_START": str(start),
                 "CH2_HORIZON_END": str(end),
                 "CH2_REQUIRE_FULL_HORIZON_RUN": "true",
-                **map_output_roots("ch2", cid),
+                **map_output_roots("ch2", chunk),
             }
         )
         jobs.append(Job(name, [*py, "fetch_data_ch2.py"], env))
 
-    for start, end in ch2_ranges:
-        cid = chunk_id(start, end)
+    for chunk in plan.ch2.coding_server.profile_chunks:
+        start, end, cid = chunk.start, chunk.end, chunk.id
         name = f"ch2-profile-{cid}"
         env = job_env(base, run_dir, name)
         env.update(
@@ -1055,6 +1016,15 @@ def run_pipeline(args: argparse.Namespace) -> int:
 
 def main() -> int:
     args = build_parser().parse_args()
+    if args.plan_only and args.ch1_run_tag and args.ch2_run_tag:
+        plan = build_job_plan(
+            args.ch1_run_tag,
+            args.ch2_run_tag,
+            ch1_chunk_size=args.ch1_chunk_size,
+            ch2_chunk_size=args.ch2_chunk_size,
+        )
+        print(plan.to_json())
+        return 0
     with local_lock(args.lock_file):
         return run_pipeline(args)
 

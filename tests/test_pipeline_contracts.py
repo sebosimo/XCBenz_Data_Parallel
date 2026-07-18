@@ -14,37 +14,64 @@ if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
 import merge_map_chunks  # noqa: E402
-import preflight_runs  # noqa: E402
-import run_coding_server_pipeline as runner  # noqa: E402
 from generate_web_exports import expected_profile_chunks  # noqa: E402
+from pipeline_orchestration.job_plan import build_job_plan  # noqa: E402
 
 
 WORKFLOW_PATH = REPO_ROOT / ".github" / "workflows" / "daily_plot.yml"
 
 
-def matrix_ids(run_tag: str) -> set[str]:
-    return {item["id"] for item in preflight_runs.ch1_profile_matrix(run_tag)["chunk"]}
+def assert_workflow_wiring(workflow: str) -> None:
+    required = (
+        "python -m pipeline_orchestration.job_plan",
+        "ch1_map_matrix: ${{ steps.plan.outputs.ch1_map_matrix }}",
+        "ch1_profile_matrix: ${{ steps.plan.outputs.ch1_profile_matrix }}",
+        "ch2_map_matrix: ${{ steps.plan.outputs.ch2_map_matrix }}",
+        "ch2_profile_matrix: ${{ steps.plan.outputs.ch2_profile_matrix }}",
+        "matrix: ${{ fromJSON(needs.plan.outputs.ch1_map_matrix) }}",
+        "matrix: ${{ fromJSON(needs.plan.outputs.ch1_profile_matrix) }}",
+        "matrix: ${{ fromJSON(needs.plan.outputs.ch2_map_matrix) }}",
+        "matrix: ${{ fromJSON(needs.plan.outputs.ch2_profile_matrix) }}",
+    )
+    for token in required:
+        if token not in workflow:
+            raise AssertionError(f"workflow is not wired to the shared job plan: {token}")
 
 
 class PipelineContractTests(unittest.TestCase):
     def test_ch1_profile_plans_match_for_regular_and_03z_runs(self):
         for run_tag in ("20260716_1500", "20260716_0300"):
-            workflow_ids = matrix_ids(run_tag)
-            runner_ids = {runner.chunk_id(start, end) for start, end in runner.ch1_profile_chunks(run_tag)}
+            plan = build_job_plan(run_tag, "20260716_1200")
+            workflow_ids = {chunk.id for chunk in plan.ch1.github.profile_chunks}
+            runner_ids = {chunk.id for chunk in plan.ch1.coding_server.profile_chunks}
             export_ids = expected_profile_chunks("icon-ch1", run_tag)
             self.assertEqual(workflow_ids, runner_ids)
             self.assertEqual(workflow_ids, export_ids)
 
-    def test_workflow_consumes_the_tested_profile_matrix_and_canonical_ch1_wind_root(self):
+    def test_ch2_profile_plans_match_runner_workflow_and_export_completeness(self):
+        plan = build_job_plan("20260716_1500", "20260716_1200")
+        workflow_ids = {chunk.id for chunk in plan.ch2.github.profile_chunks}
+        runner_ids = {chunk.id for chunk in plan.ch2.coding_server.profile_chunks}
+        self.assertEqual(workflow_ids, runner_ids)
+        self.assertEqual(workflow_ids, expected_profile_chunks("icon-ch2", "20260716_1200"))
+
+    def test_workflow_consumes_all_shared_matrices_and_planned_cache_roots(self):
         workflow = WORKFLOW_PATH.read_text(encoding="utf-8")
-        self.assertIn("ch1_profile_matrix: ${{ steps.preflight.outputs.ch1_profile_matrix }}", workflow)
-        self.assertIn("matrix: ${{ fromJSON(needs.preflight.outputs.ch1_profile_matrix) }}", workflow)
+        assert_workflow_wiring(workflow)
         self.assertNotIn("cache_wind_packed/ch1", workflow)
         self.assertIn("cache_wind_maps/ch1/", workflow)
-        self.assertIn(
-            "CH2_WIND_MAP_OUT_ROOT: map_chunk_outputs/${{ matrix.chunk.id }}/cache_wind_packed",
-            workflow,
+        self.assertIn("CH1_WIND_MAP_OUT_ROOT: ${{ matrix.chunk.wind_root }}", workflow)
+        self.assertIn("CH2_WIND_MAP_OUT_ROOT: ${{ matrix.chunk.wind_root }}", workflow)
+        self.assertNotIn("- id: H000_H030", workflow)
+
+    def test_workflow_wiring_mutation_is_rejected(self):
+        workflow = WORKFLOW_PATH.read_text(encoding="utf-8")
+        mutated = workflow.replace(
+            "needs.plan.outputs.ch2_map_matrix",
+            "needs.plan.outputs.ch2_profile_matrix",
         )
+        with self.assertRaisesRegex(AssertionError, "ch2_map_matrix"):
+            assert_workflow_wiring(mutated)
 
     def test_ch2_wind_staging_merges_into_the_canonical_root(self):
         with tempfile.TemporaryDirectory(dir=os.getenv("TEST_TMPDIR", "/tmp")) as temp_dir:

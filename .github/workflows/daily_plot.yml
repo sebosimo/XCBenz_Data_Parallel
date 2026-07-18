@@ -57,7 +57,6 @@ jobs:
       reason: ${{ steps.preflight.outputs.reason }}
       latest_ch1: ${{ steps.preflight.outputs.latest_ch1 }}
       latest_ch2: ${{ steps.preflight.outputs.latest_ch2 }}
-      ch1_profile_matrix: ${{ steps.preflight.outputs.ch1_profile_matrix }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v6
@@ -71,12 +70,40 @@ jobs:
           XCBENZ_PREFLIGHT_MANIFEST_URL: ${{ (github.event_name == 'schedule' || github.event.inputs.run_mode == 'standard-deploy-data-host') && 'https://data.xcbenz.com/web_exports/manifest.json' || '' }}
         run: python scripts/preflight_runs.py
 
-  fetch-ch1:
+  plan:
     needs: preflight
     if: needs.preflight.outputs.should_run == 'true'
     runs-on: ubuntu-latest
     permissions:
       contents: read
+    outputs:
+      ch1_map_matrix: ${{ steps.plan.outputs.ch1_map_matrix }}
+      ch1_profile_matrix: ${{ steps.plan.outputs.ch1_profile_matrix }}
+      ch2_map_matrix: ${{ steps.plan.outputs.ch2_map_matrix }}
+      ch2_profile_matrix: ${{ steps.plan.outputs.ch2_profile_matrix }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 1
+
+      - name: Build shared orchestration plan
+        id: plan
+        run: >-
+          python -m pipeline_orchestration.job_plan
+          --ch1-run-tag "${{ needs.preflight.outputs.latest_ch1 }}"
+          --ch2-run-tag "${{ needs.preflight.outputs.latest_ch2 }}"
+          --github-output "$GITHUB_OUTPUT"
+
+  fetch-ch1:
+    needs: [preflight, plan]
+    if: needs.preflight.outputs.should_run == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJSON(needs.plan.outputs.ch1_map_matrix) }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v6
@@ -111,6 +138,13 @@ jobs:
           FORCE_REFRESH: ${{ env.FORCE_REFRESH }}
           CH1_RUN_TAG: ${{ needs.preflight.outputs.latest_ch1 }}
           CH1_PROFILE_MODE: none
+          CH1_HORIZON_START: ${{ matrix.chunk.start }}
+          CH1_HORIZON_END: ${{ matrix.chunk.end }}
+          CH1_WIND_MAP_OUT_ROOT: ${{ matrix.chunk.wind_root }}
+          CH1_SUNSHINE_MAP_OUT_ROOT: ${{ matrix.chunk.sunshine_root }}
+          CH1_RAIN_MAP_OUT_ROOT: ${{ matrix.chunk.rain_root }}
+          CH1_SUNRAIN_MAP_OUT_ROOT: ${{ matrix.chunk.sunrain_root }}
+          CH1_CLOUD_MAP_OUT_ROOT: ${{ matrix.chunk.cloud_root }}
           ENABLE_WIND_MAPS: ${{ env.ENABLE_WIND_MAPS }}
           ENABLE_WIND_MAPS_CH1: ${{ env.ENABLE_WIND_MAPS_CH1 }}
           WIND_MAP_MAX_SECONDS: ${{ env.WIND_MAP_MAX_SECONDS }}
@@ -137,14 +171,14 @@ jobs:
             cache_cloud_maps/ch1/
 
   fetch-ch1-profiles:
-    needs: preflight
+    needs: [preflight, plan]
     if: needs.preflight.outputs.should_run == 'true'
     runs-on: ubuntu-latest
     permissions:
       contents: read
     strategy:
       fail-fast: false
-      matrix: ${{ fromJSON(needs.preflight.outputs.ch1_profile_matrix) }}
+      matrix: ${{ fromJSON(needs.plan.outputs.ch1_profile_matrix) }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v6
@@ -194,27 +228,14 @@ jobs:
             web_profile_chunks/
 
   fetch-ch2:
-    needs: preflight
+    needs: [preflight, plan]
     if: needs.preflight.outputs.should_run == 'true'
     runs-on: ubuntu-latest
     permissions:
       contents: read
     strategy:
       fail-fast: false
-      matrix:
-        chunk:
-          - id: H000_H030
-            start: "0"
-            end: "30"
-          - id: H031_H060
-            start: "31"
-            end: "60"
-          - id: H061_H090
-            start: "61"
-            end: "90"
-          - id: H091_H120
-            start: "91"
-            end: "120"
+      matrix: ${{ fromJSON(needs.plan.outputs.ch2_map_matrix) }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v6
@@ -244,11 +265,11 @@ jobs:
           CH2_HORIZON_START: ${{ matrix.chunk.start }}
           CH2_HORIZON_END: ${{ matrix.chunk.end }}
           CH2_REQUIRE_FULL_HORIZON_RUN: "true"
-          CH2_WIND_MAP_OUT_ROOT: map_chunk_outputs/${{ matrix.chunk.id }}/cache_wind_packed
-          CH2_SUNSHINE_MAP_OUT_ROOT: map_chunk_outputs/${{ matrix.chunk.id }}/cache_sunshine_maps
-          CH2_RAIN_MAP_OUT_ROOT: map_chunk_outputs/${{ matrix.chunk.id }}/cache_rain_maps
-          CH2_SUNRAIN_MAP_OUT_ROOT: map_chunk_outputs/${{ matrix.chunk.id }}/cache_sunrain_maps
-          CH2_CLOUD_MAP_OUT_ROOT: map_chunk_outputs/${{ matrix.chunk.id }}/cache_cloud_maps
+          CH2_WIND_MAP_OUT_ROOT: ${{ matrix.chunk.wind_root }}
+          CH2_SUNSHINE_MAP_OUT_ROOT: ${{ matrix.chunk.sunshine_root }}
+          CH2_RAIN_MAP_OUT_ROOT: ${{ matrix.chunk.rain_root }}
+          CH2_SUNRAIN_MAP_OUT_ROOT: ${{ matrix.chunk.sunrain_root }}
+          CH2_CLOUD_MAP_OUT_ROOT: ${{ matrix.chunk.cloud_root }}
           ENABLE_WIND_MAPS: ${{ env.ENABLE_WIND_MAPS }}
           ENABLE_WIND_MAPS_CH2: ${{ env.ENABLE_WIND_MAPS_CH2 }}
           WIND_MAP_MAX_SECONDS: ${{ env.WIND_MAP_MAX_SECONDS }}
@@ -271,27 +292,14 @@ jobs:
             map_chunk_outputs/${{ matrix.chunk.id }}/
 
   fetch-ch2-profiles:
-    needs: preflight
+    needs: [preflight, plan]
     if: needs.preflight.outputs.should_run == 'true'
     runs-on: ubuntu-latest
     permissions:
       contents: read
     strategy:
       fail-fast: false
-      matrix:
-        chunk:
-          - id: H000_H030
-            start: "0"
-            end: "30"
-          - id: H031_H060
-            start: "31"
-            end: "60"
-          - id: H061_H090
-            start: "61"
-            end: "90"
-          - id: H091_H120
-            start: "91"
-            end: "120"
+      matrix: ${{ fromJSON(needs.plan.outputs.ch2_profile_matrix) }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v6
