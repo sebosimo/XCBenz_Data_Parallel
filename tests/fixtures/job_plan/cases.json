@@ -1,0 +1,35 @@
+{
+  "fixture_schema_version": 1,
+  "cases": [
+    {
+      "name": "regular_ch1_and_ch2",
+      "ch1_run_tag": "20260716_1500",
+      "ch2_run_tag": "20260716_1200",
+      "expected": {
+        "ch1_horizon_count": 34,
+        "ch1_github_map_chunks": ["H000_H033"],
+        "ch1_profile_chunks": ["H000_H016", "H017_H033"],
+        "ch2_horizon_count": 121,
+        "ch2_map_chunks": ["H000_H030", "H031_H060", "H061_H090", "H091_H120"],
+        "github_ch1_wind_root": "cache_wind_maps",
+        "github_ch2_wind_root": "map_chunk_outputs/H000_H030/cache_wind_packed",
+        "coding_server_ch2_wind_root": "map_chunks/ch2/H000_H030/cache_wind_maps"
+      }
+    },
+    {
+      "name": "extended_03z_ch1",
+      "ch1_run_tag": "20260716_0300",
+      "ch2_run_tag": "20260716_1200",
+      "expected": {
+        "ch1_horizon_count": 46,
+        "ch1_github_map_chunks": ["H000_H045"],
+        "ch1_profile_chunks": ["H000_H016", "H017_H033", "H034_H045"],
+        "ch2_horizon_count": 121,
+        "ch2_map_chunks": ["H000_H030", "H031_H060", "H061_H090", "H091_H120"],
+        "github_ch1_wind_root": "cache_wind_maps",
+        "github_ch2_wind_root": "map_chunk_outputs/H000_H030/cache_wind_packed",
+        "coding_server_ch2_wind_root": "map_chunks/ch2/H000_H030/cache_wind_maps"
+      }
+    }
+  ]
+}
