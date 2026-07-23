@@ -16,6 +16,8 @@ from value_tiles import (
     CONTRACT,
     CONTRACT_VERSION,
     FINE_GRID,
+    LEGACY_FINE_GRID,
+    LEGACY_WIND_GRID,
     PACKAGE,
     WIND_GRID,
     GridSpec,
@@ -93,18 +95,24 @@ def _write_variant(
     return metadata_path
 
 
-def _write_complete_whole_grid(web_root: Path, *, include_high: bool = True) -> None:
+def _write_complete_whole_grid(
+    web_root: Path,
+    *,
+    run: str = "20260716_0300",
+    wind_grid: GridSpec = WIND_GRID,
+    fine_grid: GridSpec = FINE_GRID,
+    include_high: bool = True,
+) -> None:
     model = "icon-ch1"
-    run = "20260716_0300"
-    wind_cells = WIND_GRID.width * WIND_GRID.height
-    fine_cells = FINE_GRID.width * FINE_GRID.height
+    wind_cells = wind_grid.width * wind_grid.height
+    fine_cells = fine_grid.width * fine_grid.height
     _write_variant(
         web_root,
         "wind_maps",
         model,
         run,
         "800m_AGL",
-        WIND_GRID,
+        wind_grid,
         {
             "format": "int8-interleaved-u-v",
             "dtype": "int8",
@@ -121,7 +129,7 @@ def _write_complete_whole_grid(web_root: Path, *, include_high: bool = True) -> 
         model,
         run,
         "surface",
-        FINE_GRID,
+        fine_grid,
         {
             "format": "uint8-semantic-sunrain-code",
             "dtype": "uint8",
@@ -138,7 +146,7 @@ def _write_complete_whole_grid(web_root: Path, *, include_high: bool = True) -> 
         model,
         run,
         "surface",
-        FINE_GRID,
+        fine_grid,
         {
             "format": "uint8-interleaved-components",
             "dtype": "uint8",
@@ -160,7 +168,7 @@ def _write_complete_whole_grid(web_root: Path, *, include_high: bool = True) -> 
             model,
             run,
             layer,
-            FINE_GRID,
+            fine_grid,
             {
                 "format": "packed-uint4-cloud-cover",
                 "dtype": "uint8",
@@ -403,6 +411,52 @@ class ValueTileGenerationTests(unittest.TestCase):
             self.assertEqual(restored["counts"]["tiles"], 160)
             self.assertIsNone(prune_value_tile_manifest(web_root, {"icon-ch1": set()}))
             self.assertFalse((web_root / "value_tiles").exists())
+        finally:
+            shutil.rmtree(workspace, ignore_errors=True)
+
+    def test_generation_supports_retained_legacy_and_expanded_grid_runs(self):
+        workspace = _temp_workspace()
+        try:
+            web_root = workspace / "web_exports"
+            _write_complete_whole_grid(web_root)
+            _write_complete_whole_grid(
+                web_root,
+                run="20260715_0300",
+                wind_grid=LEGACY_WIND_GRID,
+                fine_grid=LEGACY_FINE_GRID,
+            )
+            current_wind_metadata = (
+                web_root / "wind_maps/icon-ch1/20260716_0300/800m_AGL/metadata.json"
+            )
+            current_wind_payload = json.loads(current_wind_metadata.read_text(encoding="utf-8"))
+            current_wind_payload["grid"]["lat"]["step"] = 0.03999
+            _write_json(current_wind_metadata, current_wind_payload)
+
+            manifest = generate_value_tiles(web_root)
+
+            self.assertEqual(
+                manifest["counts"],
+                {"models": 1, "runs": 2, "variants": 16, "tiles": 256},
+            )
+            runs = manifest["models"]["icon-ch1"]["runs"]
+            current_record = json.loads(
+                (web_root / Path(runs["20260716_0300"]["revision_record"].replace("web_exports/", "", 1)))
+                .with_name("revision.json")
+                .read_text(encoding="utf-8")
+            )
+            legacy_record = json.loads(
+                (web_root / Path(runs["20260715_0300"]["revision_record"].replace("web_exports/", "", 1)))
+                .with_name("revision.json")
+                .read_text(encoding="utf-8")
+            )
+            self.assertEqual(
+                set(current_record["record"]["grids"]),
+                {FINE_GRID.id, WIND_GRID.id},
+            )
+            self.assertEqual(
+                set(legacy_record["record"]["grids"]),
+                {LEGACY_FINE_GRID.id, LEGACY_WIND_GRID.id},
+            )
         finally:
             shutil.rmtree(workspace, ignore_errors=True)
 

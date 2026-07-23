@@ -94,6 +94,18 @@ FINE_GRID = GridSpec(
     core_width=160,
     core_height=112,
 )
+LEGACY_FINE_GRID = GridSpec(
+    id="alps_002deg_v1",
+    width=626,
+    height=291,
+    coordinate_scale=100_000,
+    lon_origin=400_000,
+    lat_origin=4_300_000,
+    lon_step=2_000,
+    lat_step=2_000,
+    core_width=160,
+    core_height=112,
+)
 WIND_GRID = GridSpec(
     id="icon_ch_common_safe_004deg_v1",
     width=391,
@@ -106,6 +118,21 @@ WIND_GRID = GridSpec(
     core_width=80,
     core_height=56,
 )
+LEGACY_WIND_GRID = GridSpec(
+    id="alps_004deg_v1",
+    width=313,
+    height=146,
+    coordinate_scale=100_000,
+    lon_origin=400_000,
+    lat_origin=4_300_000,
+    lon_step=4_000,
+    lat_step=4_000,
+    core_width=80,
+    core_height=56,
+)
+FINE_GRIDS = (FINE_GRID, LEGACY_FINE_GRID)
+WIND_GRIDS = (WIND_GRID, LEGACY_WIND_GRID)
+SUPPORTED_GRIDS = (*FINE_GRIDS, *WIND_GRIDS)
 
 
 @dataclass(frozen=True)
@@ -576,9 +603,9 @@ def _validate_source_metadata(path: Path, grid: GridSpec, channel: ChannelSpec) 
         raise ValueError(f"{path} has an unexpected longitude origin")
     if _axis_integer(source_grid, "lat", "start", grid.coordinate_scale) != grid.lat_origin:
         raise ValueError(f"{path} has an unexpected latitude origin")
-    if _axis_integer(source_grid, "lon", "step", grid.coordinate_scale) != grid.lon_step:
+    if abs(_axis_integer(source_grid, "lon", "step", grid.coordinate_scale) - grid.lon_step) > 1:
         raise ValueError(f"{path} has an unexpected longitude step")
-    if _axis_integer(source_grid, "lat", "step", grid.coordinate_scale) != grid.lat_step:
+    if abs(_axis_integer(source_grid, "lat", "step", grid.coordinate_scale) - grid.lat_step) > 1:
         raise ValueError(f"{path} has an unexpected latitude step")
     encoding = metadata.get("encoding") or {}
     if encoding.get("format") != channel.format:
@@ -627,6 +654,23 @@ def _validate_source_metadata(path: Path, grid: GridSpec, channel: ChannelSpec) 
     if not steps:
         raise ValueError(f"{path} has no steps")
     return metadata
+
+
+def _select_source_grid(path: Path, candidates: tuple[GridSpec, ...]) -> GridSpec:
+    metadata = load_json(path)
+    source_grid = metadata.get("grid") or {}
+    for grid in candidates:
+        if (
+            int(source_grid.get("width") or 0) == grid.width
+            and int(source_grid.get("height") or 0) == grid.height
+            and _axis_integer(source_grid, "lon", "start", grid.coordinate_scale) == grid.lon_origin
+            and _axis_integer(source_grid, "lat", "start", grid.coordinate_scale) == grid.lat_origin
+            and abs(_axis_integer(source_grid, "lon", "step", grid.coordinate_scale) - grid.lon_step) <= 1
+            and abs(_axis_integer(source_grid, "lat", "step", grid.coordinate_scale) - grid.lat_step) <= 1
+        ):
+            return grid
+    supported = ", ".join(grid.id for grid in candidates)
+    raise ValueError(f"{path} does not use a supported grid ({supported})")
 
 
 def _step_sources(
@@ -699,16 +743,20 @@ def discover_variants(web_root: Path) -> dict[tuple[str, str], list[VariantSourc
         discovered.setdefault((variant.model, variant.run), []).append(variant)
 
     for path in sorted(web_root.glob("wind_maps/*/*/*/metadata.json")):
-        add(_individual_variant(web_root, path, "wind", path.parent.name, CHANNELS["wind_uv"], WIND_GRID))
+        grid = _select_source_grid(path, WIND_GRIDS)
+        add(_individual_variant(web_root, path, "wind", path.parent.name, CHANNELS["wind_uv"], grid))
     for path in sorted(web_root.glob("sunrain_maps/*/*/surface/metadata.json")):
-        add(_individual_variant(web_root, path, "sunrain", "surface", CHANNELS["sunrain_code"], FINE_GRID))
+        grid = _select_source_grid(path, FINE_GRIDS)
+        add(_individual_variant(web_root, path, "sunrain", "surface", CHANNELS["sunrain_code"], grid))
     for path in sorted(web_root.glob("rain_maps/*/*/surface/metadata.json")):
-        add(_individual_variant(web_root, path, "rain", "surface", CHANNELS["rain"], FINE_GRID))
+        grid = _select_source_grid(path, FINE_GRIDS)
+        add(_individual_variant(web_root, path, "rain", "surface", CHANNELS["rain"], grid))
     cloud_by_run: dict[tuple[str, str], dict[str, VariantSource]] = {}
     for layer in CLOUD_VARIANTS:
         for path in sorted(web_root.glob(f"cloud_maps/*/*/{layer}/metadata.json")):
             channel = CHANNELS[f"cloud_{layer}"]
-            variant = _individual_variant(web_root, path, "cloud", layer, channel, FINE_GRID)
+            grid = _select_source_grid(path, FINE_GRIDS)
+            variant = _individual_variant(web_root, path, "cloud", layer, channel, grid)
             add(variant)
             cloud_by_run.setdefault((variant.model, variant.run), {})[layer] = variant
 
@@ -716,6 +764,8 @@ def discover_variants(web_root: Path) -> dict[tuple[str, str], list[VariantSourc
         if set(layers) != set(CLOUD_VARIANTS):
             raise ValueError(f"{key[0]}/{key[1]} does not have all four Cloud layers")
         ordered = tuple(layers[layer] for layer in CLOUD_VARIANTS)
+        if any(variant.grid != ordered[0].grid for variant in ordered[1:]):
+            raise ValueError(f"{key[0]}/{key[1]} Cloud layers use different grids")
         first_steps = {step.label: step for step in ordered[0].steps}
         for layer_variant in ordered[1:]:
             if {step.label for step in layer_variant.steps} != set(first_steps):
@@ -734,7 +784,7 @@ def discover_variants(web_root: Path) -> dict[tuple[str, str], list[VariantSourc
                 run=key[1],
                 product="cloud",
                 variant="cloud4",
-                grid=FINE_GRID,
+                grid=ordered[0].grid,
                 channels=tuple(variant.channels[0] for variant in ordered),
                 source_metadata=tuple(variant.source_metadata[0] for variant in ordered),
                 steps=tuple(grouped_steps),
@@ -870,13 +920,14 @@ def _generate_run(
 
         tile_records.sort(key=lambda item: item["logical_path"])
         metadata_records.sort(key=lambda item: item["logical_path"])
+        used_grids = {variant.grid.id: variant.grid for variant in variants}
         record = {
             "contract": CONTRACT,
             "contract_version": CONTRACT_VERSION,
             "package": PACKAGE,
             "model": model,
             "run": run,
-            "grids": {grid.id: grid.contract_payload() for grid in (FINE_GRID, WIND_GRID)},
+            "grids": {grid_id: grid.contract_payload() for grid_id, grid in sorted(used_grids.items())},
             "encodings": [CHANNELS[name].contract_payload() for name in CHANNELS],
             "metadata": metadata_records,
             "tiles": tile_records,
@@ -955,7 +1006,7 @@ def generate_value_tiles(web_root: Path) -> dict[str, Any]:
 
 def _grid_from_metadata(metadata: dict[str, Any]) -> GridSpec:
     grid_id = str(metadata.get("grid_id") or "")
-    expected = FINE_GRID if grid_id == FINE_GRID.id else WIND_GRID if grid_id == WIND_GRID.id else None
+    expected = next((grid for grid in SUPPORTED_GRIDS if grid.id == grid_id), None)
     if expected is None:
         raise ValueError(f"unknown grid id {grid_id!r}")
     if metadata.get("grid") != expected.contract_payload():
