@@ -1,14 +1,14 @@
 {
   "schema_version": 1,
   "domain": {
-    "id": "alps",
-    "label": "Alps"
+    "id": "icon-ch-common-safe",
+    "label": "ICON-CH Common Safe Domain"
   },
   "crop": {
-    "lon_min": 4.0,
-    "lon_max": 16.5,
-    "lat_min": 43.0,
-    "lat_max": 48.8
+    "lon_min": 0.8,
+    "lon_max": 16.4,
+    "lat_min": 42.4,
+    "lat_max": 50.0
   },
   "grid_spacing_deg": 0.02,
   "source_padding_deg": 0.2,

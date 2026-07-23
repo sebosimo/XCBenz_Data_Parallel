@@ -21,7 +21,7 @@ WIND_WEB_SCALE_FACTOR = 0.25
 WIND_WEB_FILL_VALUE = np.int8(-128)
 WIND_WEB_STYLE = {
     "source": "XCBenz wind-map style v1",
-    "map_bbox": [4.0, 43.0, 16.5, 48.8],
+    "map_bbox": [0.8, 42.4, 16.4, 50.0],
     "speed_units": "km/h",
     "source_speed_units": "kt",
     "bounds_kt": [0, 4, 6, 10, 14, 18, 22, 26, 30, 35, 40, 45, 50, 60, 70, 80, 90, 100],
@@ -342,6 +342,57 @@ class _HorizontalWeights:
         return flat.reshape(self.output_shape).astype(np.float32, copy=False)
 
 
+class HorizontalMapGeometry:
+    """Lazily prepare one interpolation geometry shared by all map products."""
+
+    def __init__(self, config):
+        self.config = config
+        self.source_shape = None
+        self.source_indices = None
+        self.target_lat = None
+        self.target_lon = None
+        self.weights = None
+
+    @property
+    def prepared(self):
+        return self.source_indices is not None
+
+    def prepare(self, lat, lon):
+        lat = np.asarray(lat)
+        lon = np.asarray(lon)
+        if lat.shape != lon.shape:
+            raise ValueError("map latitude and longitude coordinates must have matching shapes")
+        if self.prepared:
+            if lat.shape != self.source_shape:
+                raise ValueError("shared map geometry received a different native grid shape")
+            return self
+
+        crop = self.config.crop
+        pad = self.config.source_padding_deg
+        mask = (
+            (lon >= crop["lon_min"] - pad)
+            & (lon <= crop["lon_max"] + pad)
+            & (lat >= crop["lat_min"] - pad)
+            & (lat <= crop["lat_max"] + pad)
+        )
+        source_indices = np.flatnonzero(mask)
+        if source_indices.size < 3:
+            raise ValueError("not enough source points inside map crop")
+
+        target_lat, target_lon = _regular_crop_grid(crop, self.config.grid_spacing_deg)
+        self.source_shape = lat.shape
+        self.source_indices = source_indices
+        self.target_lat = target_lat
+        self.target_lon = target_lon
+        self.weights = _HorizontalWeights(
+            lon[source_indices],
+            lat[source_indices],
+            target_lon,
+            target_lat,
+        )
+        return self
+
+
 class WindMapAccumulator:
     def __init__(
         self,
@@ -352,6 +403,7 @@ class WindMapAccumulator:
         log=None,
         out_root=CACHE_DIR_WIND_MAPS,
         web_grid_stride=None,
+        horizontal_geometry=None,
     ):
         self.model = model
         self.model_key = "icon-ch1" if model == "ch1" else "icon-ch2"
@@ -380,6 +432,7 @@ class WindMapAccumulator:
         self.heights_full = None
         self.surface_height = None
         self.weights = None
+        self.horizontal_geometry = horizontal_geometry or HorizontalMapGeometry(config)
         self.direct_steps = {level.name: [] for level in config.enabled_levels}
         self.direct_byte_count = 0
 
@@ -392,35 +445,21 @@ class WindMapAccumulator:
     def _prepare(self, fields):
         sample = fields["U"].squeeze()
         spatial_dim, lat, lon = _lat_lon_coord(sample)
-        crop = self.config.crop
-        pad = self.config.source_padding_deg
-        mask = (
-            (lon >= crop["lon_min"] - pad)
-            & (lon <= crop["lon_max"] + pad)
-            & (lat >= crop["lat_min"] - pad)
-            & (lat <= crop["lat_max"] + pad)
-        )
-        source_indices = np.flatnonzero(mask)
-        if source_indices.size < 3:
-            raise ValueError("not enough source points inside wind-map crop")
+        geometry = self.horizontal_geometry.prepare(lat, lon)
 
         hhl = fields["HHL"].squeeze()
         hhl_values = _level_cell_values(hhl, spatial_dim)
-        hhl_values = hhl_values[:, source_indices]
+        hhl_values = hhl_values[:, geometry.source_indices]
         self.heights_full = ((hhl_values[:-1] + hhl_values[1:]) * 0.5).astype(np.float32)
         self.surface_height = hhl_values[-1].astype(np.float32)
-        self.source_indices = source_indices
-        self.target_lat, self.target_lon = _regular_crop_grid(crop, self.config.grid_spacing_deg)
-        self.weights = _HorizontalWeights(
-            lon[source_indices],
-            lat[source_indices],
-            self.target_lon,
-            self.target_lat,
-        )
+        self.source_indices = geometry.source_indices
+        self.target_lat = geometry.target_lat
+        self.target_lon = geometry.target_lon
+        self.weights = geometry.weights
         self.prepared = True
         self.log(
             f"Wind maps {self.model}: crop grid {self.target_lat.shape[1]}x{self.target_lat.shape[0]}, "
-            f"{source_indices.size} source point(s)",
+            f"{self.source_indices.size} source point(s)",
             "INFO",
         )
 

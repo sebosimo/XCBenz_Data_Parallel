@@ -29,6 +29,7 @@ HALO = 1
 SELECTORS: dict[str, tuple[float, float, float, float]] = {
     "switzerland": (5.5, 45.5, 11.0, 48.2),
     "alps": (4.0, 43.0, 16.5, 48.8),
+    "icon_common": (0.8, 42.4, 16.4, 50.0),
     "french_alps_north": (4.5, 45.1, 7.8, 46.8),
     "french_alps_south": (4.5, 43.4, 7.8, 45.2),
     "austrian_alps": (9.5, 46.2, 15.2, 48.2),
@@ -41,6 +42,7 @@ TRANSITIONS = (
     ("central_alps", "austrian_alps"),
     ("austrian_alps", "eastern_alps"),
     ("switzerland", "alps"),
+    ("alps", "icon_common"),
 )
 
 DATASET_FILES = {

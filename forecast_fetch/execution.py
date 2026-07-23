@@ -16,7 +16,7 @@ from cloud_maps import CloudMapAccumulator, cleanup_old_cloud_runs
 from rain_maps import RainMapAccumulator, cleanup_old_rain_runs
 from sunshine_maps import SunshineMapAccumulator, cleanup_old_sunshine_runs
 from sunrain_maps import SunRainMapAccumulator, cleanup_old_sunrain_runs
-from wind_maps import WindMapAccumulator, cleanup_old_wind_runs
+from wind_maps import HorizontalMapGeometry, WindMapAccumulator, cleanup_old_wind_runs
 
 from .config import FetchStartupConfig
 from .planning import ModelFetchPolicy, ProductSelection
@@ -241,8 +241,21 @@ def execute_fetch(runtime: FetchRuntime, startup: FetchStartupConfig) -> None:
         location_indices_cache = None
         height_cache = {} if startup.profile_mode == "direct-chunk" else None
 
+        horizontal_geometry = (
+            HorizontalMapGeometry(wind_config)
+            if wind_config is not None and any(enabled.values())
+            else None
+        )
         wind_accumulator = (
-            WindMapAccumulator(model, tag, reference_time, wind_config, log=log, out_root=roots.wind)
+            WindMapAccumulator(
+                model,
+                tag,
+                reference_time,
+                wind_config,
+                log=log,
+                out_root=roots.wind,
+                horizontal_geometry=horizontal_geometry,
+            )
             if enabled["wind"] and wind_config is not None
             else None
         )
@@ -254,12 +267,21 @@ def execute_fetch(runtime: FetchRuntime, startup: FetchStartupConfig) -> None:
                 wind_config,
                 log=log,
                 out_root=roots.sunshine,
+                horizontal_geometry=horizontal_geometry,
             )
             if enabled["sunshine"] and wind_config is not None
             else None
         )
         rain_accumulator = (
-            RainMapAccumulator(model, tag, reference_time, wind_config, log=log, out_root=roots.rain)
+            RainMapAccumulator(
+                model,
+                tag,
+                reference_time,
+                wind_config,
+                log=log,
+                out_root=roots.rain,
+                horizontal_geometry=horizontal_geometry,
+            )
             if enabled["rain"] and wind_config is not None
             else None
         )
@@ -271,12 +293,21 @@ def execute_fetch(runtime: FetchRuntime, startup: FetchStartupConfig) -> None:
                 wind_config,
                 log=log,
                 out_root=roots.sunrain,
+                horizontal_geometry=horizontal_geometry,
             )
             if enabled["sunrain"] and wind_config is not None
             else None
         )
         cloud_accumulator = (
-            CloudMapAccumulator(model, tag, reference_time, wind_config, log=log, out_root=roots.cloud)
+            CloudMapAccumulator(
+                model,
+                tag,
+                reference_time,
+                wind_config,
+                log=log,
+                out_root=roots.cloud,
+                horizontal_geometry=horizontal_geometry,
+            )
             if enabled["cloud"] and wind_config is not None
             else None
         )

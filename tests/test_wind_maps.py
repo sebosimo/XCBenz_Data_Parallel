@@ -1,9 +1,11 @@
 import unittest
+from types import SimpleNamespace
 
 import numpy as np
 import xarray as xr
 
 from wind_maps import (
+    HorizontalMapGeometry,
     _HorizontalWeights,
     _interpolate_vertical,
     _single_level_values,
@@ -45,12 +47,12 @@ class WindMapTests(unittest.TestCase):
                 "4000m_AMSL",
             ],
         )
-        self.assertEqual(cfg.crop["lon_min"], 4.0)
-        self.assertEqual(cfg.crop["lon_max"], 16.5)
-        self.assertEqual(cfg.crop["lat_min"], 43.0)
-        self.assertEqual(cfg.crop["lat_max"], 48.8)
-        self.assertEqual(cfg.domain_id, "alps")
-        self.assertEqual(cfg.domain_label, "Alps")
+        self.assertEqual(cfg.crop["lon_min"], 0.8)
+        self.assertEqual(cfg.crop["lon_max"], 16.4)
+        self.assertEqual(cfg.crop["lat_min"], 42.4)
+        self.assertEqual(cfg.crop["lat_max"], 50.0)
+        self.assertEqual(cfg.domain_id, "icon-ch-common-safe")
+        self.assertEqual(cfg.domain_label, "ICON-CH Common Safe Domain")
         self.assertEqual(cfg.max_seconds, 0)
 
     def test_config_can_limit_levels_for_manual_trials(self):
@@ -112,6 +114,29 @@ class WindMapTests(unittest.TestCase):
 
         self.assertTrue(np.isfinite(result[0, 0]))
         self.assertTrue(np.isnan(result[0, 1]))
+
+    def test_horizontal_map_geometry_is_prepared_once_for_shared_products(self):
+        config = SimpleNamespace(
+            crop={"lon_min": 0.0, "lon_max": 1.0, "lat_min": 0.0, "lat_max": 1.0},
+            grid_spacing_deg=1.0,
+            source_padding_deg=0.0,
+        )
+        geometry = HorizontalMapGeometry(config)
+        lat = np.asarray([0.0, 0.0, 1.0, 1.0], dtype=np.float32)
+        lon = np.asarray([0.0, 1.0, 0.0, 1.0], dtype=np.float32)
+
+        first = geometry.prepare(lat, lon)
+        first_weights = geometry.weights
+        second = geometry.prepare(lat.copy(), lon.copy())
+
+        self.assertIs(first, geometry)
+        self.assertIs(second, geometry)
+        self.assertIs(geometry.weights, first_weights)
+        self.assertEqual(geometry.target_lat.shape, (2, 2))
+        self.assertEqual(geometry.source_indices.tolist(), [0, 1, 2, 3])
+
+        with self.assertRaisesRegex(ValueError, "different native grid shape"):
+            geometry.prepare(lat[:3], lon[:3])
 
     def test_single_level_values_extracts_native_10m_wind(self):
         data = xr.DataArray(

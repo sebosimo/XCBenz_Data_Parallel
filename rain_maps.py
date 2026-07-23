@@ -4,7 +4,7 @@ import os
 
 import numpy as np
 
-from wind_maps import _HorizontalWeights, _lat_lon_coord, _regular_crop_grid
+from wind_maps import HorizontalMapGeometry, _lat_lon_coord
 
 
 CACHE_DIR_RAIN_MAPS = "cache_rain_maps"
@@ -67,7 +67,16 @@ def _write_json(path, payload):
 
 
 class RainMapAccumulator:
-    def __init__(self, model, run_tag, ref_time, config, log=None, out_root=CACHE_DIR_RAIN_MAPS):
+    def __init__(
+        self,
+        model,
+        run_tag,
+        ref_time,
+        config,
+        log=None,
+        out_root=CACHE_DIR_RAIN_MAPS,
+        horizontal_geometry=None,
+    ):
         self.model = model
         self.model_key = "icon-ch1" if model == "ch1" else "icon-ch2"
         self.run_tag = run_tag
@@ -82,6 +91,7 @@ class RainMapAccumulator:
         self.target_lon = None
         self.source_indices = None
         self.weights = None
+        self.horizontal_geometry = horizontal_geometry or HorizontalMapGeometry(config)
         self.previous_raw = None
         self.steps = []
 
@@ -94,25 +104,15 @@ class RainMapAccumulator:
     def _prepare(self, sample_field):
         sample = sample_field.squeeze()
         _spatial_dim, lat, lon = _lat_lon_coord(sample)
-        crop = self.config.crop
-        pad = self.config.source_padding_deg
-        mask = (
-            (lon >= crop["lon_min"] - pad)
-            & (lon <= crop["lon_max"] + pad)
-            & (lat >= crop["lat_min"] - pad)
-            & (lat <= crop["lat_max"] + pad)
-        )
-        source_indices = np.flatnonzero(mask)
-        if source_indices.size < 3:
-            raise ValueError("not enough source points inside rain-map crop")
-
-        self.source_indices = source_indices
-        self.target_lat, self.target_lon = _regular_crop_grid(crop, self.config.grid_spacing_deg)
-        self.weights = _HorizontalWeights(lon[source_indices], lat[source_indices], self.target_lon, self.target_lat)
+        geometry = self.horizontal_geometry.prepare(lat, lon)
+        self.source_indices = geometry.source_indices
+        self.target_lat = geometry.target_lat
+        self.target_lon = geometry.target_lon
+        self.weights = geometry.weights
         self.prepared = True
         self.log(
             f"Rain maps {self.model}: crop grid {self.target_lat.shape[1]}x{self.target_lat.shape[0]}, "
-            f"{source_indices.size} source point(s)",
+            f"{self.source_indices.size} source point(s)",
             "INFO",
         )
 

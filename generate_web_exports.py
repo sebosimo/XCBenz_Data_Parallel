@@ -64,7 +64,7 @@ CLOUD_WEB_DIR = WEB_DIR / "cloud_maps"
 RADAR_MAP_PRODUCT = "radar"
 WIND_WEB_STYLE = {
     "source": "XCBenz wind-map style v1",
-    "map_bbox": [4.0, 43.0, 16.5, 48.8],
+    "map_bbox": [0.8, 42.4, 16.4, 50.0],
     "speed_units": "km/h",
     "source_speed_units": "kt",
     "bounds_kt": [0, 4, 6, 10, 14, 18, 22, 26, 30, 35, 40, 45, 50, 60, 70, 80, 90, 100],
