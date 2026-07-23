@@ -17,6 +17,7 @@ from value_tiles import (
     CONTRACT_VERSION,
     FINE_GRID,
     PACKAGE,
+    WIND_GRID,
     GridSpec,
     capability_declaration,
     canonical_json_bytes,
@@ -95,26 +96,15 @@ def _write_variant(
 def _write_complete_whole_grid(web_root: Path, *, include_high: bool = True) -> None:
     model = "icon-ch1"
     run = "20260716_0300"
-    wind_cells = 313 * 146
-    fine_cells = 626 * 291
+    wind_cells = WIND_GRID.width * WIND_GRID.height
+    fine_cells = FINE_GRID.width * FINE_GRID.height
     _write_variant(
         web_root,
         "wind_maps",
         model,
         run,
         "800m_AGL",
-        GridSpec(
-            "alps_004deg_v1",
-            313,
-            146,
-            100_000,
-            400_000,
-            4_300_000,
-            4_000,
-            4_000,
-            80,
-            56,
-        ),
+        WIND_GRID,
         {
             "format": "int8-interleaved-u-v",
             "dtype": "int8",
@@ -370,8 +360,8 @@ class ValueTileGenerationTests(unittest.TestCase):
             second_run = second["models"]["icon-ch1"]["runs"]["20260716_0300"]
 
             self.assertEqual(first_run["revision_sha256"], second_run["revision_sha256"])
-            self.assertEqual(first["counts"], {"models": 1, "runs": 1, "variants": 8, "tiles": 96})
-            self.assertEqual(counts, {"runs": 1, "variants": 8, "steps": 8, "tiles": 96})
+            self.assertEqual(first["counts"], {"models": 1, "runs": 1, "variants": 8, "tiles": 160})
+            self.assertEqual(counts, {"runs": 1, "variants": 8, "steps": 8, "tiles": 160})
             self.assertEqual(whole_grid.read_bytes(), original)
             self.assertEqual(
                 set(first_run["variants"]),
@@ -410,7 +400,7 @@ class ValueTileGenerationTests(unittest.TestCase):
                 validate_value_tile_publication(web_root)
 
             restored = generate_value_tiles(web_root)
-            self.assertEqual(restored["counts"]["tiles"], 96)
+            self.assertEqual(restored["counts"]["tiles"], 160)
             self.assertIsNone(prune_value_tile_manifest(web_root, {"icon-ch1": set()}))
             self.assertFalse((web_root / "value_tiles").exists())
         finally:
