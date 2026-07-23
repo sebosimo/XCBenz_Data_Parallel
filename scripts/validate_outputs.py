@@ -10,7 +10,11 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
-from value_tiles import capability_declaration, validate_value_tile_publication
+from value_tiles import (
+    capability_declaration,
+    parse_value_tile_run_selection,
+    validate_value_tile_publication,
+)
 from web_export_support import load_json as load_web_json, resolve_publication_url
 
 
@@ -279,10 +283,13 @@ def main() -> int:
             raise ValueError("spatial value-tile capability and manifest must either both exist or both be absent")
         if tile_capability and tile_capability != capability_declaration():
             raise ValueError("spatial value-tile capability declaration differs from contract v1")
+        full_tile_runs = parse_value_tile_run_selection(os.getenv("VALUE_TILE_FULL_VALIDATION_RUNS"))
         tile_counts = validate_value_tile_publication(
             Path("web_exports"),
             require_capability=bool(tile_capability),
+            full_runs=full_tile_runs,
         )
+        tile_validation_scope = "all_runs" if full_tile_runs is None else f"new_runs:{len(full_tile_runs)}"
     except Exception as exc:  # noqa: BLE001 - this is a CI guard.
         return fail(str(exc))
 
@@ -303,6 +310,7 @@ def main() -> int:
         f"cloud_metadata={cloud_metadata_count}, "
         f"value_tile_runs={tile_counts['runs']}, "
         f"value_tiles={tile_counts['tiles']}, "
+        f"value_tile_validation={tile_validation_scope}, "
         f"wind_steps={counts.get('wind_map_steps')}, "
         f"sunshine_steps={counts.get('sunshine_map_steps')}, "
         f"rain_steps={counts.get('rain_map_steps')}, "

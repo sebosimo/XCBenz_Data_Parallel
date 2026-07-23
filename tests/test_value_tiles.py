@@ -26,6 +26,7 @@ from value_tiles import (
     encode_xvt,
     generate_value_tiles,
     pack_cloud_codes,
+    parse_value_tile_run_selection,
     parse_xvt,
     prune_value_tile_manifest,
     sha256_bytes,
@@ -324,6 +325,24 @@ class ValueTileContainerTests(unittest.TestCase):
         self.assertEqual(capability["package"], PACKAGE)
         self.assertFalse(capability["requires_range"])
 
+    def test_run_selection_parser_is_explicit_and_rejects_ambiguous_values(self):
+        self.assertIsNone(parse_value_tile_run_selection(None))
+        self.assertEqual(
+            parse_value_tile_run_selection(
+                "icon-ch1=20260716_1500,icon-ch2=20260716_1200"
+            ),
+            {
+                ("icon-ch1", "20260716_1500"),
+                ("icon-ch2", "20260716_1200"),
+            },
+        )
+        with self.assertRaisesRegex(ValueError, "comma-separated"):
+            parse_value_tile_run_selection("ch1=latest")
+        with self.assertRaisesRegex(ValueError, "duplicate"):
+            parse_value_tile_run_selection(
+                "icon-ch1=20260716_1500,icon-ch1=20260716_1500"
+            )
+
 
 class ValueTileGenerationTests(unittest.TestCase):
     def test_local_validator_rejects_revision_paths_outside_web_exports(self):
@@ -457,6 +476,81 @@ class ValueTileGenerationTests(unittest.TestCase):
                 set(legacy_record["record"]["grids"]),
                 {LEGACY_FINE_GRID.id, LEGACY_WIND_GRID.id},
             )
+        finally:
+            shutil.rmtree(workspace, ignore_errors=True)
+
+    def test_incremental_generation_packages_only_selected_runs(self):
+        workspace = _temp_workspace()
+        try:
+            web_root = workspace / "web_exports"
+            _write_complete_whole_grid(web_root)
+            _write_complete_whole_grid(
+                web_root,
+                run="20260715_0300",
+                wind_grid=LEGACY_WIND_GRID,
+                fine_grid=LEGACY_FINE_GRID,
+            )
+
+            manifest = generate_value_tiles(
+                web_root,
+                selected_runs={("icon-ch1", "20260716_0300")},
+                validate=False,
+            )
+
+            self.assertEqual(
+                manifest["counts"],
+                {"models": 1, "runs": 1, "variants": 8, "tiles": 160},
+            )
+            self.assertEqual(
+                set(manifest["models"]["icon-ch1"]["runs"]),
+                {"20260716_0300"},
+            )
+            self.assertFalse(
+                (web_root / "value_tiles/v1/icon-ch1/20260715_0300").exists()
+            )
+            with self.assertRaisesRegex(ValueError, "were not discovered"):
+                generate_value_tiles(
+                    web_root,
+                    selected_runs={("icon-ch2", "20260716_1200")},
+                    validate=False,
+                )
+        finally:
+            shutil.rmtree(workspace, ignore_errors=True)
+
+    def test_selective_validation_deeply_checks_only_new_runs(self):
+        workspace = _temp_workspace()
+        try:
+            web_root = workspace / "web_exports"
+            _write_complete_whole_grid(web_root)
+            _write_complete_whole_grid(
+                web_root,
+                run="20260715_0300",
+                wind_grid=LEGACY_WIND_GRID,
+                fine_grid=LEGACY_FINE_GRID,
+            )
+            manifest = generate_value_tiles(web_root)
+            legacy_entry = manifest["models"]["icon-ch1"]["runs"]["20260715_0300"]
+            legacy_revision = (
+                web_root
+                / Path(legacy_entry["revision_record"].replace("web_exports/", "", 1))
+            ).parent
+            legacy_tile = next(legacy_revision.rglob("*.xvt"))
+            corrupted = bytearray(legacy_tile.read_bytes())
+            corrupted[-1] ^= 1
+            legacy_tile.write_bytes(corrupted)
+
+            counts = validate_value_tile_publication(
+                web_root,
+                full_runs={("icon-ch1", "20260716_0300")},
+            )
+            self.assertEqual(counts["runs"], 2)
+            with self.assertRaisesRegex(ValueError, "SHA-256"):
+                validate_value_tile_publication(web_root)
+            with self.assertRaisesRegex(ValueError, "absent from the manifest"):
+                validate_value_tile_publication(
+                    web_root,
+                    full_runs={("icon-ch2", "20260716_1200")},
+                )
         finally:
             shutil.rmtree(workspace, ignore_errors=True)
 

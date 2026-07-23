@@ -567,6 +567,24 @@ def value_tiles_enabled(env: dict[str, str] | None = None) -> bool:
     return str(source.get("ENABLE_VALUE_TILES", "false")).strip().lower() in {"1", "true", "yes", "on"}
 
 
+def parse_value_tile_run_selection(raw: str | None) -> set[tuple[str, str]] | None:
+    if raw is None or not raw.strip():
+        return None
+    selected: set[tuple[str, str]] = set()
+    for item in raw.split(","):
+        model, separator, run = item.strip().partition("=")
+        if separator != "=" or model not in {"icon-ch1", "icon-ch2"} or not re.fullmatch(r"\d{8}_\d{4}", run):
+            raise ValueError(
+                "value-tile run selection must contain comma-separated "
+                f"icon-ch1=YYYYMMDD_HHMM or icon-ch2=YYYYMMDD_HHMM entries, got {item!r}"
+            )
+        key = (model, run)
+        if key in selected:
+            raise ValueError(f"duplicate value-tile run selection {model}={run}")
+        selected.add(key)
+    return selected
+
+
 def remove_value_tile_publication(web_root: Path) -> None:
     web_root = Path(web_root)
     value_tiles_root = web_root / "value_tiles"
@@ -736,24 +754,40 @@ def _individual_variant(
     )
 
 
-def discover_variants(web_root: Path) -> dict[tuple[str, str], list[VariantSource]]:
+def discover_variants(
+    web_root: Path,
+    *,
+    selected_runs: set[tuple[str, str]] | None = None,
+) -> dict[tuple[str, str], list[VariantSource]]:
     discovered: dict[tuple[str, str], list[VariantSource]] = {}
 
     def add(variant: VariantSource) -> None:
         discovered.setdefault((variant.model, variant.run), []).append(variant)
 
+    def selected(path: Path) -> bool:
+        parts = path.relative_to(web_root).parts
+        return selected_runs is None or (parts[1], parts[2]) in selected_runs
+
     for path in sorted(web_root.glob("wind_maps/*/*/*/metadata.json")):
+        if not selected(path):
+            continue
         grid = _select_source_grid(path, WIND_GRIDS)
         add(_individual_variant(web_root, path, "wind", path.parent.name, CHANNELS["wind_uv"], grid))
     for path in sorted(web_root.glob("sunrain_maps/*/*/surface/metadata.json")):
+        if not selected(path):
+            continue
         grid = _select_source_grid(path, FINE_GRIDS)
         add(_individual_variant(web_root, path, "sunrain", "surface", CHANNELS["sunrain_code"], grid))
     for path in sorted(web_root.glob("rain_maps/*/*/surface/metadata.json")):
+        if not selected(path):
+            continue
         grid = _select_source_grid(path, FINE_GRIDS)
         add(_individual_variant(web_root, path, "rain", "surface", CHANNELS["rain"], grid))
     cloud_by_run: dict[tuple[str, str], dict[str, VariantSource]] = {}
     for layer in CLOUD_VARIANTS:
         for path in sorted(web_root.glob(f"cloud_maps/*/*/{layer}/metadata.json")):
+            if not selected(path):
+                continue
             channel = CHANNELS[f"cloud_{layer}"]
             grid = _select_source_grid(path, FINE_GRIDS)
             variant = _individual_variant(web_root, path, "cloud", layer, channel, grid)
@@ -969,9 +1003,19 @@ def _generate_run(
             _remove_tree(build_root, run_root)
 
 
-def generate_value_tiles(web_root: Path) -> dict[str, Any]:
+def generate_value_tiles(
+    web_root: Path,
+    *,
+    selected_runs: set[tuple[str, str]] | None = None,
+    validate: bool = True,
+) -> dict[str, Any]:
     web_root = Path(web_root)
-    discovered = discover_variants(web_root)
+    discovered = discover_variants(web_root, selected_runs=selected_runs)
+    if selected_runs is not None:
+        missing = sorted(selected_runs.difference(discovered))
+        if missing:
+            formatted = ", ".join(f"{model}={run}" for model, run in missing)
+            raise ValueError(f"selected value-tile run(s) were not discovered: {formatted}")
     if not discovered:
         raise ValueError("no supported whole-grid map variants were found")
     value_root = web_root / "value_tiles" / "v1"
@@ -1000,7 +1044,8 @@ def generate_value_tiles(web_root: Path) -> dict[str, Any]:
         },
     }
     write_json(value_root / "manifest.json", manifest)
-    validate_value_tile_publication(web_root, manifest=manifest)
+    if validate:
+        validate_value_tile_publication(web_root, manifest=manifest)
     return manifest
 
 
@@ -1064,11 +1109,10 @@ def _tile_path(metadata_path: Path, step: str, tile_x: int, tile_y: int) -> Path
     return metadata_path.parent / step / f"t{tile_y}_{tile_x}.xvt"
 
 
-def _validate_variant(
+def _validate_variant_declaration(
     metadata_path: Path,
     metadata: dict[str, Any],
-    tile_records: dict[str, dict[str, Any]],
-) -> tuple[int, int, set[str]]:
+) -> tuple[GridSpec, tuple[ChannelSpec, ...], list[dict[str, Any]], int]:
     grid = _grid_from_metadata(metadata)
     channel_names = metadata.get("channels") or []
     channels = tuple(CHANNELS.get(str(name)) for name in channel_names)
@@ -1080,14 +1124,25 @@ def _validate_variant(
     steps = metadata.get("steps") or []
     if not steps:
         raise ValueError(f"{metadata_path} has no steps")
+    expected_tiles = grid.tiles_x * grid.tiles_y
+    for step in steps:
+        label = str(step.get("step") or "")
+        if int(step.get("tile_count") or 0) != expected_tiles:
+            raise ValueError(f"{metadata_path} {label} has an incomplete tile matrix declaration")
+    return grid, typed_channels, steps, len(steps) * expected_tiles
+
+
+def _validate_variant(
+    metadata_path: Path,
+    metadata: dict[str, Any],
+    tile_records: dict[str, dict[str, Any]],
+) -> tuple[int, int, set[str]]:
+    grid, typed_channels, steps, _declared_tiles = _validate_variant_declaration(metadata_path, metadata)
     tile_count = 0
     validated_paths: set[str] = set()
     revision_root = metadata_path.parents[2]
     for step in steps:
         label = str(step.get("step") or "")
-        expected_tiles = grid.tiles_x * grid.tiles_y
-        if int(step.get("tile_count") or 0) != expected_tiles:
-            raise ValueError(f"{metadata_path} {label} has an incomplete tile matrix declaration")
         reconstructed = {
             channel.name: bytearray(channel.missing_bytes * (grid.width * grid.height))
             for channel in typed_channels
@@ -1167,6 +1222,7 @@ def validate_value_tile_publication(
     *,
     manifest: dict[str, Any] | None = None,
     require_capability: bool = False,
+    full_runs: set[tuple[str, str]] | None = None,
 ) -> dict[str, int]:
     web_root = Path(web_root)
     manifest_path = web_root / "value_tiles" / "v1" / "manifest.json"
@@ -1183,8 +1239,12 @@ def validate_value_tile_publication(
     ):
         raise ValueError("value-tile manifest contract declaration is invalid")
     counts = {"runs": 0, "variants": 0, "steps": 0, "tiles": 0}
+    seen_runs: set[tuple[str, str]] = set()
     for model, model_entry in sorted((manifest.get("models") or {}).items()):
         for run, run_entry in sorted((model_entry.get("runs") or {}).items()):
+            run_key = (model, run)
+            seen_runs.add(run_key)
+            validate_fully = full_runs is None or run_key in full_runs
             counts["runs"] += 1
             run_tile_start = counts["tiles"]
             revision = str(run_entry.get("revision") or "")
@@ -1200,27 +1260,39 @@ def validate_value_tile_publication(
                 raise ValueError(f"{revision_path} wrapper digest is invalid")
             if record.get("model") != model or record.get("run") != run:
                 raise ValueError(f"{revision_path} record identity is invalid")
+            if (
+                record.get("contract") != CONTRACT
+                or record.get("contract_version") != CONTRACT_VERSION
+                or record.get("package") != PACKAGE
+            ):
+                raise ValueError(f"{revision_path} record contract declaration is invalid")
             revision_root = revision_path.parent
             tile_records = record.get("tiles") or []
             metadata_records = record.get("metadata") or []
             recorded_tiles = {str(item.get("logical_path")): item for item in tile_records}
             if len(recorded_tiles) != len(tile_records):
                 raise ValueError(f"{revision_path} has duplicate tile record paths")
-            actual_tiles = {
-                path.relative_to(revision_root).as_posix() for path in revision_root.rglob("*.xvt")
-            }
-            if set(recorded_tiles) != actual_tiles:
-                raise ValueError(f"{revision_path} tile file set differs from its record")
+            if int(run_entry.get("tile_count") or -1) != len(tile_records):
+                raise ValueError(f"{model}/{run} tile count differs from its revision record")
+            if validate_fully:
+                actual_tiles = {
+                    path.relative_to(revision_root).as_posix() for path in revision_root.rglob("*.xvt")
+                }
+                if set(recorded_tiles) != actual_tiles:
+                    raise ValueError(f"{revision_path} tile file set differs from its record")
             variants = run_entry.get("variants") or {}
             if len(variants) != len(metadata_records):
                 raise ValueError(f"{model}/{run} variant index differs from revision metadata")
             recorded_metadata = {str(item.get("logical_path")) for item in metadata_records}
-            actual_metadata = {
-                path.relative_to(revision_root).as_posix()
-                for path in revision_root.rglob("metadata.json")
-            }
-            if len(recorded_metadata) != len(metadata_records) or recorded_metadata != actual_metadata:
-                raise ValueError(f"{revision_path} metadata file set differs from its record")
+            if len(recorded_metadata) != len(metadata_records):
+                raise ValueError(f"{revision_path} has duplicate metadata record paths")
+            if validate_fully:
+                actual_metadata = {
+                    path.relative_to(revision_root).as_posix()
+                    for path in revision_root.rglob("metadata.json")
+                }
+                if recorded_metadata != actual_metadata:
+                    raise ValueError(f"{revision_path} metadata file set differs from its record")
             validated_tile_paths: set[str] = set()
             for metadata_record in metadata_records:
                 logical_path = str(metadata_record.get("logical_path") or "")
@@ -1236,20 +1308,32 @@ def validate_value_tile_publication(
                 indexed_path = _resolve_web_url(web_root, str((variants.get(variant_key) or {}).get("metadata") or ""))
                 if indexed_path != metadata_path:
                     raise ValueError(f"{model}/{run} variant {variant_key} metadata path is invalid")
-                step_count, variant_tiles, variant_tile_paths = _validate_variant(
-                    metadata_path,
-                    metadata,
-                    recorded_tiles,
-                )
+                if validate_fully:
+                    step_count, variant_tiles, variant_tile_paths = _validate_variant(
+                        metadata_path,
+                        metadata,
+                        recorded_tiles,
+                    )
+                else:
+                    _grid, _channels, steps, variant_tiles = _validate_variant_declaration(
+                        metadata_path,
+                        metadata,
+                    )
+                    step_count = len(steps)
+                    variant_tile_paths = set()
                 counts["variants"] += 1
                 counts["steps"] += step_count
                 counts["tiles"] += variant_tiles
                 validated_tile_paths.update(variant_tile_paths)
-            if (
-                counts["tiles"] - run_tile_start != len(tile_records)
-                or validated_tile_paths != set(recorded_tiles)
-            ):
+            if counts["tiles"] - run_tile_start != len(tile_records):
                 raise ValueError(f"{model}/{run} did not validate every recorded tile")
+            if validate_fully and validated_tile_paths != set(recorded_tiles):
+                raise ValueError(f"{model}/{run} did not validate every recorded tile")
+    if full_runs is not None:
+        missing_full_runs = sorted(full_runs.difference(seen_runs))
+        if missing_full_runs:
+            formatted = ", ".join(f"{model}={run}" for model, run in missing_full_runs)
+            raise ValueError(f"fully validated value-tile run(s) are absent from the manifest: {formatted}")
     declared = manifest.get("counts") or {}
     for key in ("runs", "variants", "tiles"):
         if int(declared.get(key) or 0) != counts[key]:

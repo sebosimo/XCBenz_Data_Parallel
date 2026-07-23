@@ -760,7 +760,23 @@ def prewarm_static_data(log_dir: Path) -> None:
     log(f"static data prewarmed; log={log_path}")
 
 
-def serial_publish_steps(args: argparse.Namespace, env: dict[str, str], log_dir: Path, py: list[str]) -> None:
+def value_tile_run_selection(ch1_run: str, ch2_run: str) -> str:
+    return f"icon-ch1={ch1_run},icon-ch2={ch2_run}"
+
+
+def should_audit_all_value_tiles(ch1_run: str) -> bool:
+    return ch1_run.endswith("_0300")
+
+
+def serial_publish_steps(
+    args: argparse.Namespace,
+    env: dict[str, str],
+    log_dir: Path,
+    py: list[str],
+    *,
+    latest_ch1: str,
+    latest_ch2: str,
+) -> None:
     run_checked("merge-map-chunks", [*py, "scripts/merge_map_chunks.py"], env=env, log_dir=log_dir)
     run_checked("apply-retention", [*py, "scripts/apply_retention.py"], env=env, log_dir=log_dir)
     run_checked("generate-combined-manifest", [*py, "generate_combined_manifest.py"], env=env, log_dir=log_dir)
@@ -771,6 +787,8 @@ def serial_publish_steps(args: argparse.Namespace, env: dict[str, str], log_dir:
             "WIND_WEB_LEVELS": "10m_AGL,800m_AGL,1000m_AMSL,1500m_AMSL,2000m_AMSL,2500m_AMSL,3000m_AMSL,4000m_AMSL",
             "WEB_EXPORT_DIR": "web_exports_staging",
             "WEB_EXPORT_URL_PREFIX": "web_exports",
+            "VALUE_TILE_GENERATE_RUNS": value_tile_run_selection(latest_ch1, latest_ch2),
+            "VALUE_TILE_VALIDATE_GENERATED": "false",
         }
     )
     run_checked("generate-web-exports", [*py, "generate_web_exports.py"], env=generate_env, log_dir=log_dir)
@@ -786,6 +804,10 @@ def serial_publish_steps(args: argparse.Namespace, env: dict[str, str], log_dir:
 
     validate_env = dict(env)
     validate_env["EXPECTED_WEB_EXPORT_DATA_ROOT"] = env["WEB_EXPORT_DATA_ROOT"]
+    if should_audit_all_value_tiles(latest_ch1):
+        validate_env.pop("VALUE_TILE_FULL_VALIDATION_RUNS", None)
+    else:
+        validate_env["VALUE_TILE_FULL_VALIDATION_RUNS"] = value_tile_run_selection(latest_ch1, latest_ch2)
     run_checked("validate-outputs", [*py, "scripts/validate_outputs.py"], env=validate_env, log_dir=log_dir)
 
 
@@ -1001,7 +1023,14 @@ def run_pipeline(args: argparse.Namespace) -> int:
         )
         if args.restore_web_exports:
             restore_web_exports(args, base_env, log_dir)
-        serial_publish_steps(args, base_env, log_dir, py)
+        serial_publish_steps(
+            args,
+            base_env,
+            log_dir,
+            py,
+            latest_ch1=latest_ch1,
+            latest_ch2=latest_ch2,
+        )
         if deploy:
             deploy_outputs(args, base_env, log_dir, py)
         if args.push_data_branch:

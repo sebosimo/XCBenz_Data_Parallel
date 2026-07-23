@@ -31,6 +31,45 @@ def _split_jobs(run_tag: str):
 
 
 class RunCodingServerPipelineTests(unittest.TestCase):
+    def test_serial_publish_scopes_tile_generation_and_validation_to_current_pair(self):
+        env = {"WEB_EXPORT_DATA_ROOT": "https://data.example/"}
+        with mock.patch.object(runner, "run_checked") as run_checked:
+            runner.serial_publish_steps(
+                mock.Mock(),
+                env,
+                Path("logs"),
+                ["python"],
+                latest_ch1="20260716_1500",
+                latest_ch2="20260716_1200",
+            )
+
+        calls = {call.args[0]: call for call in run_checked.call_args_list}
+        generate_env = calls["generate-web-exports"].kwargs["env"]
+        validate_env = calls["validate-outputs"].kwargs["env"]
+        selection = "icon-ch1=20260716_1500,icon-ch2=20260716_1200"
+        self.assertEqual(generate_env["VALUE_TILE_GENERATE_RUNS"], selection)
+        self.assertEqual(generate_env["VALUE_TILE_VALIDATE_GENERATED"], "false")
+        self.assertEqual(validate_env["VALUE_TILE_FULL_VALIDATION_RUNS"], selection)
+
+    def test_daily_03z_cycle_uses_full_retained_tile_audit(self):
+        env = {
+            "WEB_EXPORT_DATA_ROOT": "https://data.example/",
+            "VALUE_TILE_FULL_VALIDATION_RUNS": "stale",
+        }
+        with mock.patch.object(runner, "run_checked") as run_checked:
+            runner.serial_publish_steps(
+                mock.Mock(),
+                env,
+                Path("logs"),
+                ["python"],
+                latest_ch1="20260716_0300",
+                latest_ch2="20260716_0000",
+            )
+
+        calls = {call.args[0]: call for call in run_checked.call_args_list}
+        validate_env = calls["validate-outputs"].kwargs["env"]
+        self.assertNotIn("VALUE_TILE_FULL_VALIDATION_RUNS", validate_env)
+
     def test_non_03z_split_profile_jobs_end_at_h033(self):
         names = {job.name for job in _split_jobs("20260716_1500")}
 

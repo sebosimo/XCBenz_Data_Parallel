@@ -18,7 +18,12 @@ from web_profiles import (
     EMAGRAM_BUNDLE_VARIABLES,
     merge_profile_chunks,
 )
-from value_tiles import capability_declaration, generate_value_tiles, value_tiles_enabled
+from value_tiles import (
+    capability_declaration,
+    generate_value_tiles,
+    parse_value_tile_run_selection,
+    value_tiles_enabled,
+)
 from web_export_support import (
     CLOUD_MAPS as CLOUD_MAP_SPEC,
     RAIN_MAPS as RAIN_MAP_SPEC,
@@ -601,10 +606,22 @@ def export_cloud_maps(source_manifest: dict[str, Any]) -> dict[str, Any] | None:
 def export_value_tiles_capability(manifest: dict[str, Any]) -> dict[str, Any] | None:
     if not value_tiles_enabled():
         return None
-    tile_manifest = generate_value_tiles(WEB_DIR)
+    selected_runs = parse_value_tile_run_selection(os.getenv("VALUE_TILE_GENERATE_RUNS"))
+    validate_raw = os.getenv("VALUE_TILE_VALIDATE_GENERATED", "true").strip().lower()
+    if validate_raw in {"1", "true", "yes", "on"}:
+        validate_generated = True
+    elif validate_raw in {"0", "false", "no", "off"}:
+        validate_generated = False
+    else:
+        raise ValueError(f"VALUE_TILE_VALIDATE_GENERATED must be boolean-like, got {validate_raw!r}")
+    tile_manifest = generate_value_tiles(
+        WEB_DIR,
+        selected_runs=selected_runs,
+        validate=validate_generated,
+    )
     manifest.setdefault("capabilities", {})["spatial_value_tiles"] = capability_declaration()
     log(
-        "Generated validated spatial value tiles: "
+        "Generated spatial value tiles: "
         f"{tile_manifest['counts']['runs']} run(s), "
         f"{tile_manifest['counts']['variants']} variant(s), "
         f"{tile_manifest['counts']['tiles']} tile(s)"

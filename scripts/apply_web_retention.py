@@ -18,7 +18,6 @@ from value_tiles import (
     merge_value_tile_manifests,
     prune_value_tile_manifest,
     remove_value_tile_publication,
-    validate_value_tile_publication,
     value_tiles_enabled,
 )
 from web_export_support import (
@@ -488,9 +487,9 @@ def main() -> None:
     if tiles_enabled:
         value_tile_manifest = prune_value_tile_manifest(WEB_DIR, keep_by_model)
         if value_tile_manifest:
-            tile_counts = validate_value_tile_publication(WEB_DIR, manifest=value_tile_manifest)
+            tile_counts = value_tile_manifest["counts"]
             log(
-                "Validated retained spatial value tiles: "
+                "Indexed retained spatial value tiles for final validation: "
                 f"runs={tile_counts['runs']}, variants={tile_counts['variants']}, tiles={tile_counts['tiles']}"
             )
     else:

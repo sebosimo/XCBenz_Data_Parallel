@@ -32,7 +32,11 @@ class GenerateWebExportsTests(unittest.TestCase):
             generate_web_exports, "generate_value_tiles", return_value=generated
         ) as generator:
             self.assertEqual(export_value_tiles_capability(manifest), generated)
-        generator.assert_called_once_with(generate_web_exports.WEB_DIR)
+        generator.assert_called_once_with(
+            generate_web_exports.WEB_DIR,
+            selected_runs=None,
+            validate=True,
+        )
         self.assertEqual(manifest["capabilities"]["existing"], {"version": 1})
         self.assertEqual(manifest["capabilities"]["spatial_value_tiles"], capability_declaration())
 

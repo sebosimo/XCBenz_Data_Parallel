@@ -1,7 +1,16 @@
 .test_tmp/
 .test_tmp_manifest/
 .test_tmp_sunshine/
+.local_pipeline/
+.venv/
 __pycache__/
 tests/__pycache__/
 *.pyc
+cache_*/
+debug_log*.txt
+manifest.json
+map_chunks/
+static_data/*.grib2
 web_exports/
+web_exports_staging/
+web_profile_chunks/
