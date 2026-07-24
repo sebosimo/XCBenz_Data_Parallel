@@ -593,6 +593,10 @@ class ValueTileGenerationTests(unittest.TestCase):
             production_cache_block.index("max-age=31536000, immutable"),
         )
         self.assertNotIn("infomaniak-value-tiles-staging.htaccess", production_deploy)
+        self.assertIn(
+            "for subtree in live_stations webcams radar_maps airspace fai_records; do",
+            production_deploy,
+        )
         self.assertIn('EXPECTED_REMOTE_ROOT="sites/data.xcbenz.com/value-tiles-staging"', staging_deploy)
         self.assertIn('EXPECTED_BASE_URL="https://data.xcbenz.com/value-tiles-staging"', staging_deploy)
         self.assertIn("refusing remote root", staging_deploy)
@@ -600,6 +604,10 @@ class ValueTileGenerationTests(unittest.TestCase):
         self.assertIn("infomaniak-value-tiles-staging.htaccess", staging_deploy)
         self.assertIn("EXPECTED_VALUE_TILES_STATE", staging_deploy)
         self.assertIn("PRODUCTION_WEB_EXPORTS", staging_deploy)
+        self.assertIn(
+            "for subtree in live_stations webcams radar_maps airspace fai_records; do",
+            staging_deploy,
+        )
         self.assertNotIn("deploy_data_infomaniak.sh", staging_deploy)
         self.assertIn("ENABLE_VALUE_TILES: ${{ vars.ENABLE_VALUE_TILES || 'false' }}", workflow)
         self.assertIn("ENABLE_VALUE_TILES=false", coding_server_env)

@@ -83,7 +83,7 @@ The reviewed WP4 sequence is complete through production activation:
    `20260716_1800`, followed by local validation, guarded Infomaniak publication,
    remote validation, and real-browser rendering.
 
-Live stations, webcams, radar maps, and airspace remain independently owned.
+Live stations, webcams, radar maps, airspace, and FAI records remain independently owned.
 Keep the legacy reader and whole-grid outputs for at least 48 hours and four
 successful production publication cycles. Their removal requires fresh review
 and explicit approval.
@@ -108,9 +108,9 @@ Before connecting to Infomaniak:
    production publisher as a shortcut.
 4. The staging publisher must upload a complete `web_exports` candidate so the
    existing whole-grid fallback remains usable. For later beta2 testing, it may
-   copy the independently owned `live_stations`, `webcams`, `radar_maps`, and
-   `airspace` trees from production into the staging candidate without changing
-   their production sources.
+   copy the independently owned `live_stations`, `webcams`, `radar_maps`,
+   `airspace`, and `fai_records` trees from production into the staging candidate
+   without changing their production sources.
 5. Run the narrow and complete repository tests. Do not proceed with an
    uncommitted candidate.
 

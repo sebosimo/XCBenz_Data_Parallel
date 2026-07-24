@@ -252,7 +252,7 @@ retry "copy live-owned staging snapshots" \
     set -e
     source='$PRODUCTION_WEB_EXPORTS'
     target='$REMOTE_TMP/web_exports'
-    for subtree in live_stations webcams radar_maps airspace; do
+    for subtree in live_stations webcams radar_maps airspace fai_records; do
       if [ -d \"\$source/\$subtree\" ]; then
         rm -rf \"\$target/\$subtree\"
         cp -a \"\$source/\$subtree\" \"\$target/\$subtree\"
