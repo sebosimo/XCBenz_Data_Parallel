@@ -29,6 +29,7 @@ def _args(state_file, **overrides):
         "retry_minutes": 10,
         "force_run": False,
         "plan_only": False,
+        "probe_only_json": False,
         "skip_deploy": False,
         "no_push_data_branch": False,
         "no_restore_web_exports": True,
@@ -38,6 +39,66 @@ def _args(state_file, **overrides):
 
 
 class PollCodingServerPipelineTests(unittest.TestCase):
+    def test_probe_only_json_reports_complete_pair_without_state_mutation(self):
+        tmp = _temp_workspace()
+        try:
+            state_path = Path(tmp) / "state.json"
+            with mock.patch.object(
+                poller,
+                "latest_complete_run",
+                side_effect=[
+                    ("20260728_1500", [{"status": "complete"}]),
+                    ("20260728_1200", [{"status": "complete"}]),
+                ],
+            ), mock.patch.object(poller.subprocess, "run") as run_mock, mock.patch(
+                "sys.stdout",
+                new_callable=__import__("io").StringIO,
+            ) as stdout:
+                rc = poller.run_poller(
+                    _args(str(state_path), probe_only_json=True)
+                )
+
+            self.assertEqual(0, rc)
+            run_mock.assert_not_called()
+            self.assertFalse(state_path.exists())
+            payload = json.loads(stdout.getvalue().splitlines()[-1])
+            self.assertEqual("source_forecast_probe", payload["event"])
+            self.assertTrue(payload["ready"])
+            self.assertEqual(
+                {"ch1": "20260728_1500", "ch2": "20260728_1200"},
+                payload["latest"],
+            )
+        finally:
+            shutil.rmtree(tmp, ignore_errors=True)
+
+    def test_probe_only_json_reports_incomplete_pair_without_state_mutation(self):
+        tmp = _temp_workspace()
+        try:
+            state_path = Path(tmp) / "state.json"
+            with mock.patch.object(
+                poller,
+                "latest_complete_run",
+                side_effect=[
+                    ("20260728_1500", [{"status": "complete"}]),
+                    (None, [{"status": "incomplete"}]),
+                ],
+            ), mock.patch.object(poller.subprocess, "run") as run_mock, mock.patch(
+                "sys.stdout",
+                new_callable=__import__("io").StringIO,
+            ) as stdout:
+                rc = poller.run_poller(
+                    _args(str(state_path), probe_only_json=True)
+                )
+
+            self.assertEqual(0, rc)
+            run_mock.assert_not_called()
+            self.assertFalse(state_path.exists())
+            payload = json.loads(stdout.getvalue().splitlines()[-1])
+            self.assertFalse(payload["ready"])
+            self.assertIsNone(payload["latest"]["ch2"])
+        finally:
+            shutil.rmtree(tmp, ignore_errors=True)
+
     def test_build_pipeline_command_defaults_to_fresh_direct_outputs(self):
         args = _args("state.json", python_cmd="/venv/bin/python", no_push_data_branch=True)
 

@@ -203,6 +203,20 @@ model is rejected before the swap.
 Keep `XCBENZ_PUSH_DATA_BRANCH=false` on the Coding Server. GitHub remains the
 only writer of `data-web`; Infomaniak is the production source of truth.
 
+## Weather-Server Migration Preparation
+
+The separate weather runtime under `deploy/weather-server/` provides:
+
+- a pinned container image for this repository;
+- state-free `--probe-only-json` source readiness checks; and
+- a checked forecast wrapper that participates in the weather server's shared
+  heavy-work lock.
+
+These files do not change production ownership by themselves. The Coding
+Server remains primary until its production timer is stopped and the weather
+coordinator's independent forecast-primary gate is explicitly enabled. See
+the canonical cutover runbook in the `Hetzner_Server` repository.
+
 ## Verified Cutover State
 
 The production cutover is complete:
