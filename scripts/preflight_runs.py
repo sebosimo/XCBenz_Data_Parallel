@@ -19,6 +19,7 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
+from pipeline_orchestration.forecast_completeness import missing_profile_horizons  # noqa: E402
 from pipeline_orchestration.job_plan import expected_horizon_count as planned_horizon_count  # noqa: E402
 
 
@@ -122,8 +123,24 @@ def latest_run(model: str) -> str | None:
         tag = candidate.strftime("%Y%m%d_%H%M")
         required_horizon = expected_horizon_count(model, tag) - 1
         if has_profile_horizon(model, candidate, required_horizon):
-            log(f"{model} latest profile-complete run: {tag}")
-            return tag
+            try:
+                missing = missing_profile_horizons(
+                    collection_id=cfg["collection_id"],
+                    reference_datetime=ref,
+                    expected_count=required_horizon + 1,
+                    post_json=post_json,
+                    timeout=15,
+                )
+            except Exception as exc:  # noqa: BLE001 - incomplete discovery must fail closed.
+                log(f"{model} completeness probe failed for {ref}: {exc}")
+                continue
+            if not missing:
+                log(f"{model} latest profile-complete run: {tag}")
+                return tag
+            variable, horizons = next(iter(missing.items()))
+            preview = ",".join(f"H+{item:03d}" for item in horizons[:5])
+            suffix = "" if len(horizons) <= 5 else f",+{len(horizons) - 5} more"
+            log(f"{model} run {tag} incomplete: missing {variable} {preview}{suffix}")
     return None
 
 

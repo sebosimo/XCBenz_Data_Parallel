@@ -24,6 +24,14 @@ from typing import Any
 
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
+if str(REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(REPO_ROOT))
+
+from pipeline_orchestration.forecast_completeness import (  # noqa: E402
+    missing_profile_horizons,
+)
+
+
 STATE_VERSION = 1
 SEARCH_URL = "https://data.geo.admin.ch/api/stac/v1/search"
 TRUE_VALUES = {"1", "true", "yes", "on"}
@@ -194,15 +202,28 @@ def candidate_times(config: ModelConfig, now: dt.datetime) -> list[dt.datetime]:
 def run_is_complete(model: str, reference_time: dt.datetime, timeout: int) -> tuple[bool, str]:
     config = MODELS[model]
     horizon = terminal_horizon(model, reference_time)
+    expected_count = horizon + 1
     try:
         for variable in config.probe_variables:
             if not stac_has_asset(config, reference_time, variable, horizon, timeout):
                 return False, f"missing {variable} H+{horizon:03d}"
         if not stac_has_asset(config, reference_time, "T", 0, timeout):
             return False, "missing T H+000"
+        missing = missing_profile_horizons(
+            collection_id=config.collection_id,
+            reference_datetime=ref_for(reference_time),
+            expected_count=expected_count,
+            post_json=post_json,
+            timeout=timeout,
+        )
+        if missing:
+            variable, horizons = next(iter(missing.items()))
+            preview = ",".join(f"H+{item:03d}" for item in horizons[:5])
+            suffix = "" if len(horizons) <= 5 else f",+{len(horizons) - 5} more"
+            return False, f"missing {variable} profile horizons {preview}{suffix}"
     except Exception as exc:  # noqa: BLE001 - a failed probe should not start a heavy run.
         return False, f"probe failed: {exc}"
-    return True, f"complete through H+{horizon:03d}"
+    return True, f"all profile horizons complete through H+{horizon:03d}"
 
 
 def latest_complete_run(model: str, now: dt.datetime, timeout: int) -> tuple[str | None, list[dict[str, str]]]:

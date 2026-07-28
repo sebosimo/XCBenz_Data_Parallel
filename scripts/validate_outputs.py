@@ -15,6 +15,11 @@ from value_tiles import (
     parse_value_tile_run_selection,
     validate_value_tile_publication,
 )
+from pipeline_orchestration.forecast_completeness import (
+    expected_step_labels,
+    profile_run_errors,
+    step_labels,
+)
 from web_export_support import load_json as load_web_json, resolve_publication_url
 
 
@@ -49,7 +54,7 @@ def resolve_web_url(url: str | None) -> Path | None:
     return resolve_publication_url(Path("web_exports"), url)
 
 
-def validate_bundles() -> tuple[int, int]:
+def validate_bundles(latest_runs: dict[str, str]) -> tuple[int, int]:
     bundles = list(Path("web_exports/emagrams").glob("*/*/*/bundle.json"))
     if not bundles:
         raise ValueError("no emagram bundles found")
@@ -67,6 +72,24 @@ def validate_bundles() -> tuple[int, int]:
             raise ValueError(f"{bundle_path} format is {encoding.get('format')!r}")
         if tuple(variables) != EMAGRAM_BUNDLE_VARIABLES:
             raise ValueError(f"{bundle_path} variables are unexpected")
+        model_key = bundle_path.parts[2] if len(bundle_path.parts) > 3 else ""
+        run_tag = bundle_path.parts[3] if len(bundle_path.parts) > 3 else ""
+        if latest_runs.get(model_key) == run_tag:
+            try:
+                expected_steps = expected_step_labels(model_key, run_tag)
+            except ValueError as exc:
+                raise ValueError(f"{bundle_path} does not identify a supported model run") from exc
+            actual_steps = step_labels(bundle.get("steps"))
+            if actual_steps != expected_steps:
+                raise ValueError(
+                    f"{bundle_path} has incomplete profile steps: "
+                    f"{len(actual_steps)}/{len(expected_steps)}"
+                )
+            if int(encoding.get("step_count") or 0) != len(expected_steps):
+                raise ValueError(
+                    f"{bundle_path} encoding step_count is {encoding.get('step_count')!r}, "
+                    f"expected {len(expected_steps)}"
+                )
         expected = int(encoding.get("step_count") or 0) * len(variables) * int(encoding.get("level_count") or 0) * 4
         data_path = resolve_web_url(encoding.get("data"))
         if data_path is None or not data_path.exists():
@@ -240,6 +263,11 @@ def main() -> int:
         latest = model.get("latest_run")
         if latest and latest not in runs:
             return fail(f"{model_key} latest_run {latest!r} is absent from runs")
+        if not latest:
+            return fail(f"{model_key} has no latest_run")
+        completeness_errors = profile_run_errors(model_key, latest, runs[latest])
+        if completeness_errors:
+            return fail(f"{model_key} {latest} is incomplete: {completeness_errors[0]}")
         for run_tag, run_entry in runs.items():
             for location_id, location_entry in (run_entry.get("locations") or {}).items():
                 bundle_url = location_entry.get("emagram_bundle")
@@ -269,7 +297,11 @@ def main() -> int:
             return fail(f"web manifest is missing fresh {model_key} run(s) from root manifest: {missing}")
 
     try:
-        bundle_count, bundle_bytes = validate_bundles()
+        latest_runs = {
+            model_key: str((models.get(model_key) or {}).get("latest_run") or "")
+            for model_key in ("icon-ch1", "icon-ch2")
+        }
+        bundle_count, bundle_bytes = validate_bundles(latest_runs)
         (
             wind_metadata_count,
             sunshine_metadata_count,

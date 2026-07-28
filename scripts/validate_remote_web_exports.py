@@ -23,6 +23,11 @@ from value_tiles import (
     parse_xvt,
     sha256_bytes,
 )
+from pipeline_orchestration.forecast_completeness import (
+    expected_step_labels,
+    profile_run_errors,
+    step_labels,
+)
 
 
 BASE_URL = os.environ.get("DATA_BASE_URL", "https://data.xcbenz.com").rstrip("/") + "/"
@@ -118,11 +123,9 @@ def choose_first(mapping: dict[str, Any], label: str) -> tuple[str, Any]:
     return key, mapping[key]
 
 
-def validate_models(manifest: dict[str, Any]) -> tuple[str, str, str]:
+def validate_models(manifest: dict[str, Any]) -> list[tuple[str, str, str]]:
     models = manifest.get("models") or {}
-    selected_model = ""
-    selected_run = ""
-    selected_location = ""
+    selected: list[tuple[str, str, str]] = []
     for model_key in ("icon-ch1", "icon-ch2"):
         model = models.get(model_key) or {}
         runs = model.get("runs") or {}
@@ -133,16 +136,17 @@ def validate_models(manifest: dict[str, Any]) -> tuple[str, str, str]:
             raise ValidationError(f"{model_key} latest_run {latest!r} is missing from runs")
         run_key = latest or sorted(runs.keys(), reverse=True)[0]
         run_entry = runs[run_key]
+        errors = profile_run_errors(model_key, run_key, run_entry)
+        if errors:
+            raise ValidationError(f"{model_key} {run_key} is incomplete: {errors[0]}")
         locations = run_entry.get("locations") or {}
         if not locations:
             raise ValidationError(f"{model_key} {run_key} has no locations")
         location_id, location_entry = choose_first(locations, f"{model_key} {run_key} locations")
         if not location_entry.get("emagram_bundle"):
             raise ValidationError(f"{model_key} {run_key} {location_id} has no emagram_bundle")
-        selected_model = selected_model or model_key
-        selected_run = selected_run or run_key
-        selected_location = selected_location or location_id
-    return selected_model, selected_run, selected_location
+        selected.append((model_key, run_key, location_id))
+    return selected
 
 
 def validate_bundle(manifest: dict[str, Any], model_key: str, run_key: str, location_id: str) -> None:
@@ -154,6 +158,13 @@ def validate_bundle(manifest: dict[str, Any], model_key: str, run_key: str, loca
     encoding = bundle.get("encoding") or {}
     variables = encoding.get("variables") or []
     step_count = int(encoding.get("step_count") or len(bundle.get("steps") or []))
+    expected_steps = expected_step_labels(model_key, run_key)
+    actual_steps = step_labels(bundle.get("steps"))
+    if actual_steps != expected_steps or step_count != len(expected_steps):
+        raise ValidationError(
+            f"{bundle_url} has incomplete profile steps: "
+            f"bundle={len(actual_steps)} encoding={step_count} expected={len(expected_steps)}"
+        )
     level_count = int(encoding.get("level_count") or len(bundle.get("height") or []))
     expected = step_count * len(variables) * level_count * 4
     declared = int(encoding.get("byte_length") or -1)
@@ -290,8 +301,9 @@ def main() -> int:
         cors = headers.get("Access-Control-Allow-Origin")
         if cors not in ("*", None):
             raise ValidationError(f"unexpected CORS header on manifest: {cors!r}")
-        model_key, run_key, location_id = validate_models(manifest)
-        validate_bundle(manifest, model_key, run_key, location_id)
+        selected_bundles = validate_models(manifest)
+        for model_key, run_key, location_id in selected_bundles:
+            validate_bundle(manifest, model_key, run_key, location_id)
         validate_map_product(manifest, "wind")
         validate_map_product(manifest, "sunshine")
         validate_map_product(manifest, "rain")
