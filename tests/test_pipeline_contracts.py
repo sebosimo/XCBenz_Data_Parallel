@@ -19,6 +19,7 @@ from pipeline_orchestration.job_plan import build_job_plan  # noqa: E402
 
 
 WORKFLOW_PATH = REPO_ROOT / ".github" / "workflows" / "daily_plot.yml"
+REQUIREMENTS_PATH = REPO_ROOT / "requirements.txt"
 
 
 def assert_workflow_wiring(workflow: str) -> None:
@@ -39,6 +40,13 @@ def assert_workflow_wiring(workflow: str) -> None:
 
 
 class PipelineContractTests(unittest.TestCase):
+    def test_grib_geometry_dependencies_are_pinned_to_production_versions(self):
+        requirements = set(REQUIREMENTS_PATH.read_text(encoding="utf-8").splitlines())
+        self.assertIn("xarray==2026.4.0", requirements)
+        self.assertIn("cfgrib==0.9.15.1", requirements)
+        self.assertIn("eccodes==2.39.2", requirements)
+        self.assertIn("eccodes-cosmo-resources-python==2.38.3.1", requirements)
+
     def test_ch1_profile_plans_match_for_regular_and_03z_runs(self):
         for run_tag in ("20260716_1500", "20260716_0300"):
             plan = build_job_plan(run_tag, "20260716_1200")
