@@ -340,15 +340,30 @@ def local_lock(lock_file: str):
 
 def run_poller(args: argparse.Namespace) -> int:
     now = dt.datetime.now(dt.timezone.utc)
-    state_path = Path(args.state_file)
-    if not state_path.is_absolute():
-        state_path = REPO_ROOT / state_path
-    state = load_state(state_path)
-
     latest: dict[str, str | None] = {}
     probe_reports: dict[str, list[dict[str, str]]] = {}
     for model in ("ch1", "ch2"):
         latest[model], probe_reports[model] = latest_complete_run(model, now, args.probe_timeout)
+
+    if args.probe_only_json:
+        print(
+            json.dumps(
+                {
+                    "event": "source_forecast_probe",
+                    "ready": bool(latest["ch1"] and latest["ch2"]),
+                    "latest": latest,
+                    "probe_reports": probe_reports,
+                },
+                sort_keys=True,
+            ),
+            flush=True,
+        )
+        return 0
+
+    state_path = Path(args.state_file)
+    if not state_path.is_absolute():
+        state_path = REPO_ROOT / state_path
+    state = load_state(state_path)
 
     state["last_poll"] = {
         "checked_at": now_label(),
@@ -432,6 +447,14 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--retry-minutes", type=int, default=parse_int_env("XCBENZ_POLL_RETRY_MINUTES", 10))
     parser.add_argument("--force-run", action="store_true", default=env_bool("XCBENZ_POLL_FORCE_RUN", False))
     parser.add_argument("--plan-only", action="store_true", help="Probe and print the pipeline command without executing it.")
+    parser.add_argument(
+        "--probe-only-json",
+        action="store_true",
+        help=(
+            "Probe source completeness and emit one machine-readable JSON result "
+            "without reading or writing poller state or starting the pipeline."
+        ),
+    )
     parser.add_argument("--skip-deploy", action="store_true", default=env_bool("XCBENZ_POLL_SKIP_DEPLOY", False))
     parser.add_argument(
         "--no-push-data-branch",
