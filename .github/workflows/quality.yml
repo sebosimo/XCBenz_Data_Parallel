@@ -26,15 +26,11 @@ jobs:
         with:
           enable-cache: true
 
-      - name: Install ecCodes
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y libeccodes-dev
-
       - name: Install Python dependencies
         run: |
           uv venv
           uv pip install -r requirements.txt
+          uv run python -m eccodes selfcheck
 
       - name: Run unit and contract tests
         env:

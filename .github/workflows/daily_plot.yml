@@ -115,15 +115,11 @@ jobs:
         with:
           enable-cache: true
 
-      - name: Install system dependencies
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y libeccodes-dev
-
       - name: Install Python dependencies
         run: |
           uv venv
           uv pip install -r requirements.txt
+          uv run python -m eccodes selfcheck
 
       - name: Restore CH1 cache from sandbox data branch
         run: |
@@ -193,12 +189,13 @@ jobs:
       - name: Install system dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y libeccodes-dev rsync
+          sudo apt-get install -y rsync
 
       - name: Install Python dependencies
         run: |
           uv venv
           uv pip install -r requirements.txt
+          uv run python -m eccodes selfcheck
 
       - name: Fetch CH1 direct profile chunk
         env:
@@ -247,15 +244,11 @@ jobs:
         with:
           enable-cache: true
 
-      - name: Install system dependencies
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y libeccodes-dev
-
       - name: Install Python dependencies
         run: |
           uv venv
           uv pip install -r requirements.txt
+          uv run python -m eccodes selfcheck
 
       - name: Fetch CH2 map data
         env:
@@ -311,15 +304,11 @@ jobs:
         with:
           enable-cache: true
 
-      - name: Install system dependencies
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y libeccodes-dev
-
       - name: Install Python dependencies
         run: |
           uv venv
           uv pip install -r requirements.txt
+          uv run python -m eccodes selfcheck
 
       - name: Fetch CH2 direct profile chunk
         env:
@@ -379,12 +368,13 @@ jobs:
       - name: Install system dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y libeccodes-dev rsync
+          sudo apt-get install -y rsync
 
       - name: Install Python dependencies
         run: |
           uv venv
           uv pip install -r requirements.txt
+          uv run python -m eccodes selfcheck
 
       - name: Restore current sandbox data branch
         run: |
