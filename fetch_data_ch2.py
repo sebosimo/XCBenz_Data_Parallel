@@ -54,6 +54,7 @@ from forecast_fetch.profiles import (
     finalize_profile_chunk as finalize_shared_profile_chunk,
     location_indices as _location_indices,
 )
+from forecast_fetch.static_grid import load_horizontal_grid
 from forecast_fetch.stac import (
     discover_runs as discover_stac_runs,
     download_file as download_stac_file,
@@ -245,16 +246,7 @@ def load_static_grid():
     if not os.path.exists(path):
         return None
     try:
-        ds = xr.open_dataset(path, engine='cfgrib', backend_kwargs={'indexpath': ''})
-        grid = {}
-        for key in ['lat', 'lon']:
-            match_k = next((k for k in list(ds.coords) + list(ds.data_vars) if key in k.lower()), None)
-            if match_k:
-                grid[key] = ds[match_k].load()
-            else:
-                grid[key] = None
-        ds.close()
-        return grid if grid.get('lat') is not None else None
+        return load_horizontal_grid(path)
     except Exception as e:
         log(f"Error loading CH2 HGRID: {e}", "ERROR")
         return None
