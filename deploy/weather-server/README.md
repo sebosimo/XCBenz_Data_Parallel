@@ -9,6 +9,12 @@ weather server through a mode-0600 env file and a read-only deploy-key mount.
 The direct publisher must keep `XCBENZ_PUSH_DATA_BRANCH=false`; GitHub Actions
 remains the only writer of `data-web`.
 
+The example environment retains the measured four-job configuration: combined
+workers, interleaved CH1/CH2 ordering, CH2 chunks of 15 horizons, next-horizon
+prefetch, early release of profile-only fields, and eight download workers.
+The wrapper pins both Python command variables to the container's `python`
+executable so host-only interpreter paths cannot leak into deployment checks.
+
 Probe source readiness without state changes:
 
 ```bash

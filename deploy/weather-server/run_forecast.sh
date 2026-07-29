@@ -3,6 +3,7 @@ set -eu
 
 lock_path="${XCBENZ_HEAVY_LOCK_PATH:-/run/lock/xcbenz-heavy.lock}"
 export XCBENZ_PYTHON_CMD=python
+export PYTHON_BIN=python
 
 run_forecast() {
     exec python /app/scripts/run_coding_server_pipeline.py "$@"

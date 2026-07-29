@@ -53,6 +53,9 @@ WEB_EXPORT_DIR="${WEB_EXPORT_DIR:-web_exports}"
 RELEASE_ID="${RELEASE_ID:-$(date -u +'%Y%m%dT%H%M%SZ')}"
 PYTHON_BIN="${PYTHON_BIN:-python3}"
 
+command -v "$PYTHON_BIN" >/dev/null 2>&1 \
+  || fail "Python executable not found: $PYTHON_BIN"
+
 [[ -f "$WEB_EXPORT_DIR/manifest.json" ]] || fail "missing $WEB_EXPORT_DIR/manifest.json"
 
 nc_count="$(find "$WEB_EXPORT_DIR" -name '*.nc' -type f | wc -l | tr -d ' ')"
