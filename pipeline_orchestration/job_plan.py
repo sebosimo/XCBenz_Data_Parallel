@@ -62,9 +62,15 @@ def profile_ranges(model: str, run_tag: str) -> tuple[tuple[int, int], ...]:
     return ()
 
 
-def profile_chunk_ids(model: str, run_tag: str) -> tuple[str, ...]:
+def profile_chunk_ids(model: str, run_tag: str, chunk_size: int = 0) -> tuple[str, ...]:
     try:
-        ranges = profile_ranges(model, run_tag)
+        if chunk_size > 0 and model in {"ch1", "icon-ch1"}:
+            ranges = ch1_map_ranges(run_tag, chunk_size)
+        elif chunk_size > 0 and model in {"ch2", "icon-ch2"}:
+            parse_run_tag(run_tag)
+            ranges = ch2_ranges(chunk_size)
+        else:
+            ranges = profile_ranges(model, run_tag)
     except ValueError:
         if model in {"ch1", "icon-ch1"}:
             ranges = ((0, 16), (17, 33), (34, 45))

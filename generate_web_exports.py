@@ -239,7 +239,17 @@ def location_payload(location_id: str, meta: dict[str, Any]) -> dict[str, Any]:
 
 
 def expected_profile_chunks(model_key: str, run_tag: str) -> set[str]:
-    return set(profile_chunk_ids(model_key, run_tag))
+    chunk_env = {
+        "icon-ch1": "XCBENZ_CH1_CHUNK_SIZE",
+        "icon-ch2": "XCBENZ_CH2_CHUNK_SIZE",
+    }.get(model_key)
+    chunk_size = 0
+    if chunk_env:
+        try:
+            chunk_size = max(0, int(os.getenv(chunk_env, "0")))
+        except ValueError:
+            chunk_size = 0
+    return set(profile_chunk_ids(model_key, run_tag, chunk_size=chunk_size))
 
 
 def scan_profile_chunks(root: Path, locations: dict[str, Any]) -> dict[str, dict[str, list[Path]]]:

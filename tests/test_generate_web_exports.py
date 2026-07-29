@@ -81,6 +81,27 @@ class GenerateWebExportsTests(unittest.TestCase):
         finally:
             shutil.rmtree(tmp, ignore_errors=True)
 
+    def test_ch2_direct_chunks_follow_configured_local_chunk_size(self):
+        expected = {
+            "H000_H014",
+            "H015_H029",
+            "H030_H044",
+            "H045_H059",
+            "H060_H074",
+            "H075_H089",
+            "H090_H104",
+            "H105_H120",
+        }
+        with mock.patch.dict(os.environ, {"XCBENZ_CH2_CHUNK_SIZE": "15"}):
+            self.assertEqual(expected_profile_chunks("icon-ch2", "20260729_0000"), expected)
+
+    def test_invalid_configured_chunk_size_uses_legacy_chunks(self):
+        with mock.patch.dict(os.environ, {"XCBENZ_CH2_CHUNK_SIZE": "invalid"}):
+            self.assertEqual(
+                expected_profile_chunks("icon-ch2", "20260729_0000"),
+                {"H000_H030", "H031_H060", "H061_H090", "H091_H120"},
+            )
+
 
 if __name__ == "__main__":
     unittest.main()
