@@ -334,7 +334,12 @@ class WindStreamlineTileTests(unittest.TestCase):
         self.assertEqual(first["manifest"]["simplification_tolerance_px"], 0.5)
         self.assertEqual(
             first["manifest"]["profile_names"],
-            ["compact-default", "compact-lite", "wide-default"],
+            [
+                "compact-overview",
+                "compact-regional",
+                "wide-overview",
+                "wide-regional",
+            ],
         )
         self.assertNotIn("profiles", first["manifest"]["steps"][0])
         step_document = json.loads(
@@ -343,7 +348,7 @@ class WindStreamlineTileTests(unittest.TestCase):
             )
         )
         self.assertIn("profiles", step_document["step"])
-        self.assertIn("compact-lite", step_document["step"]["profiles"])
+        self.assertIn("compact-regional", step_document["step"]["profiles"])
         validated = validate_shadow_package(root / "one-worker")
         self.assertEqual(validated["counts"], first["manifest"]["counts"])
         self.assertEqual(validated["revision"], first["manifest"]["revision"])

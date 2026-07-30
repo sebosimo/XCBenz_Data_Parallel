@@ -82,15 +82,25 @@ class ProductionProfile:
 
 
 PROFILES = {
-    "compact-default": ProductionProfile.from_feasibility(
-        1, TILE_PROFILES["compact-default"]
+    "compact-overview": ProductionProfile.from_feasibility(
+        1, TILE_PROFILES["compact-overview"]
     ),
-    "compact-lite": ProductionProfile.from_feasibility(
-        3, TILE_PROFILES["compact-lite"]
+    "compact-regional": ProductionProfile.from_feasibility(
+        2, TILE_PROFILES["compact-regional"]
     ),
-    "wide-default": ProductionProfile.from_feasibility(2, TILE_PROFILES["wide-default"]),
+    "wide-overview": ProductionProfile.from_feasibility(
+        3, TILE_PROFILES["wide-overview"]
+    ),
+    "wide-regional": ProductionProfile.from_feasibility(
+        4, TILE_PROFILES["wide-regional"]
+    ),
 }
-DEFAULT_PROFILE_NAMES = ("compact-default", "compact-lite", "wide-default")
+DEFAULT_PROFILE_NAMES = (
+    "compact-overview",
+    "compact-regional",
+    "wide-overview",
+    "wide-regional",
+)
 
 
 @dataclass(frozen=True)

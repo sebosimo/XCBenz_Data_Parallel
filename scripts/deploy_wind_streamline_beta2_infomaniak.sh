@@ -216,7 +216,7 @@ readarray -t tile_identity < <(
   "$PYTHON_BIN" -c '
 import json,sys
 document=json.load(open(sys.argv[1], encoding="utf-8"))
-record=document["step"]["profiles"]["wide-default"]["tiles"][0]
+record=document["step"]["profiles"]["wide-regional"]["tiles"][0]
 print(record["path"])
 print(record["sha256"])
 ' "$published_step_manifest"

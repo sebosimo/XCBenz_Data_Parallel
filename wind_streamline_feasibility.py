@@ -73,41 +73,36 @@ class TileProfile:
 
 
 TILE_PROFILES = {
-    "compact-default": TileProfile(
-        "compact-default",
-        6,
-        37_152.62489711103,
-        Geometry(9.6, 8.064, 0.5, 186.0, 52, 0.72, 4_099.0625, False),
-    ),
-    "compact-lite": TileProfile(
-        "compact-lite",
-        6,
-        37_152.62489711103,
+    "compact-overview": TileProfile(
+        "compact-overview",
+        5,
+        9_500.0,
         Geometry(10.56, 8.8704, 0.5, 186.0, 52, 0.72, 4_099.0625, False),
     ),
-    "wide-default": TileProfile(
-        "wide-default",
-        7,
-        62_684.06980343729,
-        Geometry(16.0, 13.0, 0.62, 155.0, 32, 0.84, 2_100.0, True),
+    "compact-regional": TileProfile(
+        "compact-regional",
+        6,
+        27_000.0,
+        Geometry(10.56, 8.8704, 0.5, 186.0, 52, 0.72, 4_099.0625, False),
     ),
-    "compact-fine": TileProfile(
-        "compact-fine",
-        7,
-        37_152.62489711103,
-        Geometry(9.6, 8.064, 0.5, 186.0, 52, 0.72, 4_099.0625, False),
+    "wide-overview": TileProfile(
+        "wide-overview",
+        5,
+        20_000.0,
+        Geometry(17.6, 14.3, 0.62, 155.0, 32, 0.84, 2_100.0, True),
     ),
-    "wide-fine": TileProfile(
-        "wide-fine",
-        8,
-        62_684.06980343729,
-        Geometry(16.0, 13.0, 0.62, 155.0, 32, 0.84, 2_100.0, True),
+    "wide-regional": TileProfile(
+        "wide-regional",
+        7,
+        60_000.0,
+        Geometry(17.6, 14.3, 0.62, 155.0, 32, 0.84, 2_100.0, True),
     ),
 }
 DEFAULT_TILE_PROFILES = (
-    TILE_PROFILES["compact-default"],
-    TILE_PROFILES["compact-lite"],
-    TILE_PROFILES["wide-default"],
+    TILE_PROFILES["compact-overview"],
+    TILE_PROFILES["compact-regional"],
+    TILE_PROFILES["wide-overview"],
+    TILE_PROFILES["wide-regional"],
 )
 
 
