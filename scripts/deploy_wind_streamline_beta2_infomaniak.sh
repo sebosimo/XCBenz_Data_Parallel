@@ -199,7 +199,7 @@ curl -fsS -D "$published_headers" \
   -o "$published_tile"
 [[ "$(sha256sum "$published_tile" | awk '{print $1}')" == "${tile_identity[1]}" ]] || \
   fail "public representative tile SHA-256 does not match"
-grep -qi '^access-control-allow-origin: \*$' "$published_headers" || \
+grep -qi '^access-control-allow-origin: \*' "$published_headers" || \
   fail "public tile is missing the required CORS header"
 grep -qi '^content-type: application/octet-stream' "$published_headers" || \
   fail "public tile has the wrong MIME type"
