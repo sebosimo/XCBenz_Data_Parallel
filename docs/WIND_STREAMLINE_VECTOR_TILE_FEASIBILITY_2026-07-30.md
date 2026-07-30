@@ -2,8 +2,9 @@
 
 ## Decision
 
-Proceed with a narrow static vector-tile pilot for the default Switzerland
-view and `800m_AGL`. Do not yet enable full-domain, all-level generation.
+Proceed with an opt-in beta2 static vector-tile pilot for the full ICON-CH1
+domain at `800m_AGL`, using two presentation LODs. Do not yet enable all-level
+generation or remove the current worker fallback.
 
 The experiment proves that backend-integrated streamline geometry can remove
 almost all browser trajectory work when it is clipped like a visible vector
@@ -29,7 +30,10 @@ The frontend prototype validates and decodes `XWS1`, draws its paths and open
 arrowheads, and benchmarks that result against the production integrator on
 the same real step and numeric projection snapshot.
 
-Neither prototype is connected to a production manifest or exporter.
+The second-stage prototype generates real XYZ-partitioned full-domain packages,
+loads every tile intersecting the viewport, joins continuation fragments, and
+checks pixel error around tile boundaries. Neither prototype is connected to a
+production manifest or exporter.
 
 ## Representative result
 
@@ -91,25 +95,128 @@ The 0.35-pixel clipped experiment also sampled CH1 `H00`, `H12`, `H24`, and
 
 The H00 result is therefore not unusually small or sparse.
 
-## Backend budget
+## Full-domain tile result
+
+The real tile package uses:
+
+- `compact-default`: compact/mobile geometry partitioned at XYZ z6;
+- `wide-default`: desktop geometry partitioned at XYZ z7;
+- 512-pixel tile simplification coordinates;
+- no overlap buffer, so geometry is stored exactly once apart from the shared
+  boundary vertex;
+- an experimental `0.1.0` package manifest with immutable tile paths and
+  per-tile byte/count metadata.
+
+Full-domain output:
+
+| Step | Profile | Tiles | Raw total | Gzip total |
+| --- | --- | ---: | ---: | ---: |
+| H00 | compact z6 | 9 | 519,956 B | 387,326 B |
+| H00 | wide z7 | 30 | 486,297 B | 347,967 B |
+| H24 | compact z6 | 9 | 585,034 B | 447,018 B |
+| H24 | wide z7 | 30 | 535,306 B | 394,557 B |
+
+The default Switzerland view fetches two compact tiles or six wide tiles:
+
+| Step | Profile | View Brotli | Current draw | Stitched cold decode + draw | Cached draw |
+| --- | --- | ---: | ---: | ---: | ---: |
+| H00 | compact z6 | 121,232 B | 145.9 ms | 29.7 ms | 13.4 ms |
+| H00 | wide z7 | 90,242 B | 64.1 ms | 22.8 ms | 11.8 ms |
+| H24 | compact z6 | 157,303 B | 142.3 ms | 30.9 ms | 13.2 ms |
+| H24 | wide z7 | 114,026 B | 64.7 ms | 22.9 ms | 11.3 ms |
+
+The endpoint-string stitcher is deliberately diagnostic, not the proposed
+production implementation. It makes seam-strip RMSE lower than whole-image
+RMSE in all four cases (for H00: 2.40 versus 3.19 compact and 1.97 versus 2.51
+wide), but spends about 20–27 ms in decode/stitch. `XWS2` should carry a compact
+stable path ID plus start/end continuation flags, allowing numeric stitching
+of only boundary fragments.
+
+The finer alternatives (compact z7 and wide z8) do not improve transfer for the
+reference view. H00 Brotli increases to 126,190 B and 94,559 B, while package
+object counts rise from 9/30 to 30/108. Keep z6/z7 for the pilot.
+
+The tiled payload is larger than the perfectly viewport-clipped lower bound
+because each request includes geometry outside the exact viewport. It is also
+additional to the retained U/V field, which remains necessary for colours,
+point inspection, unsupported zooms, and fallback. The result buys roughly a
+3× desktop and 5× mobile cold CPU improvement after seam-safe stitching; cached
+draw is roughly 5–11× faster.
+
+## Backend and storage budget
 
 The intentionally straightforward Python prototype takes approximately:
 
 - 2.8–3.0 seconds for a desktop Switzerland surface;
-- 7.1–7.4 seconds for a mobile Switzerland surface.
+- 7.1–7.4 seconds for a mobile Switzerland surface;
+- 59–60 seconds for both full-domain LODs including clipping, simplification,
+  encoding, and gzip on one process.
 
-Generating profiles and zoom bands independently across the full ICON domain
-would be too expensive. A production generator must integrate the densest,
-longest required lattice once, derive lower-density/shorter LODs from stable
-seed IDs, parallelize by step/level within a bounded worker pool, and measure
-the complete pipeline wall time before expanding beyond the pilot.
+The sampled CH1 run contains 34 forecast steps. Serial prototype generation for
+one level is therefore about 34 minutes, and the two LODs retain approximately
+25–29 MB gzip per level based on H00/H24. That is acceptable for an isolated
+beta artifact but not yet for eight levels by default.
+
+A production generator should parallelize independent steps in a bounded
+worker pool, avoid repeated projection during tile clipping, and emit Brotli
+alongside gzip. Deriving both LODs from one dense integration is possible only
+if stable seed identities preserve the current profile-specific lattice and
+trajectory semantics; it must be validated rather than assumed.
+
+## Proposed optional contract
+
+Add one optional `streamline_tiles` capability to the level metadata:
+
+```json
+{
+  "contract": "xcbenz-wind-streamline-tiles",
+  "contract_version": "0.2.0-beta",
+  "format": "XWS2",
+  "profiles": {
+    "compact-default": {
+      "tile_zoom": 6,
+      "template": "streamlines/{step}/compact-default/z6/{x}_{y}.xws"
+    },
+    "wide-default": {
+      "tile_zoom": 7,
+      "template": "streamlines/{step}/wide-default/z7/{x}_{y}.xws"
+    }
+  }
+}
+```
+
+`XWS2` must add stable path identity and continuation flags before production
+wiring. The capability is all-or-nothing per step/profile: clients must not
+combine geometry revisions or silently use partial tile sets. Missing,
+malformed, or unsupported capability data falls back to the current U/V worker.
+
+## Rollout and acceptance gates
+
+1. **Contract implementation:** add XWS2 IDs/flags, deterministic backend
+   output, decoder limits, corruption tests, and tile-selection tests. Do not
+   publish a capability yet.
+2. **Shadow export:** generate all 34 CH1 `800m_AGL` steps for one run without
+   exposing them to clients. Require at most 1,400 XWS objects, 35 MB compressed
+   geometry, and 12 minutes wall time with a bounded four-worker export.
+3. **Beta2 opt-in:** publish the optional capability behind a client flag.
+   Require reference-view Brotli at or below 125 KB wide and 175 KB compact,
+   local cold decode/stitch/draw below 35 ms wide and 45 ms compact, and cached
+   median draw below 16.7 ms.
+4. **Visual and device gate:** require seam-strip RMSE no worse than whole-image
+   RMSE, no visible discontinuity during scripted pans, and a physical-phone
+   next-complete-step latency below 100 ms after tile bytes are cached.
+5. **Default for one level:** enable only `800m_AGL` after two consecutive runs
+   pass all gates. Keep the worker as a silent per-step fallback and record
+   capability/fallback telemetry.
+6. **Expansion:** evaluate other levels and CH2 separately. Do not infer their
+   storage, generation, or mobile results from CH1.
 
 ## Pilot requirements
 
-1. Publish an optional immutable capability for one model/run revision,
-   `800m_AGL`, and the default zoom band.
-2. Use stable global seed IDs and tile clipping with a buffer so panning has no
-   seams or duplicated arrowheads.
+1. Implement `XWS2` stable path IDs and continuation flags, with numeric
+   boundary-fragment stitching and a strict decoder.
+2. Publish an optional immutable capability for one model/run revision and
+   `800m_AGL`, limited to compact z6 and wide z7.
 3. Keep the U/V value field for colour rendering, inspection, and fallback.
 4. Commit a Wind step only when value and matching streamline identities are
    both ready.
@@ -140,4 +247,18 @@ Frontend:
 ```bash
 npm run perf:streamline-feasibility -- \
   --bundle /tmp/xcbenz-wind-streamline-feasibility/h00-mobile-view-s015-clip.xws
+```
+
+Full-domain tiles:
+
+```bash
+/home/sebas/projects/XCBenz_Data_Parallel/.venv/bin/python \
+  scripts/benchmark_wind_streamline_tiles.py \
+  /home/sebas/projects/XCBenz_Data_Parallel/web_exports/wind_maps/icon-ch1/20260729_1200/800m_AGL/metadata.json \
+  --step H00 \
+  --output-dir /tmp/xcbenz-wind-streamline-tiles/h00
+
+npm run perf:streamline-tiles -- \
+  --package /tmp/xcbenz-wind-streamline-tiles/h00/metadata.json \
+  --profile wide-default
 ```

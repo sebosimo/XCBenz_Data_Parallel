@@ -12,6 +12,7 @@ import json
 import math
 import struct
 import time
+from collections import defaultdict
 from dataclasses import asdict, dataclass
 from pathlib import Path
 from typing import Any, Iterable
@@ -61,6 +62,46 @@ class Geometry:
 class PathGeometry:
     seed_speed_ms: float
     points: tuple[tuple[float, float], ...]
+
+
+@dataclass(frozen=True)
+class TileProfile:
+    name: str
+    tile_zoom: int
+    pixels_per_mercator_unit: float
+    geometry: Geometry
+
+
+TILE_PROFILES = {
+    "compact-default": TileProfile(
+        "compact-default",
+        6,
+        37_152.62489711103,
+        Geometry(9.6, 8.064, 0.5, 186.0, 52, 0.72, 4_099.0625, False),
+    ),
+    "wide-default": TileProfile(
+        "wide-default",
+        7,
+        62_684.06980343729,
+        Geometry(16.0, 13.0, 0.62, 155.0, 32, 0.84, 2_100.0, True),
+    ),
+    "compact-fine": TileProfile(
+        "compact-fine",
+        7,
+        37_152.62489711103,
+        Geometry(9.6, 8.064, 0.5, 186.0, 52, 0.72, 4_099.0625, False),
+    ),
+    "wide-fine": TileProfile(
+        "wide-fine",
+        8,
+        62_684.06980343729,
+        Geometry(16.0, 13.0, 0.62, 155.0, 32, 0.84, 2_100.0, True),
+    ),
+}
+DEFAULT_TILE_PROFILES = (
+    TILE_PROFILES["compact-default"],
+    TILE_PROFILES["wide-default"],
+)
 
 
 def _clamp(value: float, minimum: float, maximum: float) -> float:
@@ -179,6 +220,62 @@ def presentation_snapshot(presentation: Presentation, grid: dict[str, Any]) -> d
     }
 
 
+def grid_bbox(grid: dict[str, Any]) -> tuple[float, float, float, float]:
+    lon_end = float(grid["lon"]["start"]) + float(grid["lon"]["step"]) * (
+        int(grid["width"]) - 1
+    )
+    lat_end = float(grid["lat"]["start"]) + float(grid["lat"]["step"]) * (
+        int(grid["height"]) - 1
+    )
+    return (
+        min(float(grid["lon"]["start"]), lon_end),
+        min(float(grid["lat"]["start"]), lat_end),
+        max(float(grid["lon"]["start"]), lon_end),
+        max(float(grid["lat"]["start"]), lat_end),
+    )
+
+
+def tile_profile_snapshot(profile: TileProfile, grid: dict[str, Any]) -> dict[str, Any]:
+    trajectory_bbox = grid_bbox(grid)
+    west, north, east, south = bbox_mercator_bounds(trajectory_bbox)
+    return {
+        "bbox": list(trajectory_bbox),
+        "css_width": (east - west) * profile.pixels_per_mercator_unit,
+        "css_height": (south - north) * profile.pixels_per_mercator_unit,
+        "draw_width": (east - west) * profile.pixels_per_mercator_unit,
+        "draw_height": (south - north) * profile.pixels_per_mercator_unit,
+        "draw_bounds": {
+            "west_x": west,
+            "north_y": north,
+            "east_x": east,
+            "south_y": south,
+        },
+        "distance_origin": list(
+            lon_lat_to_mercator(float(grid["lon"]["start"]), float(grid["lat"]["start"]))
+        ),
+        "distance_pixels_per_mercator_unit": profile.pixels_per_mercator_unit,
+        "geometry": asdict(profile.geometry),
+        "responsive_mode": (
+            "desktop" if profile.geometry.uses_wide_spacing else "phone-portrait"
+        ),
+        "trajectory_bbox": list(trajectory_bbox),
+    }
+
+
+def xyz_tile_snapshot(x: int, y: int, zoom: int) -> dict[str, Any]:
+    scale = 2**zoom
+    return {
+        "draw_width": 512.0,
+        "draw_height": 512.0,
+        "draw_bounds": {
+            "west_x": x / scale,
+            "north_y": y / scale,
+            "east_x": (x + 1) / scale,
+            "south_y": (y + 1) / scale,
+        },
+    }
+
+
 class WindSampler:
     def __init__(self, metadata: dict[str, Any], values: bytes):
         grid = metadata["grid"]
@@ -264,8 +361,16 @@ def integrate_paths(
     values: bytes,
     presentation: Presentation,
 ) -> tuple[list[PathGeometry], dict[str, Any]]:
-    sampler = WindSampler(metadata, values)
     snapshot = presentation_snapshot(presentation, metadata["grid"])
+    return integrate_paths_from_snapshot(metadata, values, snapshot)
+
+
+def integrate_paths_from_snapshot(
+    metadata: dict[str, Any],
+    values: bytes,
+    snapshot: dict[str, Any],
+) -> tuple[list[PathGeometry], dict[str, Any]]:
+    sampler = WindSampler(metadata, values)
     geometry = snapshot["geometry"]
     trajectory_bbox = snapshot["trajectory_bbox"]
     sample_margin = 0.35
@@ -784,3 +889,143 @@ def benchmark_bundle(
     sidecar_path = output_path.with_suffix(output_path.suffix + ".json")
     sidecar_path.write_text(json.dumps(result, indent=2, sort_keys=True) + "\n", encoding="utf-8")
     return result
+
+
+def _path_candidate_tiles(path: PathGeometry, zoom: int) -> Iterable[tuple[int, int]]:
+    scale = 2**zoom
+    points = [lon_lat_to_mercator(lon, lat) for lon, lat in path.points]
+    minimum_x = min(point[0] for point in points)
+    maximum_x = max(point[0] for point in points)
+    minimum_y = min(point[1] for point in points)
+    maximum_y = max(point[1] for point in points)
+    first_x = max(0, min(scale - 1, math.floor(minimum_x * scale)))
+    last_x = max(0, min(scale - 1, math.floor(maximum_x * scale)))
+    first_y = max(0, min(scale - 1, math.floor(minimum_y * scale)))
+    last_y = max(0, min(scale - 1, math.floor(maximum_y * scale)))
+    for x in range(first_x, last_x + 1):
+        for y in range(first_y, last_y + 1):
+            yield x, y
+
+
+def tile_paths(
+    paths: Iterable[PathGeometry],
+    zoom: int,
+    simplify_tolerance_px: float,
+) -> tuple[dict[tuple[int, int], list[PathGeometry]], dict[str, int | float]]:
+    by_tile: dict[tuple[int, int], list[PathGeometry]] = defaultdict(list)
+    source_paths = 0
+    candidate_assignments = 0
+    clipped_fragments = 0
+    clipped_points = 0
+    simplified_points = 0
+    for path in paths:
+        source_paths += 1
+        for tile in _path_candidate_tiles(path, zoom):
+            candidate_assignments += 1
+            snapshot = xyz_tile_snapshot(tile[0], tile[1], zoom)
+            fragments, _ = clip_paths_to_draw_bounds((path,), snapshot)
+            if not fragments:
+                continue
+            clipped_fragments += len(fragments)
+            clipped_points += sum(len(fragment.points) for fragment in fragments)
+            fragments, _ = simplify_paths(fragments, snapshot, simplify_tolerance_px)
+            by_tile[tile].extend(fragments)
+            simplified_points += sum(len(fragment.points) for fragment in fragments)
+    return dict(by_tile), {
+        "tile_zoom": zoom,
+        "source_paths": source_paths,
+        "candidate_tile_assignments": candidate_assignments,
+        "clipped_fragments": clipped_fragments,
+        "clipped_points": clipped_points,
+        "simplified_tile_points": simplified_points,
+        "nonempty_tiles": len(by_tile),
+        "simplification_tolerance_px": simplify_tolerance_px,
+    }
+
+
+def build_tile_package(
+    metadata_path: Path,
+    step_label: str,
+    output_directory: Path,
+    profiles: Iterable[TileProfile] = DEFAULT_TILE_PROFILES,
+    simplify_tolerance_px: float = 0.15,
+) -> dict[str, Any]:
+    metadata_path = Path(metadata_path).resolve()
+    output_directory = Path(output_directory).resolve()
+    metadata = json.loads(metadata_path.read_text(encoding="utf-8"))
+    step_path = resolve_step_path(metadata_path, metadata, step_label)
+    values = step_path.read_bytes()
+    quantization_bbox = grid_bbox(metadata["grid"])
+    package_profiles: list[dict[str, Any]] = []
+    started = time.perf_counter()
+
+    for profile in profiles:
+        snapshot = tile_profile_snapshot(profile, metadata["grid"])
+        benchmark_presentation = (
+            PRESENTATIONS["desktop-view"]
+            if profile.geometry.uses_wide_spacing
+            else PRESENTATIONS["mobile-view"]
+        )
+        benchmark_snapshot = presentation_snapshot(benchmark_presentation, metadata["grid"])
+        paths, integration_stats = integrate_paths_from_snapshot(metadata, values, snapshot)
+        paths_by_tile, tiling_stats = tile_paths(
+            paths,
+            profile.tile_zoom,
+            simplify_tolerance_px,
+        )
+        tile_entries: list[dict[str, Any]] = []
+        for (x, y), fragments in sorted(paths_by_tile.items()):
+            bundle, encoding_stats = encode_bundle(fragments, quantization_bbox)
+            gzip_bundle = gzip.compress(bundle, compresslevel=9, mtime=0)
+            relative_path = Path(profile.name) / f"z{profile.tile_zoom}" / f"{x}_{y}.xws"
+            tile_path = output_directory / relative_path
+            tile_path.parent.mkdir(parents=True, exist_ok=True)
+            tile_path.write_bytes(bundle)
+            tile_path.with_suffix(".xws.gz").write_bytes(gzip_bundle)
+            tile_entries.append(
+                {
+                    "x": x,
+                    "y": y,
+                    "path": relative_path.as_posix(),
+                    "bytes": len(bundle),
+                    "gzip_bytes": len(gzip_bundle),
+                    **encoding_stats,
+                }
+            )
+
+        package_profiles.append(
+            {
+                "name": profile.name,
+                "tile_zoom": profile.tile_zoom,
+                "tile_size": 512,
+                "pixels_per_mercator_unit": profile.pixels_per_mercator_unit,
+                "geometry": asdict(profile.geometry),
+                "snapshot": snapshot,
+                "benchmark_presentation": asdict(benchmark_presentation),
+                "benchmark_snapshot": benchmark_snapshot,
+                "integration": integration_stats,
+                "tiling": tiling_stats,
+                "tiles": tile_entries,
+                "total_bytes": sum(tile["bytes"] for tile in tile_entries),
+                "total_gzip_bytes": sum(tile["gzip_bytes"] for tile in tile_entries),
+            }
+        )
+
+    package = {
+        "contract": "xcbenz-wind-streamline-tiles",
+        "contract_version": "0.1.0-experimental",
+        "format": "XWS1",
+        "metadata": str(metadata_path),
+        "step": step_label,
+        "step_path": str(step_path),
+        "grid_bbox": list(quantization_bbox),
+        "simplification_tolerance_px": simplify_tolerance_px,
+        "generation_ms": round((time.perf_counter() - started) * 1000.0, 3),
+        "profiles": package_profiles,
+    }
+    output_directory.mkdir(parents=True, exist_ok=True)
+    (output_directory / "metadata.json").write_text(
+        json.dumps(package, indent=2, sort_keys=True) + "\n",
+        encoding="utf-8",
+    )
+    return package
