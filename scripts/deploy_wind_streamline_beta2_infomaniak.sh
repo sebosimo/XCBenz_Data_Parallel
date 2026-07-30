@@ -161,6 +161,13 @@ else
   "
 fi
 
+log "Setting public read and traversal permissions on the immutable package"
+ssh "${SSH_OPTS[@]}" "$SSH_TARGET" "
+  set -e
+  find '$REMOTE_TARGET' -type d -exec chmod 755 {} +
+  find '$REMOTE_TARGET' -type f -exec chmod 644 {} +
+"
+
 log "Installing isolated delivery headers"
 rsync -az -e "$RSYNC_SSH" \
   "$HTACCESS" "$SSH_TARGET:$EXPECTED_REMOTE_ROOT/.htaccess"
