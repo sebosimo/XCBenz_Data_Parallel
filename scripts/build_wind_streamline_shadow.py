@@ -34,7 +34,7 @@ def build_parser() -> argparse.ArgumentParser:
         help=f"Comma-separated profiles ({','.join(PROFILES)})",
     )
     parser.add_argument("--workers", type=int, default=min(4, os.cpu_count() or 1))
-    parser.add_argument("--simplify-px", type=float, default=0.15)
+    parser.add_argument("--simplify-px", type=float, default=0.50)
     parser.add_argument(
         "--integration",
         choices=("vectorized", "scalar"),

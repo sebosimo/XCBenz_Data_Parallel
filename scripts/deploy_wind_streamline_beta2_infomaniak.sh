@@ -174,25 +174,52 @@ rsync -az -e "$RSYNC_SSH" \
 
 PUBLIC_MANIFEST="$EXPECTED_BASE_URL/$MODEL/$RUN/$REVISION/$LEVEL/manifest.json"
 published_manifest="$(mktemp)"
+published_step_manifest="$(mktemp)"
+published_step_headers="$(mktemp)"
 published_tile="$(mktemp)"
 published_headers="$(mktemp)"
 cleanup_public_files() {
-  rm -f "$published_manifest" "$published_tile" "$published_headers"
+  rm -f \
+    "$published_manifest" \
+    "$published_step_manifest" \
+    "$published_step_headers" \
+    "$published_tile" \
+    "$published_headers"
 }
 trap 'cleanup_public_files; cleanup' EXIT
 
-log "Validating public manifest and a representative immutable tile"
+log "Validating public index, step manifest, and a representative immutable tile"
 curl -fsS "$PUBLIC_MANIFEST" -o "$published_manifest"
 [[ "$(sha256sum "$published_manifest" | awk '{print $1}')" == "$MANIFEST_SHA256" ]] || \
   fail "public manifest SHA-256 does not match"
-readarray -t tile_identity < <(
+readarray -t step_identity < <(
   "$PYTHON_BIN" -c '
 import json,sys
 manifest=json.load(open(sys.argv[1], encoding="utf-8"))
-record=manifest["steps"][0]["profiles"]["wide-default"]["tiles"][0]
+record=manifest["steps"][0]
 print(record["path"])
 print(record["sha256"])
 ' "$PACKAGE_DIRECTORY/manifest.json"
+)
+curl -fsS -D "$published_step_headers" \
+  "${PUBLIC_MANIFEST%manifest.json}${step_identity[0]}" \
+  -o "$published_step_manifest"
+[[ "$(sha256sum "$published_step_manifest" | awk '{print $1}')" == "${step_identity[1]}" ]] || \
+  fail "public representative step manifest SHA-256 does not match"
+grep -qi '^access-control-allow-origin: \*' "$published_step_headers" || \
+  fail "public step manifest is missing the required CORS header"
+grep -qi '^content-type: application/json' "$published_step_headers" || \
+  fail "public step manifest has the wrong MIME type"
+grep -qi '^cache-control: .*immutable' "$published_step_headers" || \
+  fail "public step manifest is missing immutable caching"
+readarray -t tile_identity < <(
+  "$PYTHON_BIN" -c '
+import json,sys
+document=json.load(open(sys.argv[1], encoding="utf-8"))
+record=document["step"]["profiles"]["wide-default"]["tiles"][0]
+print(record["path"])
+print(record["sha256"])
+' "$published_step_manifest"
 )
 curl -fsS -D "$published_headers" \
   "${PUBLIC_MANIFEST%manifest.json}${tile_identity[0]}" \

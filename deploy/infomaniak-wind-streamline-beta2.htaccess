@@ -20,6 +20,10 @@ AddType application/octet-stream .xws
     Header set Cache-Control "public, max-age=31536000, immutable"
   </FilesMatch>
 
+  <FilesMatch "^H[0-9]{2}\.json$">
+    Header set Cache-Control "public, max-age=31536000, immutable"
+  </FilesMatch>
+
   <FilesMatch "manifest\.json$">
     Header set Cache-Control "no-cache, must-revalidate"
   </FilesMatch>

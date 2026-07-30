@@ -22,6 +22,7 @@ from wind_streamline_tiles import (
     CONTINUES_BEFORE,
     GENERATOR_REVISION,
     HEADER,
+    MANIFEST_LAYOUT,
     ORIGINAL_END,
     ORIGINAL_START,
     PACKAGE,
@@ -329,6 +330,20 @@ class WindStreamlineTileTests(unittest.TestCase):
             first["manifest"]["revision_sha256"],
             second["manifest"]["revision_sha256"],
         )
+        self.assertEqual(first["manifest"]["manifest_layout"], MANIFEST_LAYOUT)
+        self.assertEqual(first["manifest"]["simplification_tolerance_px"], 0.5)
+        self.assertEqual(
+            first["manifest"]["profile_names"],
+            ["compact-default", "compact-lite", "wide-default"],
+        )
+        self.assertNotIn("profiles", first["manifest"]["steps"][0])
+        step_document = json.loads(
+            (root / "one-worker" / first["manifest"]["steps"][0]["path"]).read_text(
+                encoding="utf-8"
+            )
+        )
+        self.assertIn("profiles", step_document["step"])
+        self.assertIn("compact-lite", step_document["step"]["profiles"])
         validated = validate_shadow_package(root / "one-worker")
         self.assertEqual(validated["counts"], first["manifest"]["counts"])
         self.assertEqual(validated["revision"], first["manifest"]["revision"])
@@ -339,6 +354,18 @@ class WindStreamlineTileTests(unittest.TestCase):
         declared_tile.unlink()
         with self.assertRaisesRegex(ValueError, "missing|bytes"):
             validate_shadow_package(root / "one-worker")
+
+    def test_split_step_manifest_is_content_verified(self):
+        root = temporary_directory()
+        self.addCleanup(shutil_rmtree, root)
+        metadata_path = write_fixture(root / "source")
+        result = build_shadow_package(metadata_path, root / "package")
+        descriptor = result["manifest"]["steps"][0]
+        step_path = root / "package" / descriptor["path"]
+        step_path.write_bytes(step_path.read_bytes() + b" ")
+
+        with self.assertRaisesRegex(ValueError, "step manifest bytes"):
+            validate_shadow_package(root / "package")
 
 
 def shutil_rmtree(path: Path):

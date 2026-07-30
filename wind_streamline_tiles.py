@@ -42,9 +42,10 @@ from wind_streamline_feasibility import (
 
 
 CONTRACT = "xcbenz-wind-streamline-tiles"
-CONTRACT_VERSION = "2.0.0-shadow.1"
+CONTRACT_VERSION = "2.1.0-shadow.1"
 PACKAGE = "immutable-xyz-xws2-v1"
 GENERATOR_REVISION = "xws2-phase-a-vectorized-mercator-v1"
+MANIFEST_LAYOUT = "split-step-index-v1"
 MAGIC = b"XWS2"
 VERSION = 2
 HEADER = struct.Struct("<4sBBHBBHIIIII")
@@ -84,9 +85,12 @@ PROFILES = {
     "compact-default": ProductionProfile.from_feasibility(
         1, TILE_PROFILES["compact-default"]
     ),
+    "compact-lite": ProductionProfile.from_feasibility(
+        3, TILE_PROFILES["compact-lite"]
+    ),
     "wide-default": ProductionProfile.from_feasibility(2, TILE_PROFILES["wide-default"]),
 }
-DEFAULT_PROFILE_NAMES = ("compact-default", "wide-default")
+DEFAULT_PROFILE_NAMES = ("compact-default", "compact-lite", "wide-default")
 
 
 @dataclass(frozen=True)
@@ -173,6 +177,10 @@ def _canonical_json_bytes(value: Any) -> bytes:
         separators=(",", ":"),
         sort_keys=True,
     ).encode("utf-8")
+
+
+def _json_artifact_bytes(value: Any) -> bytes:
+    return (json.dumps(value, indent=2, sort_keys=True) + "\n").encode("utf-8")
 
 
 def _sha256_bytes(value: bytes) -> str:
@@ -1236,7 +1244,7 @@ def generate_step_package(
     output_root: Path,
     *,
     profile_names: Sequence[str] = DEFAULT_PROFILE_NAMES,
-    simplify_tolerance_px: float = 0.15,
+    simplify_tolerance_px: float = 0.50,
     integration_mode: str = "vectorized",
 ) -> tuple[dict[str, Any], dict[str, Any]]:
     unknown = sorted(set(profile_names) - set(PROFILES))
@@ -1308,6 +1316,7 @@ def validate_shadow_package(
         or manifest.get("contract_version") != CONTRACT_VERSION
         or manifest.get("package") != PACKAGE
         or manifest.get("generator_revision") != GENERATOR_REVISION
+        or manifest.get("manifest_layout") != MANIFEST_LAYOUT
         or manifest.get("integration_mode") not in {"scalar", "vectorized"}
     ):
         raise ValueError("XWS2 package identity is unsupported")
@@ -1325,27 +1334,103 @@ def validate_shadow_package(
     profile_names = manifest.get("profile_names")
     if profile_names != list(DEFAULT_PROFILE_NAMES):
         raise ValueError("XWS2 package profile set is unsupported")
-    steps = manifest.get("steps")
-    if not isinstance(steps, list) or not steps:
+    step_descriptors = manifest.get("steps")
+    if not isinstance(step_descriptors, list) or not step_descriptors:
         raise ValueError("XWS2 package contains no steps")
-    step_labels = [step.get("step") for step in steps if isinstance(step, dict)]
-    if len(step_labels) != len(steps) or len(set(step_labels)) != len(step_labels):
+    step_labels = [
+        descriptor.get("step")
+        for descriptor in step_descriptors
+        if isinstance(descriptor, dict)
+    ]
+    if (
+        len(step_labels) != len(step_descriptors)
+        or any(not isinstance(step, str) or not step for step in step_labels)
+        or len(set(step_labels)) != len(step_labels)
+    ):
         raise ValueError("XWS2 package steps are invalid or duplicated")
-    if require_complete_pilot and step_labels != [f"H{index:02d}" for index in range(34)]:
+    if require_complete_pilot and step_labels != [
+        f"H{index:02d}" for index in range(34)
+    ]:
         raise ValueError("XWS2 beta2 pilot requires the complete H00-H33 timeline")
 
-    content_keys = (
-        "contract",
-        "contract_version",
-        "package",
-        "generator_revision",
-        "source",
-        "profile_names",
-        "simplification_tolerance_px",
-        "integration_mode",
-        "steps",
-    )
-    content = {key: manifest.get(key) for key in content_keys}
+    revision = manifest.get("revision")
+    revision_sha256 = manifest.get("revision_sha256")
+    if (
+        not isinstance(revision, str)
+        or len(revision) != 16
+        or not isinstance(revision_sha256, str)
+        or len(revision_sha256) != 64
+        or not revision_sha256.startswith(revision)
+    ):
+        raise ValueError("XWS2 package revision identity is malformed")
+
+    declared_step_paths: set[str] = set()
+    steps: list[dict[str, Any]] = []
+    for descriptor, step_label in zip(step_descriptors, step_labels):
+        relative = PurePosixPath(str(descriptor.get("path") or ""))
+        expected_path = PurePosixPath("steps", f"{step_label}.json")
+        if (
+            relative != expected_path
+            or relative.is_absolute()
+            or any(part in {"", ".", ".."} for part in relative.parts)
+        ):
+            raise ValueError("XWS2 step manifest path does not match its identity")
+        relative_text = relative.as_posix()
+        if relative_text in declared_step_paths:
+            raise ValueError("XWS2 package contains a duplicate step manifest path")
+        declared_step_paths.add(relative_text)
+        step_path = package_directory.joinpath(*relative.parts)
+        try:
+            step_bytes = step_path.read_bytes()
+        except FileNotFoundError as error:
+            raise ValueError(
+                f"XWS2 package is missing step manifest {relative_text}"
+            ) from error
+        if (
+            len(step_bytes) != descriptor.get("bytes")
+            or _sha256_bytes(step_bytes) != descriptor.get("sha256")
+            or len(gzip.compress(step_bytes, compresslevel=9, mtime=0))
+            != descriptor.get("gzip_bytes")
+        ):
+            raise ValueError(f"XWS2 step manifest bytes do not match {relative_text}")
+        try:
+            step_document = json.loads(step_bytes)
+        except (UnicodeDecodeError, json.JSONDecodeError) as error:
+            raise ValueError(f"XWS2 step manifest is invalid {relative_text}") from error
+        if (
+            step_document.get("contract") != CONTRACT
+            or step_document.get("contract_version") != CONTRACT_VERSION
+            or step_document.get("package") != PACKAGE
+            or step_document.get("generator_revision") != GENERATOR_REVISION
+            or step_document.get("revision") != revision
+        ):
+            raise ValueError(f"XWS2 step manifest identity is invalid {relative_text}")
+        step_record = step_document.get("step")
+        if not isinstance(step_record, dict) or step_record.get("step") != step_label:
+            raise ValueError(f"XWS2 step manifest record is invalid {relative_text}")
+        steps.append(step_record)
+
+    actual_step_paths = {
+        path.relative_to(package_directory).as_posix()
+        for path in package_directory.glob("steps/*.json")
+    }
+    if actual_step_paths != declared_step_paths:
+        raise ValueError("XWS2 package contains missing or undeclared step manifests")
+
+    content = {
+        "contract": manifest.get("contract"),
+        "contract_version": manifest.get("contract_version"),
+        "package": manifest.get("package"),
+        "generator_revision": manifest.get("generator_revision"),
+        "manifest_layout": manifest.get("manifest_layout"),
+        "source": manifest.get("source"),
+        "profile_names": manifest.get("profile_names"),
+        "simplification_tolerance_px": manifest.get(
+            "simplification_tolerance_px"
+        ),
+        "integration_mode": manifest.get("integration_mode"),
+        "steps": steps,
+    }
     revision_sha256 = _sha256_bytes(_canonical_json_bytes(content))
     if (
         manifest.get("revision_sha256") != revision_sha256
@@ -1468,7 +1553,7 @@ def build_shadow_package(
     *,
     steps: Sequence[str] | None = None,
     profile_names: Sequence[str] = DEFAULT_PROFILE_NAMES,
-    simplify_tolerance_px: float = 0.15,
+    simplify_tolerance_px: float = 0.50,
     workers: int = 1,
     integration_mode: str = "vectorized",
 ) -> dict[str, Any]:
@@ -1531,6 +1616,7 @@ def build_shadow_package(
             "contract_version": CONTRACT_VERSION,
             "package": PACKAGE,
             "generator_revision": GENERATOR_REVISION,
+            "manifest_layout": MANIFEST_LAYOUT,
             "source": {
                 "model": metadata.get("model"),
                 "run": metadata.get("run"),
@@ -1544,9 +1630,38 @@ def build_shadow_package(
             "steps": ordered_records,
         }
         revision_sha256 = _sha256_bytes(_canonical_json_bytes(content))
+        revision = revision_sha256[:16]
+        step_descriptors = []
+        step_manifest_directory = build_root / "steps"
+        step_manifest_directory.mkdir(parents=True, exist_ok=True)
+        for record in ordered_records:
+            step_label = record["step"]
+            step_document = {
+                "contract": CONTRACT,
+                "contract_version": CONTRACT_VERSION,
+                "generator_revision": GENERATOR_REVISION,
+                "package": PACKAGE,
+                "revision": revision,
+                "step": record,
+            }
+            step_bytes = _json_artifact_bytes(step_document)
+            step_path = f"steps/{step_label}.json"
+            (build_root / step_path).write_bytes(step_bytes)
+            step_descriptors.append(
+                {
+                    "bytes": len(step_bytes),
+                    "gzip_bytes": len(
+                        gzip.compress(step_bytes, compresslevel=9, mtime=0)
+                    ),
+                    "path": step_path,
+                    "sha256": _sha256_bytes(step_bytes),
+                    "step": step_label,
+                }
+            )
         manifest = {
-            **content,
-            "revision": revision_sha256[:16],
+            **{key: value for key, value in content.items() if key != "steps"},
+            "steps": step_descriptors,
+            "revision": revision,
             "revision_sha256": revision_sha256,
             "counts": {
                 "steps": len(ordered_records),
@@ -1598,14 +1713,8 @@ def build_shadow_package(
             "maximum_worker_peak_rss_bytes": max(peak_rss_by_worker.values()),
             "wall_ms": round((time.perf_counter() - started) * 1000.0, 3),
         }
-        (build_root / "manifest.json").write_text(
-            json.dumps(manifest, indent=2, sort_keys=True) + "\n",
-            encoding="utf-8",
-        )
-        (build_root / "benchmark.json").write_text(
-            json.dumps(benchmark, indent=2, sort_keys=True) + "\n",
-            encoding="utf-8",
-        )
+        (build_root / "manifest.json").write_bytes(_json_artifact_bytes(manifest))
+        (build_root / "benchmark.json").write_bytes(_json_artifact_bytes(benchmark))
         os.replace(build_root, output_directory)
         return {"manifest": manifest, "benchmark": benchmark}
     finally:

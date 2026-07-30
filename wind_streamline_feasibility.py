@@ -79,6 +79,12 @@ TILE_PROFILES = {
         37_152.62489711103,
         Geometry(9.6, 8.064, 0.5, 186.0, 52, 0.72, 4_099.0625, False),
     ),
+    "compact-lite": TileProfile(
+        "compact-lite",
+        6,
+        37_152.62489711103,
+        Geometry(10.56, 8.8704, 0.5, 186.0, 52, 0.72, 4_099.0625, False),
+    ),
     "wide-default": TileProfile(
         "wide-default",
         7,
@@ -100,6 +106,7 @@ TILE_PROFILES = {
 }
 DEFAULT_TILE_PROFILES = (
     TILE_PROFILES["compact-default"],
+    TILE_PROFILES["compact-lite"],
     TILE_PROFILES["wide-default"],
 )
 

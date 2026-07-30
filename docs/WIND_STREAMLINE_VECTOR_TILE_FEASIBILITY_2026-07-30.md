@@ -3,14 +3,42 @@
 ## Decision
 
 Proceed with an opt-in beta2 static vector-tile pilot for the full ICON-CH1
-domain at `800m_AGL`, using two presentation LODs. Do not yet enable all-level
-generation or remove the current worker fallback.
+domain at `800m_AGL`. Publish the unchanged compact and wide densities plus an
+explicit compact-lite A/B profile. Do not yet enable all-level generation or
+remove the current worker fallback.
 
 The experiment proves that backend-integrated streamline geometry can remove
 almost all browser trajectory work when it is clipped like a visible vector
 tile and simplified below the display's pixel resolution. It does not yet
 prove that generating and retaining every zoom band, level, model, and horizon
 fits the production pipeline budget.
+
+## Lean follow-up
+
+The internet pilot exposed metadata and subpixel geometry as the two safe
+payload reductions:
+
+- raise Douglas-Peucker tolerance from 0.15 to 0.50 presentation pixels;
+- replace the embedded 34-step manifest with
+  `split-step-index-v1`, where `manifest.json` contains content-addressed step
+  descriptors and `steps/Hxx.json` contains only one immutable step;
+- retain `compact-default` and `wide-default`, and add `compact-lite` with 10%
+  larger seed spacing in each direction for explicit visual A/B testing.
+
+On run `20260730_1500` H00, 0.50-pixel simplification reduced the reference
+compact transfer from 196,544 to 141,405 gzip bytes and wide transfer from
+143,902 to 109,658 bytes while preserving terminal arrows and producing no
+meaningful visual regression in side-by-side inspection. Compact-lite reduced
+the same compact view to 116,887 bytes, with a deliberate visible density
+change. The split two-step sample index is 2,527 gzip bytes and each
+three-profile step manifest is about 4.7 KB; a complete index grows only with
+small step descriptors.
+
+The split package remains integrity-checked: the index declares the exact
+SHA-256 and byte length of every step document, each step document declares
+the exact SHA-256 of every tile, and XWS2 retains its payload CRC32 and strict
+identity checks. Step documents and tiles are immutable; only the small root
+index revalidates.
 
 ## Prototype
 
