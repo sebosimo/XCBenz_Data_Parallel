@@ -34,6 +34,7 @@ from wind_streamline_tiles import (
     integrate_projected_paths,
     integrate_projected_paths_vectorized,
     partition_paths,
+    validate_shadow_package,
 )
 
 
@@ -315,14 +316,12 @@ class WindStreamlineTileTests(unittest.TestCase):
             metadata_path,
             root / "one-worker",
             steps=("H00", "H01"),
-            profile_names=("wide-default",),
             workers=1,
         )
         second = build_shadow_package(
             metadata_path,
             root / "two-workers",
             steps=("H00", "H01"),
-            profile_names=("wide-default",),
             workers=2,
         )
 
@@ -330,6 +329,16 @@ class WindStreamlineTileTests(unittest.TestCase):
             first["manifest"]["revision_sha256"],
             second["manifest"]["revision_sha256"],
         )
+        validated = validate_shadow_package(root / "one-worker")
+        self.assertEqual(validated["counts"], first["manifest"]["counts"])
+        self.assertEqual(validated["revision"], first["manifest"]["revision"])
+
+        declared_tile = next(
+            (root / "one-worker").glob("profiles/**/*.xws")
+        )
+        declared_tile.unlink()
+        with self.assertRaisesRegex(ValueError, "missing|bytes"):
+            validate_shadow_package(root / "one-worker")
 
 
 def shutil_rmtree(path: Path):

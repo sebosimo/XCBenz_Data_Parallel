@@ -23,7 +23,7 @@ import time
 import zlib
 from collections import defaultdict
 from dataclasses import asdict, dataclass
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 from typing import Any, Iterable, Iterator, Sequence
 
 import numpy as np
@@ -1293,6 +1293,173 @@ def _assert_owned_build_path(path: Path, parent: Path) -> None:
         ".wind-streamline-shadow-"
     ):
         raise ValueError(f"refusing to remove unowned shadow build path {resolved}")
+
+
+def validate_shadow_package(
+    package_directory: Path,
+    *,
+    require_complete_pilot: bool = False,
+) -> dict[str, Any]:
+    package_directory = Path(package_directory).resolve()
+    manifest_path = package_directory / "manifest.json"
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    if (
+        manifest.get("contract") != CONTRACT
+        or manifest.get("contract_version") != CONTRACT_VERSION
+        or manifest.get("package") != PACKAGE
+        or manifest.get("generator_revision") != GENERATOR_REVISION
+        or manifest.get("integration_mode") not in {"scalar", "vectorized"}
+    ):
+        raise ValueError("XWS2 package identity is unsupported")
+    source = manifest.get("source") or {}
+    source_level = source.get("level") or {}
+    run = str(source.get("run") or "")
+    if (
+        source.get("model") != "icon-ch1"
+        or source_level.get("name") != "800m_AGL"
+        or len(run) != 13
+        or run[8] != "_"
+        or not (run[:8] + run[9:]).isdigit()
+    ):
+        raise ValueError("XWS2 package source is outside the beta2 pilot")
+    profile_names = manifest.get("profile_names")
+    if profile_names != list(DEFAULT_PROFILE_NAMES):
+        raise ValueError("XWS2 package profile set is unsupported")
+    steps = manifest.get("steps")
+    if not isinstance(steps, list) or not steps:
+        raise ValueError("XWS2 package contains no steps")
+    step_labels = [step.get("step") for step in steps if isinstance(step, dict)]
+    if len(step_labels) != len(steps) or len(set(step_labels)) != len(step_labels):
+        raise ValueError("XWS2 package steps are invalid or duplicated")
+    if require_complete_pilot and step_labels != [f"H{index:02d}" for index in range(34)]:
+        raise ValueError("XWS2 beta2 pilot requires the complete H00-H33 timeline")
+
+    content_keys = (
+        "contract",
+        "contract_version",
+        "package",
+        "generator_revision",
+        "source",
+        "profile_names",
+        "simplification_tolerance_px",
+        "integration_mode",
+        "steps",
+    )
+    content = {key: manifest.get(key) for key in content_keys}
+    revision_sha256 = _sha256_bytes(_canonical_json_bytes(content))
+    if (
+        manifest.get("revision_sha256") != revision_sha256
+        or manifest.get("revision") != revision_sha256[:16]
+    ):
+        raise ValueError("XWS2 package revision identity does not match its content")
+
+    actual_counts = {
+        "steps": len(steps),
+        "profiles": len(profile_names),
+        "tiles": 0,
+        "bytes": 0,
+        "gzip_bytes": 0,
+    }
+    declared_paths: set[str] = set()
+    for step in steps:
+        step_label = step["step"]
+        profiles = step.get("profiles")
+        if not isinstance(profiles, dict) or list(profiles) != list(profile_names):
+            raise ValueError(f"XWS2 {step_label} profile set is invalid")
+        for profile_name in profile_names:
+            profile = PROFILES[profile_name]
+            profile_record = profiles[profile_name]
+            profile_identity = profile_record.get("profile") or {}
+            if (
+                profile_identity.get("id") != profile.id
+                or profile_identity.get("name") != profile.name
+                or profile_identity.get("tile_zoom") != profile.tile_zoom
+                or profile_identity.get("renderer_revision") != GENERATOR_REVISION
+            ):
+                raise ValueError(
+                    f"XWS2 {step_label}/{profile_name} profile identity is invalid"
+                )
+            tiles = profile_record.get("tiles")
+            if not isinstance(tiles, list):
+                raise ValueError(f"XWS2 {step_label}/{profile_name} tiles are invalid")
+            profile_bytes = 0
+            profile_gzip_bytes = 0
+            for record in tiles:
+                relative = PurePosixPath(str(record.get("path") or ""))
+                if (
+                    relative.is_absolute()
+                    or not relative.parts
+                    or any(part in {"", ".", ".."} for part in relative.parts)
+                ):
+                    raise ValueError("XWS2 package contains an unsafe tile path")
+                expected_prefix = (
+                    "profiles",
+                    profile_name,
+                    step_label,
+                    f"z{profile.tile_zoom}",
+                )
+                if relative.parts[:4] != expected_prefix or relative.suffix != ".xws":
+                    raise ValueError("XWS2 tile path does not match its identity")
+                relative_text = relative.as_posix()
+                if relative_text in declared_paths:
+                    raise ValueError("XWS2 package contains a duplicate tile path")
+                declared_paths.add(relative_text)
+                tile_path = package_directory.joinpath(*relative.parts)
+                try:
+                    payload = tile_path.read_bytes()
+                except FileNotFoundError as error:
+                    raise ValueError(
+                        f"XWS2 package is missing declared tile {relative_text}"
+                    ) from error
+                if (
+                    len(payload) != record.get("bytes")
+                    or _sha256_bytes(payload) != record.get("sha256")
+                ):
+                    raise ValueError(f"XWS2 tile bytes do not match {relative_text}")
+                decoded = decode_tile(
+                    payload,
+                    profile,
+                    (record.get("x"), record.get("y")),
+                )
+                header = HEADER.unpack_from(payload)
+                if (
+                    len(decoded.fragments) != record.get("fragment_count")
+                    or decoded.point_count != record.get("point_count")
+                    or header[-1] != record.get("payload_crc32")
+                ):
+                    raise ValueError(f"XWS2 tile counts do not match {relative_text}")
+                gzip_bytes = len(gzip.compress(payload, compresslevel=9, mtime=0))
+                if gzip_bytes != record.get("gzip_bytes"):
+                    raise ValueError(f"XWS2 gzip measurement does not match {relative_text}")
+                profile_bytes += len(payload)
+                profile_gzip_bytes += gzip_bytes
+            if (
+                profile_bytes != profile_record.get("total_bytes")
+                or profile_gzip_bytes != profile_record.get("total_gzip_bytes")
+            ):
+                raise ValueError(
+                    f"XWS2 {step_label}/{profile_name} aggregate bytes do not match"
+                )
+            actual_counts["tiles"] += len(tiles)
+            actual_counts["bytes"] += profile_bytes
+            actual_counts["gzip_bytes"] += profile_gzip_bytes
+
+    actual_tile_paths = {
+        path.relative_to(package_directory).as_posix()
+        for path in package_directory.glob("profiles/**/*.xws")
+    }
+    if actual_tile_paths != declared_paths:
+        raise ValueError("XWS2 package contains missing or undeclared tile files")
+    if manifest.get("counts") != actual_counts:
+        raise ValueError("XWS2 package aggregate counts do not match")
+    return {
+        "counts": actual_counts,
+        "level": source_level["name"],
+        "model": source["model"],
+        "revision": manifest["revision"],
+        "revision_sha256": revision_sha256,
+        "run": run,
+    }
 
 
 def build_shadow_package(
