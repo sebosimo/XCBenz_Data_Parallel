@@ -1,4 +1,5 @@
 import argparse
+import datetime as dt
 import json
 import subprocess
 import sys
@@ -31,6 +32,80 @@ def _split_jobs(run_tag: str):
 
 
 class RunCodingServerPipelineTests(unittest.TestCase):
+    def test_wind_streamline_shadow_is_post_base_non_advertised_evidence(self):
+        with tempfile.TemporaryDirectory(prefix="xcb_runner_shadow_") as tmp:
+            root = Path(tmp)
+            metadata_path = (
+                root
+                / "web_exports"
+                / "wind_maps"
+                / "icon-ch1"
+                / "20260716_1500"
+                / "800m_AGL"
+                / "metadata.json"
+            )
+            metadata_path.parent.mkdir(parents=True)
+            metadata_path.write_text("{}\n", encoding="utf-8")
+            run_dir = root / "run"
+            log_dir = run_dir / "logs"
+            log_dir.mkdir(parents=True)
+            args = argparse.Namespace(wind_streamline_shadow_workers=4)
+
+            def complete_shadow(*call_args, **call_kwargs):
+                command = call_args[1]
+                output = Path(command[command.index("--output-dir") + 1])
+                output.mkdir(parents=True)
+                (output / "manifest.json").write_text(
+                    json.dumps(
+                        {
+                            "revision": "fixture-revision",
+                            "counts": {"steps": 34, "tiles": 1326},
+                        }
+                    ),
+                    encoding="utf-8",
+                )
+                (output / "benchmark.json").write_text(
+                    json.dumps(
+                        {
+                            "wall_ms": 127_598.203,
+                            "aggregate_worker_peak_rss_bytes": 1_694_605_312,
+                        }
+                    ),
+                    encoding="utf-8",
+                )
+                return subprocess.CompletedProcess(command, 0, "")
+
+            base_ready = dt.datetime.now(dt.timezone.utc)
+            with mock.patch.object(runner, "REPO_ROOT", root), mock.patch.object(
+                runner,
+                "run_checked",
+                side_effect=complete_shadow,
+            ) as run_checked:
+                evidence = runner.run_wind_streamline_shadow(
+                    args,
+                    {},
+                    log_dir,
+                    run_dir,
+                    ["python"],
+                    latest_ch1="20260716_1500",
+                    base_ready_at=base_ready,
+                )
+
+            call = run_checked.call_args
+            self.assertEqual(call.args[0], "wind-streamline-shadow")
+            self.assertTrue(call.kwargs["allow_failure"])
+            self.assertEqual(call.kwargs["env"]["OMP_NUM_THREADS"], "1")
+            self.assertEqual(evidence["status"], "succeeded")
+            self.assertFalse(evidence["advertised"])
+            self.assertEqual(evidence["revision"], "fixture-revision")
+            self.assertEqual(evidence["counts"]["steps"], 34)
+            recorded = json.loads(
+                (run_dir / "wind-streamline-shadow.json").read_text(
+                    encoding="utf-8"
+                )
+            )
+            self.assertEqual(recorded, evidence)
+
     def test_serial_publish_scopes_tile_generation_and_validation_to_current_pair(self):
         env = {"WEB_EXPORT_DATA_ROOT": "https://data.example/"}
         with mock.patch.object(runner, "run_checked") as run_checked:

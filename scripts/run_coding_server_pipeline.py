@@ -831,6 +831,115 @@ def deploy_outputs(args: argparse.Namespace, env: dict[str, str], log_dir: Path,
         )
 
 
+def run_wind_streamline_shadow(
+    args: argparse.Namespace,
+    env: dict[str, str],
+    log_dir: Path,
+    run_dir: Path,
+    py: list[str],
+    *,
+    latest_ch1: str,
+    base_ready_at: dt.datetime,
+) -> dict[str, Any]:
+    if not 1 <= args.wind_streamline_shadow_workers <= 6:
+        raise SystemExit("Wind streamline shadow workers must be between 1 and 6")
+    metadata_path = (
+        REPO_ROOT
+        / "web_exports"
+        / "wind_maps"
+        / "icon-ch1"
+        / latest_ch1
+        / "800m_AGL"
+        / "metadata.json"
+    )
+    if not metadata_path.is_file():
+        raise SystemExit(
+            f"Wind streamline shadow source metadata is missing: {metadata_path}"
+        )
+    output_directory = (
+        run_dir
+        / "wind_streamline_shadow"
+        / "icon-ch1"
+        / latest_ch1
+        / "800m_AGL"
+    )
+    shadow_env = dict(env)
+    shadow_env.update(
+        {
+            "OMP_NUM_THREADS": "1",
+            "OPENBLAS_NUM_THREADS": "1",
+            "MKL_NUM_THREADS": "1",
+        }
+    )
+    started_at = dt.datetime.now(dt.timezone.utc)
+    completed = run_checked(
+        "wind-streamline-shadow",
+        [
+            *py,
+            "scripts/build_wind_streamline_shadow.py",
+            str(metadata_path),
+            "--output-dir",
+            str(output_directory),
+            "--workers",
+            str(args.wind_streamline_shadow_workers),
+        ],
+        env=shadow_env,
+        log_dir=log_dir,
+        allow_failure=True,
+    )
+    finished_at = dt.datetime.now(dt.timezone.utc)
+    evidence: dict[str, Any] = {
+        "mode": "shadow",
+        "advertised": False,
+        "status": "succeeded" if completed.returncode == 0 else "failed",
+        "source_metadata": str(metadata_path),
+        "output_directory": str(output_directory),
+        "workers": args.wind_streamline_shadow_workers,
+        "base_ready_at": base_ready_at.isoformat(),
+        "shadow_started_at": started_at.isoformat(),
+        "shadow_finished_at": finished_at.isoformat(),
+        "post_base_elapsed_seconds": round(
+            (finished_at - base_ready_at).total_seconds(),
+            3,
+        ),
+        "shadow_elapsed_seconds": round(
+            (finished_at - started_at).total_seconds(),
+            3,
+        ),
+        "returncode": completed.returncode,
+    }
+    manifest_path = output_directory / "manifest.json"
+    benchmark_path = output_directory / "benchmark.json"
+    if completed.returncode == 0:
+        if not manifest_path.is_file() or not benchmark_path.is_file():
+            evidence["status"] = "failed"
+            evidence["error"] = "shadow command returned success without complete evidence"
+        else:
+            manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+            benchmark = json.loads(benchmark_path.read_text(encoding="utf-8"))
+            evidence.update(
+                {
+                    "revision": manifest["revision"],
+                    "counts": manifest["counts"],
+                    "wall_ms": benchmark["wall_ms"],
+                    "aggregate_worker_peak_rss_bytes": benchmark[
+                        "aggregate_worker_peak_rss_bytes"
+                    ],
+                }
+            )
+    evidence_path = run_dir / "wind-streamline-shadow.json"
+    evidence_path.write_text(
+        json.dumps(evidence, indent=2, sort_keys=True) + "\n",
+        encoding="utf-8",
+    )
+    log(
+        "wind streamline shadow "
+        f"status={evidence['status']} advertised=false "
+        f"evidence={evidence_path}"
+    )
+    return evidence
+
+
 def push_data_branch_snapshot(args: argparse.Namespace, env: dict[str, str], log_dir: Path, run_dir: Path) -> None:
     source = REPO_ROOT / "web_exports"
     if not (source / "manifest.json").exists():
@@ -944,6 +1053,20 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--skip-deploy", action="store_true", help="Generate and validate web_exports but do not publish them.")
     parser.add_argument("--skip-static-prewarm", action="store_true")
     parser.add_argument("--skip-remote-validate", action="store_true")
+    parser.add_argument(
+        "--wind-streamline-shadow",
+        action="store_true",
+        default=env_bool("ENABLE_WIND_STREAMLINE_SHADOW", False),
+        help=(
+            "After the normal forecast is ready, build a local non-advertised "
+            "ICON-CH1 800m_AGL XWS2 shadow package."
+        ),
+    )
+    parser.add_argument(
+        "--wind-streamline-shadow-workers",
+        type=int,
+        default=parse_int_env("WIND_STREAMLINE_SHADOW_WORKERS", 4),
+    )
     parser.add_argument("--restore-web-exports", dest="restore_web_exports", action="store_true", default=env_bool("XCBENZ_RESTORE_WEB_EXPORTS", True))
     parser.add_argument("--no-restore-web-exports", dest="restore_web_exports", action="store_false")
     parser.add_argument("--push-data-branch", dest="push_data_branch", action="store_true", default=None)
@@ -1033,6 +1156,17 @@ def run_pipeline(args: argparse.Namespace) -> int:
         )
         if deploy:
             deploy_outputs(args, base_env, log_dir, py)
+        base_ready_at = dt.datetime.now(dt.timezone.utc)
+        if args.wind_streamline_shadow:
+            run_wind_streamline_shadow(
+                args,
+                base_env,
+                log_dir,
+                run_dir,
+                py,
+                latest_ch1=latest_ch1,
+                base_ready_at=base_ready_at,
+            )
         if args.push_data_branch:
             push_data_branch_snapshot(args, base_env, log_dir, run_dir)
     finally:

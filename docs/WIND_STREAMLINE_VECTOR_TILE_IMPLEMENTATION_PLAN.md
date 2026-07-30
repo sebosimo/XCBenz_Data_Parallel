@@ -1,6 +1,7 @@
 # Wind streamline vector-tile implementation plan
 
-- Status: reviewed proposal; Codex and Claude Opus accepted the plan
+- Status: reviewed proposal; Phase-A optimized shadow generator implemented
+  and measured; frontend and production-advertisement work remains
 - Scope: ICON-CH1 `800m_AGL` pilot
 - Repositories: `XCBenz_Data_Parallel` producer and `XCBenz_Web` consumer
 - Fallback: existing U/V grid and browser streamline worker remain mandatory

@@ -1,0 +1,59 @@
+{
+  "fixture_schema_version": 1,
+  "contract": "xcbenz-wind-streamline-tiles",
+  "contract_version": "2.0.0-shadow.1",
+  "package": "immutable-xyz-xws2-v1",
+  "generator_revision": "xws2-phase-a-vectorized-mercator-v1",
+  "profile": {
+    "id": 77,
+    "name": "fixture",
+    "tile_zoom": 6,
+    "pixels_per_mercator_unit": 8000,
+    "quantization_bounds": [0.5, 0.3, 0.6, 0.4]
+  },
+  "tile": {
+    "coordinates": [33, 22],
+    "byte_length": 64,
+    "sha256": "5ed2d4deb39168d7edf17b3921c054992a20e34a82582c5ec86c683442452b85",
+    "payload_hex": "58575332020020004d06000021000000160000000200000005000000c8699d260c0005039a33ffff019833be149a33be1406020a02ac069a3399b302b2669a33",
+    "fragments": [
+      {
+        "path_id": 12,
+        "fragment_order": 0,
+        "flags": 5,
+        "terminal_speed_ms": 0.0,
+        "points": [[6554, 32767], [9830, 34078], [13107, 35389]]
+      },
+      {
+        "path_id": 18,
+        "fragment_order": 2,
+        "flags": 10,
+        "terminal_speed_ms": 8.12,
+        "points": [[6554, 39321], [13107, 42598]]
+      }
+    ]
+  },
+  "revision": {
+    "id": "aa85e0fe81a32eba",
+    "sha256": "aa85e0fe81a32ebab48fe82b1820e1a0933be334f50f9567a488eb6e0af1a21a",
+    "record": {
+      "contract": "xcbenz-wind-streamline-tiles",
+      "contract_version": "2.0.0-shadow.1",
+      "generator_revision": "xws2-phase-a-vectorized-mercator-v1",
+      "package": "immutable-xyz-xws2-v1",
+      "profile": {
+        "id": 77,
+        "name": "fixture",
+        "quantization_bounds": [0.5, 0.3, 0.6, 0.4],
+        "tile_zoom": 6
+      },
+      "tiles": [
+        {
+          "byte_length": 64,
+          "logical_path": "fixture/H00/z6/33_22.xws",
+          "sha256": "5ed2d4deb39168d7edf17b3921c054992a20e34a82582c5ec86c683442452b85"
+        }
+      ]
+    }
+  }
+}
