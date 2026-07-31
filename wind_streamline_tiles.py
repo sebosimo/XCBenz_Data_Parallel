@@ -28,6 +28,7 @@ from typing import Any, Iterable, Iterator, Sequence
 
 import numpy as np
 
+from pipeline_orchestration.job_plan import expected_horizon_count
 from wind_streamline_feasibility import (
     Geometry,
     TILE_PROFILES,
@@ -1365,6 +1366,13 @@ def _assert_owned_build_path(path: Path, parent: Path) -> None:
         raise ValueError(f"refusing to remove unowned shadow build path {resolved}")
 
 
+def expected_complete_pilot_steps(model: str, run: str) -> list[str]:
+    """Return the complete published timeline for a supported pilot run."""
+    count = expected_horizon_count(model, run)
+    digits = 2 if model in {"ch1", "icon-ch1"} else 3
+    return [f"H{index:0{digits}d}" for index in range(count)]
+
+
 def validate_shadow_package(
     package_directory: Path,
     *,
@@ -1410,10 +1418,13 @@ def validate_shadow_package(
         or len(set(step_labels)) != len(step_labels)
     ):
         raise ValueError("XWS2 package steps are invalid or duplicated")
-    if require_complete_pilot and step_labels != [
-        f"H{index:02d}" for index in range(34)
-    ]:
-        raise ValueError("XWS2 beta2 pilot requires the complete H00-H33 timeline")
+    if require_complete_pilot:
+        expected_steps = expected_complete_pilot_steps(str(source["model"]), run)
+        if step_labels != expected_steps:
+            raise ValueError(
+                "XWS2 beta2 pilot requires the complete "
+                f"{expected_steps[0]}-{expected_steps[-1]} timeline"
+            )
 
     revision = manifest.get("revision")
     revision_sha256 = manifest.get("revision_sha256")

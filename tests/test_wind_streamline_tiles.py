@@ -32,6 +32,7 @@ from wind_streamline_tiles import (
     build_shadow_package,
     decode_tile,
     encode_tile,
+    expected_complete_pilot_steps,
     integrate_projected_paths,
     integrate_projected_paths_vectorized,
     partition_paths,
@@ -97,6 +98,16 @@ def write_fixture(root: Path, steps=("H00",)) -> Path:
 
 
 class WindStreamlineTileTests(unittest.TestCase):
+    def test_complete_pilot_timeline_follows_the_run_cycle(self):
+        self.assertEqual(
+            expected_complete_pilot_steps("icon-ch1", "20260731_1200")[-1],
+            "H33",
+        )
+        self.assertEqual(
+            expected_complete_pilot_steps("icon-ch1", "20260731_0300")[-1],
+            "H45",
+        )
+
     def test_canonical_xws2_fixture_locks_bytes_decode_and_revision(self):
         fixture_path = (
             Path(__file__).parent

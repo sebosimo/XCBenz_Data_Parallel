@@ -146,7 +146,7 @@ else
     rm -rf '$REMOTE_TMP'
     mkdir -p '$REMOTE_TMP'
   "
-  log "Uploading 34-step package to the isolated temporary path"
+  log "Uploading complete package to the isolated temporary path"
   rsync -az --stats -e "$RSYNC_SSH" \
     "$PACKAGE_DIRECTORY/" "$SSH_TARGET:$REMOTE_TMP/"
   remote_sha256="$(ssh "${SSH_OPTS[@]}" "$SSH_TARGET" \
