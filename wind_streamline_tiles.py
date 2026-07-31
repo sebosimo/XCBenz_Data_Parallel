@@ -42,11 +42,11 @@ from wind_streamline_feasibility import (
 
 
 CONTRACT = "xcbenz-wind-streamline-tiles"
-CONTRACT_VERSION = "2.2.0-shadow.1"
+CONTRACT_VERSION = "2.3.0-shadow.1"
 PACKAGE = "immutable-xyz-xws2-v1"
-GENERATOR_REVISION = "xws2-ranked-three-lod-mercator-v1"
+GENERATOR_REVISION = "xws2-fixed-four-lod-mercator-v1"
 MANIFEST_LAYOUT = "split-step-index-v1"
-DENSITY_RANK_ALGORITHM = "path-id-mix32-v1"
+LOD_SELECTION_ALGORITHM = "fixed-camera-scale-bands-v1"
 MAGIC = b"XWS2"
 VERSION = 2
 HEADER = struct.Struct("<4sBBHBBHIIIII")
@@ -82,29 +82,44 @@ class ProductionProfile:
         )
 
 
+_COMPACT_GEOMETRY = TILE_PROFILES["compact-regional"].geometry
+_DETAIL_GEOMETRY = TILE_PROFILES["shared-detail"].geometry
+
 PROFILES = {
-    "compact-overview": ProductionProfile.from_feasibility(
-        1, TILE_PROFILES["compact-overview"]
+    "lod-overview": ProductionProfile(
+        1,
+        "lod-overview",
+        5,
+        9_500.0,
+        _COMPACT_GEOMETRY,
     ),
-    "compact-regional": ProductionProfile.from_feasibility(
-        2, TILE_PROFILES["compact-regional"]
+    "lod-regional": ProductionProfile(
+        2,
+        "lod-regional",
+        6,
+        27_000.0,
+        _COMPACT_GEOMETRY,
     ),
-    "shared-detail": ProductionProfile.from_feasibility(
-        5, TILE_PROFILES["shared-detail"]
+    "lod-local": ProductionProfile(
+        3,
+        "lod-local",
+        7,
+        52_000.0,
+        _DETAIL_GEOMETRY,
     ),
-    "wide-overview": ProductionProfile.from_feasibility(
-        3, TILE_PROFILES["wide-overview"]
-    ),
-    "wide-regional": ProductionProfile.from_feasibility(
-        4, TILE_PROFILES["wide-regional"]
+    "lod-detail": ProductionProfile(
+        4,
+        "lod-detail",
+        8,
+        72_000.0,
+        _DETAIL_GEOMETRY,
     ),
 }
 DEFAULT_PROFILE_NAMES = (
-    "compact-overview",
-    "compact-regional",
-    "shared-detail",
-    "wide-overview",
-    "wide-regional",
+    "lod-overview",
+    "lod-regional",
+    "lod-local",
+    "lod-detail",
 )
 
 
@@ -209,13 +224,6 @@ def _peak_rss_bytes() -> int:
 
 
 def _profile_payload(profile: ProductionProfile, lattice: SeedLattice) -> dict[str, Any]:
-    if profile.name == "shared-detail":
-        responsive_modes = ["compact", "wide"]
-        selection_scales = {"compact": 72_000.0, "wide": 120_000.0}
-    else:
-        mode = "wide" if profile.geometry.uses_wide_spacing else "compact"
-        responsive_modes = [mode]
-        selection_scales = {mode: profile.pixels_per_mercator_unit}
     return {
         "id": profile.id,
         "name": profile.name,
@@ -224,12 +232,10 @@ def _profile_payload(profile: ProductionProfile, lattice: SeedLattice) -> dict[s
         "tile_size": round(TILE_SIZE),
         "pixels_per_mercator_unit": profile.pixels_per_mercator_unit,
         "geometry": asdict(profile.geometry),
-        "density_control": {
-            "algorithm": DENSITY_RANK_ALGORITHM,
-            "exponent": 2.0,
-            "minimum_keep_fraction": 0.08,
-            "responsive_modes": responsive_modes,
-            "selection_scales": selection_scales,
+        "lod_control": {
+            "algorithm": LOD_SELECTION_ALGORITHM,
+            "responsive_modes": ["compact", "wide"],
+            "selection_scale": profile.pixels_per_mercator_unit,
         },
         "lattice": asdict(lattice),
     }

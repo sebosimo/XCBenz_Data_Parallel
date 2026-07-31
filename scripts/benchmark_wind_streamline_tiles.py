@@ -23,8 +23,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--profiles",
         default=(
-            "compact-overview,compact-regional,shared-detail,"
-            "wide-overview,wide-regional"
+            "lod-overview,lod-regional,lod-local,lod-detail"
         ),
         help=f"Comma-separated profiles ({','.join(TILE_PROFILES)})",
     )
