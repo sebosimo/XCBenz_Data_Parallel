@@ -368,6 +368,10 @@ class WindStreamlineTileTests(unittest.TestCase):
             profiles["lod-local"]["profile"]["geometry"]["dx_px"],
             14.0,
         )
+        self.assertEqual(
+            profiles["lod-detail"]["profile"]["geometry"],
+            profiles["lod-local"]["profile"]["geometry"],
+        )
         validated = validate_shadow_package(root / "one-worker")
         self.assertEqual(validated["counts"], first["manifest"]["counts"])
         self.assertEqual(validated["revision"], first["manifest"]["revision"])

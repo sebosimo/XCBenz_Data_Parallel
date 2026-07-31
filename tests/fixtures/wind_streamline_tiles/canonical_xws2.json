@@ -3,7 +3,7 @@
   "contract": "xcbenz-wind-streamline-tiles",
   "contract_version": "2.3.0-shadow.1",
   "package": "immutable-xyz-xws2-v1",
-  "generator_revision": "xws2-fixed-four-even-lod-mercator-v1",
+  "generator_revision": "xws2-fixed-four-stable-lod-mercator-v2",
   "profile": {
     "id": 77,
     "name": "fixture",
@@ -34,12 +34,12 @@
     ]
   },
   "revision": {
-    "id": "6c41300dd95c4d94",
-    "sha256": "6c41300dd95c4d94efac8d88f5125c1a12b5aa39fabcd0aec8f8781aa7db9ac2",
+    "id": "87b17235604db4bb",
+    "sha256": "87b17235604db4bb889ef3f051597b557ab8780e24f89421e6a008e2dc91d135",
     "record": {
       "contract": "xcbenz-wind-streamline-tiles",
       "contract_version": "2.3.0-shadow.1",
-      "generator_revision": "xws2-fixed-four-even-lod-mercator-v1",
+      "generator_revision": "xws2-fixed-four-stable-lod-mercator-v2",
       "package": "immutable-xyz-xws2-v1",
       "profile": {
         "id": 77,

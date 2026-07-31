@@ -44,7 +44,7 @@ from wind_streamline_feasibility import (
 CONTRACT = "xcbenz-wind-streamline-tiles"
 CONTRACT_VERSION = "2.3.0-shadow.1"
 PACKAGE = "immutable-xyz-xws2-v1"
-GENERATOR_REVISION = "xws2-fixed-four-even-lod-mercator-v1"
+GENERATOR_REVISION = "xws2-fixed-four-stable-lod-mercator-v2"
 MANIFEST_LAYOUT = "split-step-index-v1"
 LOD_SELECTION_ALGORITHM = "fixed-camera-scale-bands-v1"
 MAGIC = b"XWS2"
@@ -83,7 +83,6 @@ class ProductionProfile:
 
 
 _COMPACT_GEOMETRY = TILE_PROFILES["compact-regional"].geometry
-_DETAIL_GEOMETRY = TILE_PROFILES["shared-detail"].geometry
 _CONTROL_ZOOM_FACTOR = 1.65
 _REGIONAL_SELECTION_SCALE = 27_000.0
 _LOD_SELECTION_SCALES = {
@@ -100,6 +99,16 @@ _LOCAL_GEOMETRY = Geometry(
     _COMPACT_GEOMETRY.steps,
     _COMPACT_GEOMETRY.stroke_opacity,
     _COMPACT_GEOMETRY.trajectory_seconds,
+    False,
+)
+_DETAIL_GEOMETRY = Geometry(
+    _LOCAL_GEOMETRY.dx_px,
+    _LOCAL_GEOMETRY.dy_px,
+    _LOCAL_GEOMETRY.line_width,
+    _LOCAL_GEOMETRY.max_len_px,
+    _LOCAL_GEOMETRY.steps,
+    _LOCAL_GEOMETRY.stroke_opacity,
+    _LOCAL_GEOMETRY.trajectory_seconds,
     False,
 )
 
