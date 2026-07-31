@@ -337,6 +337,7 @@ class WindStreamlineTileTests(unittest.TestCase):
             [
                 "compact-overview",
                 "compact-regional",
+                "shared-detail",
                 "wide-overview",
                 "wide-regional",
             ],
@@ -349,6 +350,21 @@ class WindStreamlineTileTests(unittest.TestCase):
         )
         self.assertIn("profiles", step_document["step"])
         self.assertIn("compact-regional", step_document["step"]["profiles"])
+        self.assertEqual(
+            step_document["step"]["profiles"]["shared-detail"]["profile"][
+                "density_control"
+            ],
+            {
+                "algorithm": "path-id-mix32-v1",
+                "exponent": 2.0,
+                "minimum_keep_fraction": 0.08,
+                "responsive_modes": ["compact", "wide"],
+                "selection_scales": {
+                    "compact": 72_000.0,
+                    "wide": 120_000.0,
+                },
+            },
+        )
         validated = validate_shadow_package(root / "one-worker")
         self.assertEqual(validated["counts"], first["manifest"]["counts"])
         self.assertEqual(validated["revision"], first["manifest"]["revision"])

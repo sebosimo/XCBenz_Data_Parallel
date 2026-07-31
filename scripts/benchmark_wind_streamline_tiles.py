@@ -22,7 +22,10 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--step", default="H00")
     parser.add_argument(
         "--profiles",
-        default="compact-overview,compact-regional,wide-overview,wide-regional",
+        default=(
+            "compact-overview,compact-regional,shared-detail,"
+            "wide-overview,wide-regional"
+        ),
         help=f"Comma-separated profiles ({','.join(TILE_PROFILES)})",
     )
     parser.add_argument("--output-dir", type=Path, required=True)

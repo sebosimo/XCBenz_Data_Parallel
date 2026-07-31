@@ -85,6 +85,12 @@ TILE_PROFILES = {
         27_000.0,
         Geometry(10.56, 8.8704, 0.5, 186.0, 52, 0.72, 4_099.0625, False),
     ),
+    "shared-detail": TileProfile(
+        "shared-detail",
+        8,
+        72_000.0,
+        Geometry(10.56, 8.8704, 0.5, 210.0, 58, 0.72, 4_628.0, False),
+    ),
     "wide-overview": TileProfile(
         "wide-overview",
         5,
@@ -101,6 +107,7 @@ TILE_PROFILES = {
 DEFAULT_TILE_PROFILES = (
     TILE_PROFILES["compact-overview"],
     TILE_PROFILES["compact-regional"],
+    TILE_PROFILES["shared-detail"],
     TILE_PROFILES["wide-overview"],
     TILE_PROFILES["wide-regional"],
 )

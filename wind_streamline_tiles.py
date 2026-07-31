@@ -42,10 +42,11 @@ from wind_streamline_feasibility import (
 
 
 CONTRACT = "xcbenz-wind-streamline-tiles"
-CONTRACT_VERSION = "2.1.0-shadow.1"
+CONTRACT_VERSION = "2.2.0-shadow.1"
 PACKAGE = "immutable-xyz-xws2-v1"
-GENERATOR_REVISION = "xws2-phase-a-vectorized-mercator-v1"
+GENERATOR_REVISION = "xws2-ranked-three-lod-mercator-v1"
 MANIFEST_LAYOUT = "split-step-index-v1"
+DENSITY_RANK_ALGORITHM = "path-id-mix32-v1"
 MAGIC = b"XWS2"
 VERSION = 2
 HEADER = struct.Struct("<4sBBHBBHIIIII")
@@ -88,6 +89,9 @@ PROFILES = {
     "compact-regional": ProductionProfile.from_feasibility(
         2, TILE_PROFILES["compact-regional"]
     ),
+    "shared-detail": ProductionProfile.from_feasibility(
+        5, TILE_PROFILES["shared-detail"]
+    ),
     "wide-overview": ProductionProfile.from_feasibility(
         3, TILE_PROFILES["wide-overview"]
     ),
@@ -98,6 +102,7 @@ PROFILES = {
 DEFAULT_PROFILE_NAMES = (
     "compact-overview",
     "compact-regional",
+    "shared-detail",
     "wide-overview",
     "wide-regional",
 )
@@ -204,6 +209,13 @@ def _peak_rss_bytes() -> int:
 
 
 def _profile_payload(profile: ProductionProfile, lattice: SeedLattice) -> dict[str, Any]:
+    if profile.name == "shared-detail":
+        responsive_modes = ["compact", "wide"]
+        selection_scales = {"compact": 72_000.0, "wide": 120_000.0}
+    else:
+        mode = "wide" if profile.geometry.uses_wide_spacing else "compact"
+        responsive_modes = [mode]
+        selection_scales = {mode: profile.pixels_per_mercator_unit}
     return {
         "id": profile.id,
         "name": profile.name,
@@ -212,6 +224,13 @@ def _profile_payload(profile: ProductionProfile, lattice: SeedLattice) -> dict[s
         "tile_size": round(TILE_SIZE),
         "pixels_per_mercator_unit": profile.pixels_per_mercator_unit,
         "geometry": asdict(profile.geometry),
+        "density_control": {
+            "algorithm": DENSITY_RANK_ALGORITHM,
+            "exponent": 2.0,
+            "minimum_keep_fraction": 0.08,
+            "responsive_modes": responsive_modes,
+            "selection_scales": selection_scales,
+        },
         "lattice": asdict(lattice),
     }
 
@@ -1459,7 +1478,11 @@ def validate_shadow_package(
     for step in steps:
         step_label = step["step"]
         profiles = step.get("profiles")
-        if not isinstance(profiles, dict) or list(profiles) != list(profile_names):
+        if (
+            not isinstance(profiles, dict)
+            or len(profiles) != len(profile_names)
+            or set(profiles) != set(profile_names)
+        ):
             raise ValueError(f"XWS2 {step_label} profile set is invalid")
         for profile_name in profile_names:
             profile = PROFILES[profile_name]
