@@ -44,7 +44,7 @@ from wind_streamline_feasibility import (
 CONTRACT = "xcbenz-wind-streamline-tiles"
 CONTRACT_VERSION = "2.3.0-shadow.1"
 PACKAGE = "immutable-xyz-xws2-v1"
-GENERATOR_REVISION = "xws2-fixed-four-lod-mercator-v1"
+GENERATOR_REVISION = "xws2-fixed-four-even-lod-mercator-v1"
 MANIFEST_LAYOUT = "split-step-index-v1"
 LOD_SELECTION_ALGORITHM = "fixed-camera-scale-bands-v1"
 MAGIC = b"XWS2"
@@ -84,6 +84,24 @@ class ProductionProfile:
 
 _COMPACT_GEOMETRY = TILE_PROFILES["compact-regional"].geometry
 _DETAIL_GEOMETRY = TILE_PROFILES["shared-detail"].geometry
+_CONTROL_ZOOM_FACTOR = 1.65
+_REGIONAL_SELECTION_SCALE = 27_000.0
+_LOD_SELECTION_SCALES = {
+    "lod-overview": _REGIONAL_SELECTION_SCALE / _CONTROL_ZOOM_FACTOR,
+    "lod-regional": _REGIONAL_SELECTION_SCALE,
+    "lod-local": _REGIONAL_SELECTION_SCALE * _CONTROL_ZOOM_FACTOR,
+    "lod-detail": _REGIONAL_SELECTION_SCALE * _CONTROL_ZOOM_FACTOR**2,
+}
+_LOCAL_GEOMETRY = Geometry(
+    14.0,
+    11.76,
+    _COMPACT_GEOMETRY.line_width,
+    _COMPACT_GEOMETRY.max_len_px,
+    _COMPACT_GEOMETRY.steps,
+    _COMPACT_GEOMETRY.stroke_opacity,
+    _COMPACT_GEOMETRY.trajectory_seconds,
+    False,
+)
 
 PROFILES = {
     "lod-overview": ProductionProfile(
@@ -97,15 +115,15 @@ PROFILES = {
         2,
         "lod-regional",
         6,
-        27_000.0,
+        _REGIONAL_SELECTION_SCALE,
         _COMPACT_GEOMETRY,
     ),
     "lod-local": ProductionProfile(
         3,
         "lod-local",
         7,
-        52_000.0,
-        _DETAIL_GEOMETRY,
+        _REGIONAL_SELECTION_SCALE * _CONTROL_ZOOM_FACTOR,
+        _LOCAL_GEOMETRY,
     ),
     "lod-detail": ProductionProfile(
         4,
@@ -235,7 +253,7 @@ def _profile_payload(profile: ProductionProfile, lattice: SeedLattice) -> dict[s
         "lod_control": {
             "algorithm": LOD_SELECTION_ALGORITHM,
             "responsive_modes": ["compact", "wide"],
-            "selection_scale": profile.pixels_per_mercator_unit,
+            "selection_scale": _LOD_SELECTION_SCALES[profile.name],
         },
         "lattice": asdict(lattice),
     }

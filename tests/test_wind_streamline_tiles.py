@@ -349,15 +349,24 @@ class WindStreamlineTileTests(unittest.TestCase):
         )
         self.assertIn("profiles", step_document["step"])
         self.assertIn("lod-regional", step_document["step"]["profiles"])
+        profiles = step_document["step"]["profiles"]
+        scales = [
+            profiles[name]["profile"]["lod_control"]["selection_scale"]
+            for name in first["manifest"]["profile_names"]
+        ]
         self.assertEqual(
-            step_document["step"]["profiles"]["lod-detail"]["profile"][
-                "lod_control"
-            ],
-            {
-                "algorithm": "fixed-camera-scale-bands-v1",
-                "responsive_modes": ["compact", "wide"],
-                "selection_scale": 72_000.0,
-            },
+            profiles["lod-detail"]["profile"]["lod_control"]["algorithm"],
+            "fixed-camera-scale-bands-v1",
+        )
+        self.assertEqual(
+            profiles["lod-detail"]["profile"]["lod_control"]["responsive_modes"],
+            ["compact", "wide"],
+        )
+        for lower, upper in zip(scales, scales[1:]):
+            self.assertAlmostEqual(upper / lower, 1.65)
+        self.assertEqual(
+            profiles["lod-local"]["profile"]["geometry"]["dx_px"],
+            14.0,
         )
         validated = validate_shadow_package(root / "one-worker")
         self.assertEqual(validated["counts"], first["manifest"]["counts"])
