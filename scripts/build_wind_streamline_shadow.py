@@ -17,7 +17,12 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
-from wind_streamline_tiles import DEFAULT_PROFILE_NAMES, PROFILES, build_shadow_package
+from wind_streamline_tiles import (
+    COMPACT_VARIANT_PRESETS,
+    DEFAULT_PROFILE_NAMES,
+    PROFILES,
+    build_shadow_package,
+)
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -34,7 +39,23 @@ def build_parser() -> argparse.ArgumentParser:
         help=f"Comma-separated profiles ({','.join(PROFILES)})",
     )
     parser.add_argument("--workers", type=int, default=min(4, os.cpu_count() or 1))
-    parser.add_argument("--simplify-px", type=float, default=0.50)
+    parser.add_argument(
+        "--variant",
+        choices=tuple(COMPACT_VARIANT_PRESETS),
+        default="baseline",
+        help="Named size/quality experiment preset",
+    )
+    parser.add_argument(
+        "--simplify-px",
+        type=float,
+        help="Override the preset simplification tolerance",
+    )
+    parser.add_argument(
+        "--quantization-bits",
+        type=int,
+        choices=range(12, 17),
+        help="Override the preset coordinate quantization",
+    )
     parser.add_argument(
         "--integration",
         choices=("vectorized", "scalar"),
@@ -53,14 +74,28 @@ def main(argv: Sequence[str] | None = None) -> int:
     profiles = [
         item.strip() for item in args.profiles.split(",") if item.strip()
     ]
+    preset = COMPACT_VARIANT_PRESETS[args.variant]
+    quantization_maximum = (
+        (1 << args.quantization_bits) - 1
+        if args.quantization_bits is not None
+        else preset["quantization_maximum"]
+    )
     result = build_shadow_package(
         args.metadata,
         args.output_dir,
         steps=steps,
         profile_names=profiles,
-        simplify_tolerance_px=args.simplify_px,
+        simplify_tolerance_px=(
+            args.simplify_px
+            if args.simplify_px is not None
+            else preset["simplification_tolerance_px"]
+        ),
         workers=args.workers,
         integration_mode=args.integration,
+        experiment_variant=args.variant,
+        quantization_maximum=quantization_maximum,
+        collapse_quantized_duplicates=preset["collapse_quantized_duplicates"],
+        trajectory_scales=preset["trajectory_scales"],
     )
     manifest = result["manifest"]
     benchmark = result["benchmark"]

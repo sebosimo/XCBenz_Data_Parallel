@@ -22,7 +22,7 @@ import tempfile
 import time
 import zlib
 from collections import defaultdict
-from dataclasses import asdict, dataclass
+from dataclasses import asdict, dataclass, replace
 from pathlib import Path, PurePosixPath
 from typing import Any, Iterable, Iterator, Sequence
 
@@ -53,6 +53,7 @@ VERSION = 2
 HEADER = struct.Struct("<4sBBHBBHIIIII")
 HEADER_FLAGS = 0
 QUANTIZATION_MAX = 65_535
+SUPPORTED_QUANTIZATION_MAXIMA = frozenset((4_095, 8_191, 16_383, 32_767, 65_535))
 TILE_SIZE = 512.0
 ORIGINAL_START = 1 << 0
 CONTINUES_BEFORE = 1 << 1
@@ -62,6 +63,35 @@ KNOWN_FRAGMENT_FLAGS = ORIGINAL_START | CONTINUES_BEFORE | CONTINUES_AFTER | ORI
 MAX_TILE_BYTES = 32 * 1024 * 1024
 MAX_TILE_FRAGMENTS = 100_000
 MAX_TILE_POINTS = 5_000_000
+
+COMPACT_VARIANT_PRESETS = {
+    "baseline": {
+        "collapse_quantized_duplicates": False,
+        "quantization_maximum": 65_535,
+        "simplification_tolerance_px": 0.50,
+        "trajectory_scales": {},
+    },
+    "recommended": {
+        "collapse_quantized_duplicates": True,
+        "quantization_maximum": 8_191,
+        "simplification_tolerance_px": 0.75,
+        "trajectory_scales": {
+            "lod-local": 0.90,
+            "lod-detail": 0.80,
+        },
+    },
+    "maximalist": {
+        "collapse_quantized_duplicates": True,
+        "quantization_maximum": 4_095,
+        "simplification_tolerance_px": 1.00,
+        "trajectory_scales": {
+            "lod-overview": 0.90,
+            "lod-regional": 0.85,
+            "lod-local": 0.70,
+            "lod-detail": 0.55,
+        },
+    },
+}
 
 
 @dataclass(frozen=True)
@@ -267,6 +297,22 @@ def _profile_payload(profile: ProductionProfile, lattice: SeedLattice) -> dict[s
         },
         "lattice": asdict(lattice),
     }
+
+
+def _scaled_profile(profile: ProductionProfile, trajectory_scale: float) -> ProductionProfile:
+    if not math.isfinite(trajectory_scale) or not 0 < trajectory_scale <= 1:
+        raise ValueError("XWS2 trajectory scales must be within (0, 1]")
+    if trajectory_scale == 1:
+        return profile
+    geometry = profile.geometry
+    return replace(
+        profile,
+        geometry=replace(
+            geometry,
+            steps=max(2, round(geometry.steps * trajectory_scale)),
+            trajectory_seconds=geometry.trajectory_seconds * trajectory_scale,
+        ),
+    )
 
 
 class WindGrid:
@@ -991,15 +1037,16 @@ def _unzigzag(value: int) -> int:
 def _quantize_point(
     point: tuple[float, float],
     quantization_bounds: tuple[float, float, float, float],
+    quantization_maximum: int = QUANTIZATION_MAX,
 ) -> tuple[int, int]:
     west_x, north_y, east_x, south_y = quantization_bounds
     qx = round(
         _clamp((point[0] - west_x) / (east_x - west_x), 0.0, 1.0)
-        * QUANTIZATION_MAX
+        * quantization_maximum
     )
     qy = round(
         _clamp((point[1] - north_y) / (south_y - north_y), 0.0, 1.0)
-        * QUANTIZATION_MAX
+        * quantization_maximum
     )
     return qx, qy
 
@@ -1009,7 +1056,12 @@ def encode_tile(
     profile: ProductionProfile,
     tile: tuple[int, int],
     quantization_bounds: tuple[float, float, float, float],
+    *,
+    collapse_quantized_duplicates: bool = False,
+    quantization_maximum: int = QUANTIZATION_MAX,
 ) -> tuple[bytes, dict[str, int]]:
+    if quantization_maximum not in SUPPORTED_QUANTIZATION_MAXIMA:
+        raise ValueError("XWS2 quantization maximum is unsupported")
     ordered = sorted(fragments, key=lambda item: (item.path_id, item.fragment_order))
     payload = bytearray()
     point_count = 0
@@ -1030,16 +1082,24 @@ def encode_tile(
             raise ValueError("fragment end flags are inconsistent")
         if len(fragment.points) < 2:
             raise ValueError("fragment must contain at least two points")
+        quantized = [
+            _quantize_point(point, quantization_bounds, quantization_maximum)
+            for point in fragment.points
+        ]
+        if collapse_quantized_duplicates:
+            collapsed = [quantized[0]]
+            collapsed.extend(
+                point for point in quantized[1:] if point != collapsed[-1]
+            )
+            if len(collapsed) >= 2:
+                quantized = collapsed
         path_delta = fragment.path_id if index == 0 else fragment.path_id - previous_path_id
         _append_varint(payload, path_delta)
         _append_varint(payload, fragment.fragment_order)
         payload.append(fragment.flags)
-        _append_varint(payload, len(fragment.points))
+        _append_varint(payload, len(quantized))
         if fragment.flags & ORIGINAL_END:
             _append_varint(payload, round(max(0.0, fragment.terminal_speed_ms) * 100.0))
-        quantized = [
-            _quantize_point(point, quantization_bounds) for point in fragment.points
-        ]
         previous_x, previous_y = quantized[0]
         _append_varint(payload, previous_x)
         _append_varint(payload, previous_y)
@@ -1076,7 +1136,11 @@ def decode_tile(
     data: bytes,
     profile: ProductionProfile,
     expected_tile: tuple[int, int],
+    *,
+    quantization_maximum: int = QUANTIZATION_MAX,
 ) -> DecodedTile:
+    if quantization_maximum not in SUPPORTED_QUANTIZATION_MAXIMA:
+        raise ValueError("XWS2 quantization maximum is unsupported")
     if len(data) < HEADER.size:
         raise ValueError("XWS2 tile is shorter than its header")
     if len(data) > MAX_TILE_BYTES:
@@ -1140,7 +1204,7 @@ def decode_tile(
             terminal_speed = speed_centi_ms / 100.0
         qx, offset = _read_varint(payload, offset)
         qy, offset = _read_varint(payload, offset)
-        if qx > QUANTIZATION_MAX or qy > QUANTIZATION_MAX:
+        if qx > quantization_maximum or qy > quantization_maximum:
             raise ValueError("XWS2 coordinate exceeds its quantization domain")
         points = [(qx, qy)]
         for _ in range(count - 1):
@@ -1148,7 +1212,7 @@ def decode_tile(
             dy, offset = _read_varint(payload, offset)
             qx += _unzigzag(dx)
             qy += _unzigzag(dy)
-            if not (0 <= qx <= QUANTIZATION_MAX and 0 <= qy <= QUANTIZATION_MAX):
+            if not (0 <= qx <= quantization_maximum and 0 <= qy <= quantization_maximum):
                 raise ValueError("XWS2 coordinate exceeds its quantization domain")
             points.append((qx, qy))
         identity = (path_id, fragment_order)
@@ -1195,6 +1259,9 @@ def _step_record(
     profile_names: Sequence[str],
     simplify_tolerance_px: float,
     integration_mode: str,
+    quantization_maximum: int,
+    collapse_quantized_duplicates: bool,
+    trajectory_scales: dict[str, float],
 ) -> tuple[dict[str, Any], dict[str, Any]]:
     timer = PhaseTimer()
     total_started = time.perf_counter()
@@ -1208,7 +1275,10 @@ def _step_record(
     profile_metrics: dict[str, Any] = {}
 
     for profile_name in profile_names:
-        profile = PROFILES[profile_name]
+        profile = _scaled_profile(
+            PROFILES[profile_name],
+            trajectory_scales.get(profile_name, 1.0),
+        )
         with timer.measure(f"{profile_name}_integrate_ms"):
             integrator = (
                 integrate_projected_paths_vectorized
@@ -1231,8 +1301,15 @@ def _step_record(
                 profile,
                 tile,
                 quantization_bounds,
+                collapse_quantized_duplicates=collapse_quantized_duplicates,
+                quantization_maximum=quantization_maximum,
             )
-            decoded = decode_tile(bundle, profile, tile)
+            decoded = decode_tile(
+                bundle,
+                profile,
+                tile,
+                quantization_maximum=quantization_maximum,
+            )
             if (
                 len(decoded.fragments) != encoding["fragment_count"]
                 or decoded.point_count != encoding["point_count"]
@@ -1271,7 +1348,7 @@ def _step_record(
             "profile": _profile_payload(profile, lattice),
             "quantization": {
                 "coordinate_system": "normalized_web_mercator",
-                "maximum": QUANTIZATION_MAX,
+                "maximum": quantization_maximum,
                 "bounds": list(quantization_bounds),
             },
             "tiles": tile_records,
@@ -1309,12 +1386,23 @@ def generate_step_package(
     profile_names: Sequence[str] = DEFAULT_PROFILE_NAMES,
     simplify_tolerance_px: float = 0.50,
     integration_mode: str = "vectorized",
+    quantization_maximum: int = QUANTIZATION_MAX,
+    collapse_quantized_duplicates: bool = False,
+    trajectory_scales: dict[str, float] | None = None,
 ) -> tuple[dict[str, Any], dict[str, Any]]:
     unknown = sorted(set(profile_names) - set(PROFILES))
     if unknown:
         raise ValueError(f"unknown XWS2 profile(s): {', '.join(unknown)}")
     if integration_mode not in {"scalar", "vectorized"}:
         raise ValueError("XWS2 integration mode must be scalar or vectorized")
+    if quantization_maximum not in SUPPORTED_QUANTIZATION_MAXIMA:
+        raise ValueError("XWS2 quantization maximum is unsupported")
+    resolved_trajectory_scales = dict(trajectory_scales or {})
+    unknown_scales = sorted(set(resolved_trajectory_scales) - set(PROFILES))
+    if unknown_scales:
+        raise ValueError(
+            f"XWS2 trajectory scales contain unknown profiles: {', '.join(unknown_scales)}"
+        )
     return _step_record(
         Path(metadata_path),
         step_label,
@@ -1322,12 +1410,17 @@ def generate_step_package(
         tuple(profile_names),
         simplify_tolerance_px,
         integration_mode,
+        quantization_maximum,
+        collapse_quantized_duplicates,
+        {
+            name: resolved_trajectory_scales[name]
+            for name in profile_names
+            if name in resolved_trajectory_scales
+        },
     )
 
 
-def _worker_generate_step(
-    arguments: tuple[str, str, str, tuple[str, ...], float, str],
-):
+def _worker_generate_step(arguments: tuple[Any, ...]):
     (
         metadata_path,
         step_label,
@@ -1335,6 +1428,9 @@ def _worker_generate_step(
         profile_names,
         tolerance,
         integration_mode,
+        quantization_maximum,
+        collapse_quantized_duplicates,
+        trajectory_scales,
     ) = arguments
     return generate_step_package(
         Path(metadata_path),
@@ -1343,6 +1439,9 @@ def _worker_generate_step(
         profile_names=profile_names,
         simplify_tolerance_px=tolerance,
         integration_mode=integration_mode,
+        quantization_maximum=quantization_maximum,
+        collapse_quantized_duplicates=collapse_quantized_duplicates,
+        trajectory_scales=trajectory_scales,
     )
 
 
@@ -1404,6 +1503,12 @@ def validate_shadow_package(
     profile_names = manifest.get("profile_names")
     if profile_names != list(DEFAULT_PROFILE_NAMES):
         raise ValueError("XWS2 package profile set is unsupported")
+    experiment_variant = manifest.get("experiment_variant", "baseline")
+    if experiment_variant not in COMPACT_VARIANT_PRESETS:
+        raise ValueError("XWS2 package experiment variant is unsupported")
+    quantization_maximum = manifest.get("quantization_maximum", QUANTIZATION_MAX)
+    if quantization_maximum not in SUPPORTED_QUANTIZATION_MAXIMA:
+        raise ValueError("XWS2 package quantization maximum is unsupported")
     step_descriptors = manifest.get("steps")
     if not isinstance(step_descriptors, list) or not step_descriptors:
         raise ValueError("XWS2 package contains no steps")
@@ -1504,6 +1609,14 @@ def validate_shadow_package(
         "integration_mode": manifest.get("integration_mode"),
         "steps": steps,
     }
+    for optional_key in (
+        "experiment_variant",
+        "quantization_maximum",
+        "collapse_quantized_duplicates",
+        "trajectory_scales",
+    ):
+        if optional_key in manifest:
+            content[optional_key] = manifest[optional_key]
     revision_sha256 = _sha256_bytes(_canonical_json_bytes(content))
     if (
         manifest.get("revision_sha256") != revision_sha256
@@ -1532,11 +1645,13 @@ def validate_shadow_package(
             profile = PROFILES[profile_name]
             profile_record = profiles[profile_name]
             profile_identity = profile_record.get("profile") or {}
+            quantization = profile_record.get("quantization") or {}
             if (
                 profile_identity.get("id") != profile.id
                 or profile_identity.get("name") != profile.name
                 or profile_identity.get("tile_zoom") != profile.tile_zoom
                 or profile_identity.get("renderer_revision") != GENERATOR_REVISION
+                or quantization.get("maximum") != quantization_maximum
             ):
                 raise ValueError(
                     f"XWS2 {step_label}/{profile_name} profile identity is invalid"
@@ -1582,6 +1697,7 @@ def validate_shadow_package(
                     payload,
                     profile,
                     (record.get("x"), record.get("y")),
+                    quantization_maximum=quantization_maximum,
                 )
                 header = HEADER.unpack_from(payload)
                 if (
@@ -1633,6 +1749,10 @@ def build_shadow_package(
     simplify_tolerance_px: float = 0.50,
     workers: int = 1,
     integration_mode: str = "vectorized",
+    experiment_variant: str = "baseline",
+    quantization_maximum: int = QUANTIZATION_MAX,
+    collapse_quantized_duplicates: bool = False,
+    trajectory_scales: dict[str, float] | None = None,
 ) -> dict[str, Any]:
     metadata_path = Path(metadata_path).resolve()
     output_directory = Path(output_directory).resolve()
@@ -1644,9 +1764,27 @@ def build_shadow_package(
         raise ValueError("XWS2 shadow selection contains no profiles")
     if integration_mode not in {"scalar", "vectorized"}:
         raise ValueError("XWS2 integration mode must be scalar or vectorized")
+    if quantization_maximum not in SUPPORTED_QUANTIZATION_MAXIMA:
+        raise ValueError("XWS2 quantization maximum is unsupported")
+    if experiment_variant not in COMPACT_VARIANT_PRESETS:
+        raise ValueError("XWS2 experiment variant is unsupported")
     unknown_profiles = sorted(set(profile_names) - set(PROFILES))
     if unknown_profiles:
         raise ValueError(f"unknown XWS2 profile(s): {', '.join(unknown_profiles)}")
+    resolved_trajectory_scales = dict(trajectory_scales or {})
+    unknown_scale_profiles = sorted(set(resolved_trajectory_scales) - set(PROFILES))
+    if unknown_scale_profiles:
+        raise ValueError(
+            "unknown XWS2 trajectory scale profile(s): "
+            + ", ".join(unknown_scale_profiles)
+        )
+    selected_trajectory_scales = {
+        name: resolved_trajectory_scales[name]
+        for name in profile_names
+        if name in resolved_trajectory_scales
+    }
+    for profile_name, scale in selected_trajectory_scales.items():
+        _scaled_profile(PROFILES[profile_name], scale)
     metadata = json.loads(metadata_path.read_text(encoding="utf-8"))
     selected = _selected_steps(metadata, steps)
     if not selected:
@@ -1668,6 +1806,9 @@ def build_shadow_package(
                 tuple(profile_names),
                 simplify_tolerance_px,
                 integration_mode,
+                quantization_maximum,
+                collapse_quantized_duplicates,
+                selected_trajectory_scales,
             )
             for step in selected
         ]
@@ -1702,6 +1843,10 @@ def build_shadow_package(
                 "encoding": metadata.get("encoding"),
             },
             "profile_names": list(profile_names),
+            "experiment_variant": experiment_variant,
+            "quantization_maximum": quantization_maximum,
+            "collapse_quantized_duplicates": collapse_quantized_duplicates,
+            "trajectory_scales": selected_trajectory_scales,
             "simplification_tolerance_px": simplify_tolerance_px,
             "integration_mode": integration_mode,
             "steps": ordered_records,

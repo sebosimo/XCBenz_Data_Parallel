@@ -204,6 +204,53 @@ class WindStreamlineTileTests(unittest.TestCase):
         self.assertEqual(decoded.fragments[1].path_id, 18)
         self.assertEqual(decoded.fragments[1].terminal_speed_ms, 8.12)
 
+    def test_compact_quantization_collapses_duplicate_points(self):
+        profile = fixture_profile(zoom=1)
+        fragment = TileFragment(
+            path_id=3,
+            fragment_order=0,
+            flags=ORIGINAL_START | ORIGINAL_END,
+            terminal_speed_ms=4,
+            points=((0.1, 0.1), (0.100001, 0.100001), (0.2, 0.2)),
+        )
+        encoded, stats = encode_tile(
+            [fragment],
+            profile,
+            (0, 0),
+            (0, 0, 1, 1),
+            collapse_quantized_duplicates=True,
+            quantization_maximum=8_191,
+        )
+        decoded = decode_tile(
+            encoded,
+            profile,
+            (0, 0),
+            quantization_maximum=8_191,
+        )
+
+        self.assertEqual(stats["point_count"], 2)
+        self.assertEqual(decoded.point_count, 2)
+        self.assertLessEqual(max(decoded.fragments[0].points[1]), 8_191)
+
+    def test_compact_variant_is_revisioned_and_validated(self):
+        root = temporary_directory()
+        self.addCleanup(shutil_rmtree, root)
+        metadata_path = write_fixture(root / "source")
+        result = build_shadow_package(
+            metadata_path,
+            root / "compact",
+            experiment_variant="recommended",
+            quantization_maximum=8_191,
+            collapse_quantized_duplicates=True,
+            simplify_tolerance_px=0.75,
+            trajectory_scales={"lod-detail": 0.8},
+        )
+
+        self.assertEqual(result["manifest"]["experiment_variant"], "recommended")
+        self.assertEqual(result["manifest"]["quantization_maximum"], 8_191)
+        validated = validate_shadow_package(root / "compact")
+        self.assertEqual(validated["revision"], result["manifest"]["revision"])
+
     def test_xws2_rejects_crc_and_tile_identity_mismatch(self):
         profile = fixture_profile()
         fragment = TileFragment(
