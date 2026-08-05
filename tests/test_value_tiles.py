@@ -594,7 +594,7 @@ class ValueTileGenerationTests(unittest.TestCase):
         )
         self.assertNotIn("infomaniak-value-tiles-staging.htaccess", production_deploy)
         self.assertIn(
-            "for subtree in live_stations webcams radar_maps airspace fai_records; do",
+            "for subtree in live_stations webcams radar_maps airspace fai_records satellite_cloud_maps; do",
             production_deploy,
         )
         self.assertIn('EXPECTED_REMOTE_ROOT="sites/data.xcbenz.com/value-tiles-staging"', staging_deploy)
@@ -605,7 +605,7 @@ class ValueTileGenerationTests(unittest.TestCase):
         self.assertIn("EXPECTED_VALUE_TILES_STATE", staging_deploy)
         self.assertIn("PRODUCTION_WEB_EXPORTS", staging_deploy)
         self.assertIn(
-            "for subtree in live_stations webcams radar_maps airspace fai_records; do",
+            "for subtree in live_stations webcams radar_maps airspace fai_records satellite_cloud_maps; do",
             staging_deploy,
         )
         self.assertNotIn("deploy_data_infomaniak.sh", staging_deploy)
@@ -753,6 +753,11 @@ class ValueTileRetentionIntegrationTests(unittest.TestCase):
             self.assertFalse((web_root / "value_tiles").exists())
             root_manifest = json.loads((web_root / "manifest.json").read_text(encoding="utf-8"))
             self.assertNotIn("capabilities", root_manifest)
+            self.assertEqual(
+                root_manifest["products"]["maps"]["satellite_cloud"],
+                "web_exports/satellite_cloud_maps/manifest.json",
+            )
+            self.assertFalse((web_root / "satellite_cloud_maps").exists())
         finally:
             shutil.rmtree(workspace, ignore_errors=True)
 

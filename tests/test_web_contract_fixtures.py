@@ -37,6 +37,10 @@ def validate_root_manifest(root):
     require(root.get("generated_at"), str, "$.generated_at")
     urls = require(root.get("urls"), dict, "$.urls")
     require(urls.get("locations"), str, "$.urls.locations")
+    products = require(root.get("products"), dict, "$.products")
+    maps = require(products.get("maps"), dict, "$.products.maps")
+    if maps.get("satellite_cloud") != "web_exports/satellite_cloud_maps/manifest.json":
+        raise AssertionError("$.products.maps.satellite_cloud must use the stable optional path")
     models = require(root.get("models"), dict, "$.models")
     for model_key, model_value in models.items():
         runs = require(require(model_value, dict, f"$.models.{model_key}").get("runs"), dict, f"$.models.{model_key}.runs")

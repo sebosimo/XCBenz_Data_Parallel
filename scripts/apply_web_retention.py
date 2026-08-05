@@ -361,6 +361,7 @@ def rebuild_main_manifest(
                 "rain": "web_exports/rain_maps/manifest.json" if rain_manifest else None,
                 "sunrain": "web_exports/sunrain_maps/manifest.json" if sunrain_manifest else None,
                 "cloud": "web_exports/cloud_maps/manifest.json" if cloud_manifest else None,
+                "satellite_cloud": "web_exports/satellite_cloud_maps/manifest.json",
                 RADAR_MAP_PRODUCT: radar_map_manifest_url(),
             },
         },

@@ -19,7 +19,8 @@
       "wind": "web_exports/wind_maps/manifest.json",
       "rain": "web_exports/rain_maps/manifest.json",
       "sunrain": "web_exports/sunrain_maps/manifest.json",
-      "cloud": "web_exports/cloud_maps/manifest.json"
+      "cloud": "web_exports/cloud_maps/manifest.json",
+      "satellite_cloud": "web_exports/satellite_cloud_maps/manifest.json"
     }
   },
   "models": {
