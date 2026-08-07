@@ -382,6 +382,20 @@ jobs:
           git checkout FETCH_HEAD -- web_exports/ 2>/dev/null || true
           git reset HEAD -- web_exports/ 2>/dev/null || true
 
+      - name: Hydrate authoritative production forecast history
+        if: ${{ env.DEPLOY_DATA_HOST == 'true' }}
+        env:
+          INFOMANIAK_HOST: ${{ secrets.INFOMANIAK_HOST }}
+          INFOMANIAK_PORT: ${{ secrets.INFOMANIAK_PORT }}
+          INFOMANIAK_USER: ${{ secrets.INFOMANIAK_USER }}
+          INFOMANIAK_SSH_KEY: ${{ secrets.INFOMANIAK_SSH_KEY }}
+          INFOMANIAK_DATA_ROOT: ${{ secrets.INFOMANIAK_DATA_ROOT }}
+          PYTHON_BIN: python
+        run: >-
+          bash scripts/hydrate_forecast_history_infomaniak.sh
+          "${{ needs.preflight.outputs.latest_ch1 }}"
+          "${{ needs.preflight.outputs.latest_ch2 }}"
+
       - name: Download CH1 outputs
         uses: actions/download-artifact@v4
         with:

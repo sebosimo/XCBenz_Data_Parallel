@@ -148,6 +148,42 @@ class PipelineContractTests(unittest.TestCase):
             self.assertIn(f"run: uv run python {script}", workflow)
             self.assertNotIn(f"run: python {script}", workflow)
 
+    def test_deploy_publish_hydrates_authoritative_history_before_generation(self):
+        workflow = WORKFLOW_PATH.read_text(encoding="utf-8")
+        hydrate = workflow.index("Hydrate authoritative production forecast history")
+        generate = workflow.index("Generate web exports", hydrate)
+        self.assertLess(hydrate, generate)
+        self.assertIn("if: ${{ env.DEPLOY_DATA_HOST == 'true' }}", workflow[hydrate:generate])
+        self.assertIn("scripts/hydrate_forecast_history_infomaniak.sh", workflow[hydrate:generate])
+        self.assertIn("needs.preflight.outputs.latest_ch1", workflow[hydrate:generate])
+        self.assertIn("needs.preflight.outputs.latest_ch2", workflow[hydrate:generate])
+
+    def test_history_hydration_is_locked_and_forecast_scoped(self):
+        script = (SCRIPTS_ROOT / "hydrate_forecast_history_infomaniak.sh").read_text(
+            encoding="utf-8"
+        )
+        self.assertIn(".xcbenz_web_exports_publish.lock", script)
+        self.assertIn("cp -al", script)
+        for forecast_path in (
+            "region_forecasts",
+            "emagrams",
+            "thermal_panels",
+            "wind_maps",
+            "sunshine_maps",
+            "rain_maps",
+            "sunrain_maps",
+            "cloud_maps",
+            "value_tiles",
+        ):
+            self.assertIn(forecast_path, script)
+        for unrelated_path in (
+            "satellite_cloud_maps",
+            "live.json",
+            "live_archive",
+            "measurements",
+        ):
+            self.assertNotIn(unrelated_path, script)
+
     def test_ephemeral_data_branch_publish_has_no_invalid_main_cleanup(self):
         workflow = WORKFLOW_PATH.read_text(encoding="utf-8")
         self.assertIn('git commit --quiet -m "Web export snapshot:', workflow)

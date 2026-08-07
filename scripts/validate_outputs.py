@@ -5,6 +5,7 @@ from __future__ import annotations
 import os
 import sys
 from pathlib import Path
+from typing import Any
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 if str(REPO_ROOT) not in sys.path:
@@ -20,6 +21,7 @@ from pipeline_orchestration.forecast_completeness import (
     profile_run_errors,
     step_labels,
 )
+from forecast_retention import manifest_run_tags
 from web_export_support import load_json as load_web_json, resolve_publication_url
 
 
@@ -48,6 +50,23 @@ def load_json(path: Path) -> dict:
 def fail(message: str) -> int:
     print(f"[validate] ERROR: {message}", flush=True)
     return 1
+
+
+def map_run_set_mismatches(
+    root_manifest: dict[str, Any],
+    product_manifests: dict[str, dict[str, Any]],
+) -> list[str]:
+    mismatches: list[str] = []
+    for product, manifest in product_manifests.items():
+        for model_key in ("icon-ch1", "icon-ch2"):
+            expected = manifest_run_tags(root_manifest, model_key)
+            actual = manifest_run_tags(manifest, model_key)
+            if actual != expected:
+                mismatches.append(
+                    f"{product}/{model_key}: runs={sorted(actual, reverse=True)} "
+                    f"expected={sorted(expected, reverse=True)}"
+                )
+    return mismatches
 
 
 def resolve_web_url(url: str | None) -> Path | None:
@@ -278,12 +297,18 @@ def main() -> int:
                     return fail(f"{model_key} {run_tag} {location_id} bundle path missing: {bundle_url}")
 
     map_products = ((web.get("products") or {}).get("maps") or {})
+    product_manifests: dict[str, dict[str, Any]] = {}
     for product in ("wind", "sunshine", "rain", "sunrain", "cloud"):
         path = map_products.get(product)
         if not path:
             return fail(f"web manifest has no {product} map product")
         if not Path(path).exists():
             return fail(f"{product} map manifest path does not exist: {path}")
+        product_manifests[product] = load_json(Path(path))
+
+    run_set_errors = map_run_set_mismatches(web, product_manifests)
+    if run_set_errors:
+        return fail("forecast product run sets differ: " + "; ".join(run_set_errors))
 
     root_ch1_runs = root.get("runs") or {}
     root_ch2_runs = root.get("runs_ch2") or {}

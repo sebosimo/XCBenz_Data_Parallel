@@ -31,6 +31,27 @@ def _split_jobs(run_tag: str):
 
 
 class RunCodingServerPipelineTests(unittest.TestCase):
+    def test_history_hydration_uses_the_intended_run_pair(self):
+        with mock.patch.object(runner, "run_checked") as run_checked:
+            runner.hydrate_forecast_history(
+                {"INFOMANIAK_HOST": "example"},
+                Path("logs"),
+                latest_ch1="20260807_1500",
+                latest_ch2="20260807_1200",
+            )
+
+        run_checked.assert_called_once_with(
+            "hydrate-forecast-history",
+            [
+                "bash",
+                "scripts/hydrate_forecast_history_infomaniak.sh",
+                "20260807_1500",
+                "20260807_1200",
+            ],
+            env={"INFOMANIAK_HOST": "example"},
+            log_dir=Path("logs"),
+        )
+
     def test_serial_publish_scopes_tile_generation_and_validation_to_current_pair(self):
         env = {"WEB_EXPORT_DATA_ROOT": "https://data.example/"}
         with mock.patch.object(runner, "run_checked") as run_checked:

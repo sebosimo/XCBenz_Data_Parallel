@@ -30,9 +30,9 @@ from web_export_support import (
     resolve_publication_url,
     write_json as write_web_json,
 )
+from forecast_retention import MODEL_ANCHOR_HOURS, kept_model_run_tags, parse_run_tag
 
 
-RUN_FORMAT = "%Y%m%d_%H%M"
 WEB_DIR = Path(os.getenv("WEB_EXPORT_DIR", "web_exports"))
 STAGING_DIR = Path(os.getenv("WEB_EXPORT_STAGING_DIR", "web_exports_staging"))
 DEFAULT_DATA_ROOT = "https://raw.githubusercontent.com/sebosimo/XCBenz_Data/data"
@@ -41,10 +41,6 @@ RADAR_MAP_PRODUCT = "radar"
 MODEL_LABELS = {
     "icon-ch1": "ICON-CH1",
     "icon-ch2": "ICON-CH2",
-}
-ANCHOR_HOURS = {
-    "icon-ch1": 3,
-    "icon-ch2": 0,
 }
 EMAGRAM_BUNDLE_VARIABLES = (
     "p",
@@ -62,27 +58,6 @@ EMAGRAM_BUNDLE_VARIABLES = (
 
 def log(message: str) -> None:
     print(f"[web-retention] {message}", flush=True)
-
-
-def parse_run_tag(run_tag: str) -> dt.datetime | None:
-    try:
-        return dt.datetime.strptime(run_tag, RUN_FORMAT).replace(tzinfo=dt.timezone.utc)
-    except ValueError:
-        return None
-
-
-def kept_run_tags(run_tags: list[str], *, anchor_hour: int, now: dt.datetime) -> set[str]:
-    keep_dates = {now.date(), (now - dt.timedelta(days=1)).date()}
-    sorted_tags = sorted(run_tags, reverse=True)
-    keep = set(sorted_tags[:2])
-
-    for run_tag in sorted_tags:
-        run_dt = parse_run_tag(run_tag)
-        if run_dt is None:
-            continue
-        if run_dt.hour == anchor_hour and run_dt.minute == 0 and run_dt.date() in keep_dates:
-            keep.add(run_tag)
-    return keep
 
 
 def load_json(path: Path) -> dict[str, Any]:
@@ -192,11 +167,10 @@ def prune_model_runs(model_key: str, keep: set[str]) -> None:
 
 
 def apply_retention() -> dict[str, set[str]]:
-    now = dt.datetime.now(dt.timezone.utc)
     keep_by_model: dict[str, set[str]] = {}
-    for model_key, anchor_hour in ANCHOR_HOURS.items():
+    for model_key in MODEL_ANCHOR_HOURS:
         runs = sorted(collect_model_runs(model_key), reverse=True)
-        keep = kept_run_tags(runs, anchor_hour=anchor_hour, now=now)
+        keep = kept_model_run_tags(model_key, runs)
         keep_by_model[model_key] = keep
         prune_model_runs(model_key, keep)
     return keep_by_model

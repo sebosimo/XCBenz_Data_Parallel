@@ -768,6 +768,26 @@ def should_audit_all_value_tiles(ch1_run: str) -> bool:
     return ch1_run.endswith("_0300")
 
 
+def hydrate_forecast_history(
+    env: dict[str, str],
+    log_dir: Path,
+    *,
+    latest_ch1: str,
+    latest_ch2: str,
+) -> None:
+    run_checked(
+        "hydrate-forecast-history",
+        [
+            "bash",
+            "scripts/hydrate_forecast_history_infomaniak.sh",
+            latest_ch1,
+            latest_ch2,
+        ],
+        env=env,
+        log_dir=log_dir,
+    )
+
+
 def serial_publish_steps(
     args: argparse.Namespace,
     env: dict[str, str],
@@ -1002,6 +1022,14 @@ def run_pipeline(args: argparse.Namespace) -> int:
 
     if not args.skip_static_prewarm:
         prewarm_static_data(log_dir)
+
+    if deploy:
+        hydrate_forecast_history(
+            base_env,
+            log_dir,
+            latest_ch1=latest_ch1,
+            latest_ch2=latest_ch2,
+        )
 
     for staging in ("map_chunks", "web_profile_chunks", "web_exports_staging"):
         safe_rmtree(REPO_ROOT / staging)

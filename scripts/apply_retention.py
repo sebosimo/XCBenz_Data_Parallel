@@ -2,37 +2,19 @@
 
 from __future__ import annotations
 
-import datetime as dt
 import shutil
+import sys
 from pathlib import Path
 
+REPO_ROOT = Path(__file__).resolve().parents[1]
+if str(REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(REPO_ROOT))
 
-RUN_FORMAT = "%Y%m%d_%H%M"
+from forecast_retention import kept_run_tags, parse_run_tag
 
 
 def log(message: str) -> None:
     print(f"[retention] {message}", flush=True)
-
-
-def parse_run_tag(run_tag: str) -> dt.datetime | None:
-    try:
-        return dt.datetime.strptime(run_tag, RUN_FORMAT).replace(tzinfo=dt.timezone.utc)
-    except ValueError:
-        return None
-
-
-def kept_run_tags(run_tags: list[str], *, anchor_hour: int, now: dt.datetime) -> set[str]:
-    keep_dates = {now.date(), (now - dt.timedelta(days=1)).date()}
-    sorted_tags = sorted(run_tags, reverse=True)
-    keep = set(sorted_tags[:2])
-
-    for run_tag in sorted_tags:
-        run_dt = parse_run_tag(run_tag)
-        if run_dt is None:
-            continue
-        if run_dt.hour == anchor_hour and run_dt.minute == 0 and run_dt.date() in keep_dates:
-            keep.add(run_tag)
-    return keep
 
 
 def prune_run_dir(root: Path, *, anchor_hour: int) -> None:
@@ -42,9 +24,8 @@ def prune_run_dir(root: Path, *, anchor_hour: int) -> None:
         log(f"Skipping non-directory root: {root}")
         return
 
-    now = dt.datetime.now(dt.timezone.utc)
     run_dirs = [path for path in root.iterdir() if path.is_dir()]
-    keep = kept_run_tags([path.name for path in run_dirs], anchor_hour=anchor_hour, now=now)
+    keep = kept_run_tags([path.name for path in run_dirs], anchor_hour=anchor_hour)
 
     removed = 0
     for path in run_dirs:

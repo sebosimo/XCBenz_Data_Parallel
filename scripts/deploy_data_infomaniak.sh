@@ -95,12 +95,6 @@ SSH_OPTS=(
   -o BatchMode=yes
   -o StrictHostKeyChecking=accept-new
 )
-SCP_OPTS=(
-  -i "$KEY_FILE"
-  -P "$INFOMANIAK_PORT"
-  -o BatchMode=yes
-  -o StrictHostKeyChecking=accept-new
-)
 RSYNC_SSH="ssh -i $KEY_FILE -p $INFOMANIAK_PORT -o BatchMode=yes -o StrictHostKeyChecking=accept-new"
 
 REMOTE_ROOT="${INFOMANIAK_DATA_ROOT%/}"
@@ -109,7 +103,7 @@ REMOTE_CURRENT="$REMOTE_ROOT/web_exports"
 REMOTE_PREVIOUS="$REMOTE_ROOT/_previous_web_exports"
 REMOTE_LOCK="$REMOTE_ROOT/.xcbenz_web_exports_publish.lock"
 REMOTE_BREAK_LOCK="$REMOTE_LOCK.break"
-CURRENT_MANIFEST_TMP="${RUNNER_TEMP:-/tmp}/xcbenz_current_manifest_${RELEASE_ID}.json"
+CURRENT_MANIFEST_DIR="${RUNNER_TEMP:-/tmp}/xcbenz_current_manifests_${RELEASE_ID}"
 LOCK_ID="${LOCK_ID:-forecast-$RELEASE_ID}"
 DEPLOY_LOCK_WAIT_SECONDS="${DEPLOY_LOCK_WAIT_SECONDS:-300}"
 DEPLOY_LOCK_POLL_SECONDS="${DEPLOY_LOCK_POLL_SECONDS:-5}"
@@ -169,12 +163,29 @@ acquire_remote_lock() {
 
 check_publish_freshness() {
   if ssh "${SSH_OPTS[@]}" "$SSH_TARGET" "test -f '$REMOTE_CURRENT/manifest.json'"; then
-    rm -f "$CURRENT_MANIFEST_TMP"
-    retry "download current production manifest" \
-      scp "${SCP_OPTS[@]}" "$SSH_TARGET:$REMOTE_CURRENT/manifest.json" "$CURRENT_MANIFEST_TMP"
-    "$PYTHON_BIN" scripts/guard_publish_freshness.py \
-      --candidate "$WEB_EXPORT_DIR/manifest.json" \
-      --current "$CURRENT_MANIFEST_TMP"
+    rm -rf "$CURRENT_MANIFEST_DIR"
+    mkdir -p "$CURRENT_MANIFEST_DIR"
+    retry "download current production manifests" \
+      rsync -az --delete --prune-empty-dirs -e "$RSYNC_SSH" \
+        --include='/manifest.json' \
+        --include='/wind_maps/' --include='/wind_maps/manifest.json' \
+        --include='/sunshine_maps/' --include='/sunshine_maps/manifest.json' \
+        --include='/rain_maps/' --include='/rain_maps/manifest.json' \
+        --include='/sunrain_maps/' --include='/sunrain_maps/manifest.json' \
+        --include='/cloud_maps/' --include='/cloud_maps/manifest.json' \
+        --include='/value_tiles/' --include='/value_tiles/v1/' \
+        --include='/value_tiles/v1/manifest.json' \
+        --exclude='*' \
+        "$SSH_TARGET:$REMOTE_CURRENT/" "$CURRENT_MANIFEST_DIR/"
+    guard_args=(
+      --candidate-root "$WEB_EXPORT_DIR"
+      --current-root "$CURRENT_MANIFEST_DIR"
+      --require-products wind,sunshine,rain,sunrain,cloud
+    )
+    if [[ "${ENABLE_VALUE_TILES:-false}" == "true" ]]; then
+      guard_args+=(--require-value-tiles)
+    fi
+    "$PYTHON_BIN" scripts/guard_publish_freshness.py "${guard_args[@]}"
   else
     log "No current production manifest found; freshness guard has nothing to compare"
   fi
@@ -195,7 +206,7 @@ release_remote_lock() {
 
 cleanup() {
   release_remote_lock
-  rm -f "$CURRENT_MANIFEST_TMP"
+  rm -rf "$CURRENT_MANIFEST_DIR"
   if [[ "$cleanup_key" == "true" ]]; then
     rm -f "$KEY_FILE"
   fi
