@@ -604,6 +604,9 @@ class ValueTileGenerationTests(unittest.TestCase):
         self.assertIn("infomaniak-value-tiles-staging.htaccess", staging_deploy)
         self.assertIn("EXPECTED_VALUE_TILES_STATE", staging_deploy)
         self.assertIn("PRODUCTION_WEB_EXPORTS", staging_deploy)
+        self.assertIn('retry "release staging publish lock"', staging_deploy)
+        self.assertIn("DEPLOY_LOCK_RELEASE_TIMEOUT_SECONDS", staging_deploy)
+        self.assertIn("actual_owner", staging_deploy)
         self.assertIn(
             "for subtree in live_stations webcams radar_maps airspace fai_records satellite_cloud_maps; do",
             staging_deploy,

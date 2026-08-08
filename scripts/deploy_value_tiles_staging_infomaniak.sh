@@ -31,8 +31,9 @@ retry() {
   while true; do
     if "$@"; then
       return 0
+    else
+      rc=$?
     fi
-    rc=$?
     if (( attempt >= max_attempts )); then
       log "$label failed after $attempt attempt(s)"
       return "$rc"
@@ -66,6 +67,8 @@ cd "$REPO_ROOT"
 
 PYTHON_BIN="${PYTHON_BIN:-python3}"
 INFOMANIAK_PORT="${INFOMANIAK_PORT:-22}"
+DEPLOY_LOCK_RELEASE_TIMEOUT_SECONDS="${DEPLOY_LOCK_RELEASE_TIMEOUT_SECONDS:-30}"
+command -v timeout >/dev/null 2>&1 || fail "timeout executable not found"
 RELEASE_ID="${RELEASE_ID:-$(date -u +'%Y%m%dT%H%M%SZ')-$$}"
 [[ "$RELEASE_ID" =~ ^[0-9A-Za-z._-]+$ ]] || fail "RELEASE_ID contains unsafe characters"
 
@@ -135,6 +138,9 @@ SSH_OPTS=(
   -p "$INFOMANIAK_PORT"
   -o BatchMode=yes
   -o StrictHostKeyChecking=accept-new
+  -o ConnectTimeout=10
+  -o ServerAliveInterval=15
+  -o ServerAliveCountMax=3
 )
 RSYNC_SSH="ssh -i $KEY_FILE -p $INFOMANIAK_PORT -o BatchMode=yes -o StrictHostKeyChecking=accept-new"
 
@@ -153,12 +159,19 @@ release_remote_lock() {
   if [[ "$lock_acquired" != "true" ]]; then
     return
   fi
-  ssh "${SSH_OPTS[@]}" "$SSH_TARGET" "
-    if [ -d '$REMOTE_LOCK' ] && [ \"\$(cat '$REMOTE_LOCK/owner' 2>/dev/null || true)\" = '$LOCK_ID' ]; then
-      rm -rf '$REMOTE_LOCK'
-    fi
-  " >/dev/null 2>&1 || true
-  lock_acquired=false
+  if retry "release staging publish lock" \
+    timeout --signal=TERM "${DEPLOY_LOCK_RELEASE_TIMEOUT_SECONDS}s" \
+    ssh "${SSH_OPTS[@]}" "$SSH_TARGET" "
+      actual_owner=\$(cat '$REMOTE_LOCK/owner' 2>/dev/null || true)
+      if [ -d '$REMOTE_LOCK' ] && [ \"\$actual_owner\" = '$LOCK_ID' ]; then
+        rm -rf '$REMOTE_LOCK'
+      fi
+    "; then
+    lock_acquired=false
+    return 0
+  fi
+  log "staging publish lock release failed; exact owner remains available for recovery"
+  return 1
 }
 
 rollback_staging() {
@@ -190,7 +203,7 @@ cleanup() {
     rollback_staging || true
   fi
   if [[ "$retain_lock_on_failure" != "true" ]]; then
-    release_remote_lock
+    release_remote_lock || true
   fi
   if [[ "$published" != "true" ]]; then
     ssh "${SSH_OPTS[@]}" "$SSH_TARGET" "rm -rf '$REMOTE_TMP'" >/dev/null 2>&1 || true

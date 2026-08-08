@@ -195,10 +195,17 @@ The production design has three independent layers:
 3. GitHub Actions retains its six-hour native schedule as a last resort and
    rechecks the live manifest before starting heavy jobs.
 
-All publishers use the same remote lock and atomic directory swap. The deploy
-script removes locks older than 30 minutes and, while holding the lock, compares
-the candidate manifest with the live manifest. A candidate older in either
-model is rejected before the swap.
+All production publishers use the compatible v1 lease in
+`docs/REMOTE_PUBLISH_LEASE_V1.md` and an atomic directory swap. The deploy
+script heartbeats while holding the lease, fences the swap with an exact-owner
+check, and serializes acquire/recover/release mutations with the shared
+kernel-managed `.lock.guard`. It quarantines only a revalidated expired v1
+record and never automatically removes a legacy, incomplete, malformed, or
+unknown-version lock.
+While holding the lease, it compares the candidate manifest with the live
+manifest. A candidate older in either model is rejected before the swap.
+Abandoned `_upload_tmp_*` trees are quarantined after seven days and deleted
+only after a further fourteen-day quarantine retention.
 
 Keep `XCBENZ_PUSH_DATA_BRANCH=false` on the Coding Server. GitHub remains the
 only writer of `data-web`; Infomaniak is the production source of truth.
