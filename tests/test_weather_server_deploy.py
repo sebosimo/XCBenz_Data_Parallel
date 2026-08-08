@@ -1,3 +1,4 @@
+import subprocess
 import unittest
 from pathlib import Path
 
@@ -50,6 +51,61 @@ class WeatherServerDeployTests(unittest.TestCase):
         ).read_text(encoding="utf-8")
         self.assertIn('command -v "$PYTHON_BIN"', deploy_script)
         self.assertIn("Python executable not found", deploy_script)
+
+    def test_deploy_script_uses_compatible_fenced_publish_lease(self):
+        deploy_path = ROOT / "scripts" / "deploy_data_infomaniak.sh"
+        deploy_script = deploy_path.read_text(encoding="utf-8")
+
+        subprocess.run(["bash", "-n", str(deploy_path)], check=True)
+        for contract_field in (
+            "protocol_version",
+            "publisher",
+            "host",
+            "pid",
+            "acquired_at",
+            "acquired_at_epoch",
+            "lease_seconds",
+            "heartbeat_at",
+        ):
+            with self.subTest(contract_field=contract_field):
+                self.assertIn(contract_field, deploy_script)
+        self.assertIn("DEPLOY_LOCK_PROTOCOL_VERSION=1", deploy_script)
+        self.assertIn("Quarantined expired publish lease", deploy_script)
+        self.assertIn("REMOTE_LOCK_GUARD", deploy_script)
+        self.assertIn("flock -w", deploy_script)
+        self.assertIn("current_protocol", deploy_script)
+        self.assertIn("current_heartbeat", deploy_script)
+        self.assertIn("assert_remote_lease", deploy_script)
+        self.assertIn("rollback", deploy_script.lower())
+        self.assertIn("maintain_remote_candidates", deploy_script)
+        self.assertIn("DEPLOY_CANDIDATE_QUARANTINE_AFTER_SECONDS", deploy_script)
+        self.assertIn("DEPLOY_CANDIDATE_DELETE_AFTER_SECONDS", deploy_script)
+        self.assertIn(".xcbenz_upload_candidate.quarantine", deploy_script)
+        self.assertNotIn("DEPLOY_LOCK_STALE_SECONDS", deploy_script)
+        self.assertNotIn("Removing stale publish lock", deploy_script)
+
+    def test_release_is_retried_owner_checked_and_time_bounded(self):
+        deploy_script = (
+            ROOT / "scripts" / "deploy_data_infomaniak.sh"
+        ).read_text(encoding="utf-8")
+
+        release_start = deploy_script.index("release_remote_lock()")
+        release_end = deploy_script.index("\ncleanup()", release_start)
+        release = deploy_script[release_start:release_end]
+        self.assertIn('retry "release remote publish lease"', release)
+        self.assertIn("DEPLOY_LOCK_RELEASE_TIMEOUT_SECONDS", release)
+        self.assertIn("actual_owner", release)
+        self.assertIn("'$LOCK_ID'", release)
+
+    def test_retry_preserves_the_failed_command_status(self):
+        deploy_script = (
+            ROOT / "scripts" / "deploy_data_infomaniak.sh"
+        ).read_text(encoding="utf-8")
+
+        retry_start = deploy_script.index("retry()")
+        retry_end = deploy_script.index("\nrequire_env()", retry_start)
+        retry_function = deploy_script[retry_start:retry_end]
+        self.assertIn("else\n      rc=$?", retry_function)
 
     def test_container_context_excludes_runtime_data_and_secrets(self):
         ignore = (ROOT / ".dockerignore").read_text(encoding="utf-8")
