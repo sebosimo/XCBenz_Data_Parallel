@@ -52,10 +52,17 @@ DATA_HOST_BASE_URL="${DATA_HOST_BASE_URL:-https://data.xcbenz.com}"
 WEB_EXPORT_DIR="${WEB_EXPORT_DIR:-web_exports}"
 RELEASE_ID="${RELEASE_ID:-$(date -u +'%Y%m%dT%H%M%SZ')}"
 PYTHON_BIN="${PYTHON_BIN:-python3}"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+LIVE_SUBTREE_REGISTRY="$SCRIPT_DIR/../config/live_subtree_registry.json"
 
 command -v "$PYTHON_BIN" >/dev/null 2>&1 \
   || fail "Python executable not found: $PYTHON_BIN"
 command -v timeout >/dev/null 2>&1 || fail "timeout executable not found"
+LIVE_SUBTREE_WORDS="$(
+  "$PYTHON_BIN" "$SCRIPT_DIR/live_subtree_registry.py" \
+    --shell-words "$LIVE_SUBTREE_REGISTRY"
+)" || fail "live-subtree registry validation failed"
+[[ -n "$LIVE_SUBTREE_WORDS" ]] || fail "live-subtree registry is empty"
 
 [[ -f "$WEB_EXPORT_DIR/manifest.json" ]] || fail "missing $WEB_EXPORT_DIR/manifest.json"
 
@@ -425,7 +432,7 @@ retry "preserve live-owned folders" \
   current='$REMOTE_CURRENT'
   target='$REMOTE_TMP/web_exports'
   mkdir -p \"\$target\"
-  for subtree in live_stations webcams radar_maps airspace fai_records satellite_cloud_maps; do
+  for subtree in $LIVE_SUBTREE_WORDS; do
     if [ -d \"\$current/\$subtree\" ]; then
       rm -rf \"\$target/\$subtree\"
       cp -a \"\$current/\$subtree\" \"\$target/\$subtree\"

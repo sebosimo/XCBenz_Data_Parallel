@@ -593,10 +593,8 @@ class ValueTileGenerationTests(unittest.TestCase):
             production_cache_block.index("max-age=31536000, immutable"),
         )
         self.assertNotIn("infomaniak-value-tiles-staging.htaccess", production_deploy)
-        self.assertIn(
-            "for subtree in live_stations webcams radar_maps airspace fai_records satellite_cloud_maps; do",
-            production_deploy,
-        )
+        self.assertIn("live_subtree_registry.py", production_deploy)
+        self.assertIn("for subtree in $LIVE_SUBTREE_WORDS; do", production_deploy)
         self.assertIn('EXPECTED_REMOTE_ROOT="sites/data.xcbenz.com/value-tiles-staging"', staging_deploy)
         self.assertIn('EXPECTED_BASE_URL="https://data.xcbenz.com/value-tiles-staging"', staging_deploy)
         self.assertIn("refusing remote root", staging_deploy)
@@ -607,10 +605,8 @@ class ValueTileGenerationTests(unittest.TestCase):
         self.assertIn('retry "release staging publish lock"', staging_deploy)
         self.assertIn("DEPLOY_LOCK_RELEASE_TIMEOUT_SECONDS", staging_deploy)
         self.assertIn("actual_owner", staging_deploy)
-        self.assertIn(
-            "for subtree in live_stations webcams radar_maps airspace fai_records satellite_cloud_maps; do",
-            staging_deploy,
-        )
+        self.assertIn("live_subtree_registry.py", staging_deploy)
+        self.assertIn("for subtree in $LIVE_SUBTREE_WORDS; do", staging_deploy)
         self.assertNotIn("deploy_data_infomaniak.sh", staging_deploy)
         self.assertIn("ENABLE_VALUE_TILES: ${{ vars.ENABLE_VALUE_TILES || 'false' }}", workflow)
         self.assertIn("ENABLE_VALUE_TILES=false", coding_server_env)

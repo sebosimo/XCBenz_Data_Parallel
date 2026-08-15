@@ -1,0 +1,13 @@
+{
+  "schema_version": 1,
+  "registry_id": "xcbenz-live-subtrees",
+  "subtree_digest": "c25abfd7d6e108b5da8e00763bc0e5df2183f2479ad434b7e3e502ad1324939b",
+  "subtrees": [
+    "airspace",
+    "fai_records",
+    "live_stations",
+    "radar_maps",
+    "satellite_cloud_maps",
+    "webcams"
+  ]
+}

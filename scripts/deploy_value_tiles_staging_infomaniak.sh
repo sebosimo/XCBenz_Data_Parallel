@@ -66,9 +66,17 @@ REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 cd "$REPO_ROOT"
 
 PYTHON_BIN="${PYTHON_BIN:-python3}"
+LIVE_SUBTREE_REGISTRY="$REPO_ROOT/config/live_subtree_registry.json"
 INFOMANIAK_PORT="${INFOMANIAK_PORT:-22}"
 DEPLOY_LOCK_RELEASE_TIMEOUT_SECONDS="${DEPLOY_LOCK_RELEASE_TIMEOUT_SECONDS:-30}"
 command -v timeout >/dev/null 2>&1 || fail "timeout executable not found"
+command -v "$PYTHON_BIN" >/dev/null 2>&1 \
+  || fail "Python executable not found: $PYTHON_BIN"
+LIVE_SUBTREE_WORDS="$(
+  "$PYTHON_BIN" "$SCRIPT_DIR/live_subtree_registry.py" \
+    --shell-words "$LIVE_SUBTREE_REGISTRY"
+)" || fail "live-subtree registry validation failed"
+[[ -n "$LIVE_SUBTREE_WORDS" ]] || fail "live-subtree registry is empty"
 RELEASE_ID="${RELEASE_ID:-$(date -u +'%Y%m%dT%H%M%SZ')-$$}"
 [[ "$RELEASE_ID" =~ ^[0-9A-Za-z._-]+$ ]] || fail "RELEASE_ID contains unsafe characters"
 
@@ -265,7 +273,7 @@ retry "copy live-owned staging snapshots" \
     set -e
     source='$PRODUCTION_WEB_EXPORTS'
     target='$REMOTE_TMP/web_exports'
-    for subtree in live_stations webcams radar_maps airspace fai_records satellite_cloud_maps; do
+    for subtree in $LIVE_SUBTREE_WORDS; do
       if [ -d \"\$source/\$subtree\" ]; then
         rm -rf \"\$target/\$subtree\"
         cp -a \"\$source/\$subtree\" \"\$target/\$subtree\"
