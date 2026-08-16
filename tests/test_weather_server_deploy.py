@@ -81,8 +81,34 @@ class WeatherServerDeployTests(unittest.TestCase):
         self.assertIn("DEPLOY_CANDIDATE_QUARANTINE_AFTER_SECONDS", deploy_script)
         self.assertIn("DEPLOY_CANDIDATE_DELETE_AFTER_SECONDS", deploy_script)
         self.assertIn(".xcbenz_upload_candidate.quarantine", deploy_script)
+        self.assertIn(
+            'DEPLOY_CANDIDATE_QUARANTINE_AFTER_SECONDS:-21600', deploy_script
+        )
+        self.assertIn(
+            'DEPLOY_CANDIDATE_DELETE_AFTER_SECONDS:-324000', deploy_script
+        )
         self.assertNotIn("DEPLOY_LOCK_STALE_SECONDS", deploy_script)
         self.assertNotIn("Removing stale publish lock", deploy_script)
+
+    def test_failed_deploy_removes_only_its_exact_upload_candidate(self):
+        deploy_script = (
+            ROOT / "scripts" / "deploy_data_infomaniak.sh"
+        ).read_text(encoding="utf-8")
+
+        cleanup_start = deploy_script.index("cleanup_remote_upload_candidate()")
+        cleanup_end = deploy_script.index("\ncleanup()", cleanup_start)
+        candidate_cleanup = deploy_script[cleanup_start:cleanup_end]
+        self.assertIn("'$REMOTE_ROOT'/_upload_tmp_*", candidate_cleanup)
+        self.assertIn("rm -rf -- '$REMOTE_TMP'", candidate_cleanup)
+        self.assertIn(
+            "Refusing to remove unexpected remote upload path", candidate_cleanup
+        )
+
+        trap_cleanup_start = deploy_script.index("cleanup()", cleanup_end)
+        trap_cleanup_end = deploy_script.index("\ntrap cleanup EXIT", trap_cleanup_start)
+        trap_cleanup = deploy_script[trap_cleanup_start:trap_cleanup_end]
+        self.assertIn("if (( exit_code != 0 )); then", trap_cleanup)
+        self.assertIn("cleanup_remote_upload_candidate", trap_cleanup)
 
     def test_release_is_retried_owner_checked_and_time_bounded(self):
         deploy_script = (

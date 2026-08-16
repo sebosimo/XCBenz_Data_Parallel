@@ -117,8 +117,11 @@ DEPLOY_LOCK_HEARTBEAT_SECONDS="${DEPLOY_LOCK_HEARTBEAT_SECONDS:-30}"
 DEPLOY_LOCK_RECOVERY_GRACE_SECONDS="${DEPLOY_LOCK_RECOVERY_GRACE_SECONDS:-60}"
 DEPLOY_LOCK_RELEASE_TIMEOUT_SECONDS="${DEPLOY_LOCK_RELEASE_TIMEOUT_SECONDS:-30}"
 DEPLOY_LOCK_RECOVERY_ENABLED="${DEPLOY_LOCK_RECOVERY_ENABLED:-true}"
-DEPLOY_CANDIDATE_QUARANTINE_AFTER_SECONDS="${DEPLOY_CANDIDATE_QUARANTINE_AFTER_SECONDS:-604800}"
-DEPLOY_CANDIDATE_DELETE_AFTER_SECONDS="${DEPLOY_CANDIDATE_DELETE_AFTER_SECONDS:-1209600}"
+# Keep abandoned candidates for no more than four days in normal operation:
+# six hours before quarantine plus 90 hours in quarantine. The initial grace
+# exceeds the expected duration of an active fallback workflow.
+DEPLOY_CANDIDATE_QUARANTINE_AFTER_SECONDS="${DEPLOY_CANDIDATE_QUARANTINE_AFTER_SECONDS:-21600}"
+DEPLOY_CANDIDATE_DELETE_AFTER_SECONDS="${DEPLOY_CANDIDATE_DELETE_AFTER_SECONDS:-324000}"
 DEPLOY_LOCK_PROTOCOL_VERSION=1
 REMOTE_QUARANTINE_ROOT="$REMOTE_ROOT/.xcbenz_web_exports_publish.quarantine"
 REMOTE_CANDIDATE_QUARANTINE_ROOT="$REMOTE_ROOT/.xcbenz_upload_candidate.quarantine"
@@ -384,11 +387,28 @@ release_remote_lock() {
   lock_acquired=false
 }
 
+cleanup_remote_upload_candidate() {
+  retry "remove failed remote upload candidate" \
+    timeout --signal=TERM "${DEPLOY_LOCK_RELEASE_TIMEOUT_SECONDS}s" \
+    ssh "${SSH_OPTS[@]}" "$SSH_TARGET" "
+      set -eu
+      case '$REMOTE_TMP' in
+        '$REMOTE_ROOT'/_upload_tmp_*) ;;
+        *) echo 'Refusing to remove unexpected remote upload path' >&2; exit 58 ;;
+      esac
+      rm -rf -- '$REMOTE_TMP'
+    "
+}
+
 cleanup() {
   local exit_code=$?
   stop_lease_heartbeat
   if [[ "$lock_acquired" == "true" ]]; then
     release_remote_lock || log "remote publish lease release failed during cleanup"
+  fi
+  if (( exit_code != 0 )); then
+    cleanup_remote_upload_candidate \
+      || log "failed remote upload candidate cleanup will be handled by retention maintenance"
   fi
   rm -rf "$CURRENT_MANIFEST_DIR"
   if [[ "$cleanup_key" == "true" ]]; then
