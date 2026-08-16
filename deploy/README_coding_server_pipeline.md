@@ -204,8 +204,10 @@ record and never automatically removes a legacy, incomplete, malformed, or
 unknown-version lock.
 While holding the lease, it compares the candidate manifest with the live
 manifest. A candidate older in either model is rejected before the swap.
-Abandoned `_upload_tmp_*` trees are quarantined after seven days and deleted
-only after a further fourteen-day quarantine retention.
+Failed deployments immediately remove their own exact `_upload_tmp_*` tree.
+Candidates orphaned by a killed process or lost connection are quarantined
+after six hours and deleted after a further 90 hours, limiting normal total
+retention to four days.
 
 Keep `XCBENZ_PUSH_DATA_BRANCH=false` on the Coding Server. GitHub remains the
 only writer of `data-web`; Infomaniak is the production source of truth.
