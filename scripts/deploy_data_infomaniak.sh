@@ -340,7 +340,7 @@ check_publish_freshness() {
     rm -rf "$CURRENT_MANIFEST_DIR"
     mkdir -p "$CURRENT_MANIFEST_DIR"
     retry "download current production manifests" \
-      rsync -az --delete --prune-empty-dirs -e "$RSYNC_SSH" \
+      rsync -az --no-owner --no-group --delete --prune-empty-dirs -e "$RSYNC_SSH" \
         --include='/manifest.json' \
         --include='/wind_maps/' --include='/wind_maps/manifest.json' \
         --include='/sunshine_maps/' --include='/sunshine_maps/manifest.json' \

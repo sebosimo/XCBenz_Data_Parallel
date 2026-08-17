@@ -138,6 +138,16 @@ class WeatherServerDeployTests(unittest.TestCase):
         self.assertLess(lease_check_start, lease_check_end)
         self.assertLess(lease_check_end, remote_mutation)
 
+    def test_manifest_download_does_not_require_chown_capability(self):
+        deploy_script = (
+            ROOT / "scripts" / "deploy_data_infomaniak.sh"
+        ).read_text(encoding="utf-8")
+
+        freshness_start = deploy_script.index("check_publish_freshness()")
+        freshness_end = deploy_script.index("\nrelease_remote_lock()", freshness_start)
+        freshness_check = deploy_script[freshness_start:freshness_end]
+        self.assertIn("--no-owner --no-group", freshness_check)
+
     def test_retry_preserves_the_failed_command_status(self):
         deploy_script = (
             ROOT / "scripts" / "deploy_data_infomaniak.sh"
