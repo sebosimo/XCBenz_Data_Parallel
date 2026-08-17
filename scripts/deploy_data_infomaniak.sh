@@ -461,17 +461,19 @@ retry "switch remote web_exports directory" \
     command -v flock >/dev/null 2>&1 || { echo 'Remote host requires flock for publish fencing' >&2; exit 57; }
     exec 9>'$REMOTE_LOCK_GUARD'
     flock -w '$DEPLOY_LOCK_RELEASE_TIMEOUT_SECONDS' 9 || { echo 'Timed out waiting for publish mutation guard' >&2; exit 52; }
-    cd '$REMOTE_LOCK' 2>/dev/null || { echo 'Remote publish lease ownership lost before commit' >&2; exit 49; }
-    actual_owner=\$(cat owner 2>/dev/null || true)
-    protocol=\$(cat protocol_version 2>/dev/null || true)
-    if [ \"\$actual_owner\" != '$LOCK_ID' ] || [ \"\$protocol\" != '$DEPLOY_LOCK_PROTOCOL_VERSION' ]; then
-      echo 'Remote publish lease ownership lost before commit' >&2
-      exit 49
-    fi
-    now=\$(date +%s)
-    printf '%s\n' \"\$now\" > heartbeat_at.next
-    mv heartbeat_at.next heartbeat_at
-    touch .
+    (
+      cd '$REMOTE_LOCK' 2>/dev/null || { echo 'Remote publish lease ownership lost before commit' >&2; exit 49; }
+      actual_owner=\$(cat owner 2>/dev/null || true)
+      protocol=\$(cat protocol_version 2>/dev/null || true)
+      if [ \"\$actual_owner\" != '$LOCK_ID' ] || [ \"\$protocol\" != '$DEPLOY_LOCK_PROTOCOL_VERSION' ]; then
+        echo 'Remote publish lease ownership lost before commit' >&2
+        exit 49
+      fi
+      now=\$(date +%s)
+      printf '%s\n' \"\$now\" > heartbeat_at.next
+      mv heartbeat_at.next heartbeat_at
+      touch .
+    )
     flock -u 9
     mkdir -p '$REMOTE_ROOT'
     rm -rf '$REMOTE_PREVIOUS'

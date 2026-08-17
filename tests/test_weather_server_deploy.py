@@ -123,6 +123,21 @@ class WeatherServerDeployTests(unittest.TestCase):
         self.assertIn("actual_owner", release)
         self.assertIn("'$LOCK_ID'", release)
 
+    def test_commit_lease_check_preserves_relative_remote_root(self):
+        deploy_script = (
+            ROOT / "scripts" / "deploy_data_infomaniak.sh"
+        ).read_text(encoding="utf-8")
+
+        switch_start = deploy_script.index('retry "switch remote web_exports directory"')
+        switch_end = deploy_script.index("\nassert_remote_lease", switch_start)
+        remote_switch = deploy_script[switch_start:switch_end]
+
+        lease_check_start = remote_switch.index("    (\n      cd '$REMOTE_LOCK'")
+        lease_check_end = remote_switch.index("\n    )\n    flock -u 9")
+        remote_mutation = remote_switch.index("mkdir -p '$REMOTE_ROOT'")
+        self.assertLess(lease_check_start, lease_check_end)
+        self.assertLess(lease_check_end, remote_mutation)
+
     def test_retry_preserves_the_failed_command_status(self):
         deploy_script = (
             ROOT / "scripts" / "deploy_data_infomaniak.sh"
