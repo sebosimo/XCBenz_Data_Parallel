@@ -91,12 +91,22 @@ extra generation time with the forecast freshness budget and decide whether a
 static indexed archive should replace the individual detail files. The archive
 would target file and request overhead, not further value compression.
 
-The latest four successful production forecast publications on the same day
-took 19.9 to 23.9 minutes. The 15.6-minute staging measurement includes work
-already performed for the base tier, so it must not simply be added to those
-durations. Run the same retained inputs once with the production base-only code
-and once with this branch to measure the incremental wall time before enabling
-the detail tier in production.
+The latest production forecast publication took 22.9 minutes. A controlled
+normal-cycle benchmark used identical CH1 18:00 and CH2 12:00 whole-grid inputs
+for the production base-only image and this branch:
+
+| Two-run tile phase | Base only | Base plus detail | Added time |
+| --- | ---: | ---: | ---: |
+| Generation | 20.5 seconds | 53.4 seconds | 32.9 seconds |
+| Full tile validation | 42.0 seconds | 111.6 seconds | 69.6 seconds |
+| Combined | 62.4 seconds | 165.0 seconds | 102.6 seconds |
+
+The base-only output contained 46,493 files and 591,654,254 bytes. The adaptive
+output contained 144,059 files and 1,186,124,460 bytes. A normal publication
+therefore adds about one minute and 43 seconds of isolated tile work, not the
+15.6 minutes measured by the deliberately exhaustive eight-run acceptance
+pass. The daily 03:00 cycle still validates all eight retained runs and remains
+the slowest case to benchmark before production activation.
 
 ## Executive summary
 
