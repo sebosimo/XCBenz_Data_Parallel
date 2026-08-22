@@ -12,7 +12,7 @@ import shutil
 import struct
 import uuid
 import zlib
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from pathlib import Path
 from typing import Any, Sequence
 
@@ -133,6 +133,19 @@ LEGACY_WIND_GRID = GridSpec(
 FINE_GRIDS = (FINE_GRID, LEGACY_FINE_GRID)
 WIND_GRIDS = (WIND_GRID, LEGACY_WIND_GRID)
 SUPPORTED_GRIDS = (*FINE_GRIDS, *WIND_GRIDS)
+DETAIL_TILE_TIER_ID = "detail"
+
+
+def _detail_tile_grid(grid: GridSpec) -> GridSpec:
+    if grid in FINE_GRIDS:
+        return replace(grid, core_width=128, core_height=64)
+    if grid in WIND_GRIDS:
+        return replace(grid, core_width=64, core_height=32)
+    raise ValueError(f"grid {grid.id!r} has no detail tile tier")
+
+
+def _tile_grids(grid: GridSpec) -> tuple[tuple[str | None, GridSpec], ...]:
+    return ((None, grid), (DETAIL_TILE_TIER_ID, _detail_tile_grid(grid)))
 
 
 @dataclass(frozen=True)
@@ -883,6 +896,7 @@ def _load_decoded(path: Path, grid: GridSpec, channel: ChannelSpec) -> tuple[byt
 
 
 def _variant_metadata_content(source: VariantSource, steps: list[dict[str, Any]]) -> dict[str, Any]:
+    detail_grid = _detail_tile_grid(source.grid)
     content = {
         "contract": CONTRACT,
         "contract_version": CONTRACT_VERSION,
@@ -894,12 +908,22 @@ def _variant_metadata_content(source: VariantSource, steps: list[dict[str, Any]]
         "grid_id": source.grid.id,
         "grid": source.grid.contract_payload(),
         "tile_matrix": source.grid.tile_matrix_payload(),
+        "tile_tiers": [
+            {
+                "id": DETAIL_TILE_TIER_ID,
+                **detail_grid.tile_matrix_payload(),
+                "url_template": f"tiers/{DETAIL_TILE_TIER_ID}/{{step}}/t{{tile_y}}_{{tile_x}}.xvt",
+            }
+        ],
         "channels": [channel.name for channel in source.channels],
         "encodings": [channel.contract_payload() for channel in source.channels],
         "source_whole_grid_metadata": list(source.source_metadata),
         "steps": steps,
     }
-    if any(step.get("neutral_tile_indexes") for step in steps):
+    if any(
+        step.get("neutral_tile_indexes") or step.get("tier_neutral_tile_indexes")
+        for step in steps
+    ):
         content["neutral_values"] = {channel.name: channel.neutral for channel in source.channels}
     return content
 
@@ -928,36 +952,39 @@ def _generate_run(
                     channel.name: f"{zlib.crc32(raw) & 0xFFFFFFFF:08x}"
                     for channel, (raw, _decoded) in zip(source.channels, loaded)
                 }
-                neutral_tile_indexes: list[int] = []
-                for tile_y in range(source.grid.tiles_y):
-                    for tile_x in range(source.grid.tiles_x):
-                        tile, neutral = _encode_xvt_with_neutral_state(
-                            source.grid,
-                            tile_x,
-                            tile_y,
-                            [
-                                (channel, decoded)
-                                for channel, (_raw, decoded) in zip(source.channels, loaded)
-                            ],
-                        )
-                        if neutral:
-                            neutral_tile_indexes.append(tile_y * source.grid.tiles_x + tile_x)
-                        logical_path = (
-                            Path(source.product)
-                            / source.variant
-                            / step.label
-                            / f"t{tile_y}_{tile_x}.xvt"
-                        ).as_posix()
-                        tile_path = build_root / logical_path
-                        tile_path.parent.mkdir(parents=True, exist_ok=True)
-                        tile_path.write_bytes(tile)
-                        tile_records.append(
-                            {
-                                "logical_path": logical_path,
-                                "byte_length": len(tile),
-                                "sha256": sha256_bytes(tile),
-                            }
-                        )
+                neutral_indexes_by_tier: dict[str | None, list[int]] = {}
+                for tier_id, tile_grid in _tile_grids(source.grid):
+                    neutral_tile_indexes: list[int] = []
+                    for tile_y in range(tile_grid.tiles_y):
+                        for tile_x in range(tile_grid.tiles_x):
+                            tile, neutral = _encode_xvt_with_neutral_state(
+                                tile_grid,
+                                tile_x,
+                                tile_y,
+                                [
+                                    (channel, decoded)
+                                    for channel, (_raw, decoded) in zip(source.channels, loaded)
+                                ],
+                            )
+                            if neutral:
+                                neutral_tile_indexes.append(tile_y * tile_grid.tiles_x + tile_x)
+                            path_parts = [source.product, source.variant]
+                            if tier_id is not None:
+                                path_parts.extend(("tiers", tier_id))
+                            path_parts.extend((step.label, f"t{tile_y}_{tile_x}.xvt"))
+                            logical_path = Path(*path_parts).as_posix()
+                            tile_path = build_root / logical_path
+                            tile_path.parent.mkdir(parents=True, exist_ok=True)
+                            tile_path.write_bytes(tile)
+                            tile_records.append(
+                                {
+                                    "logical_path": logical_path,
+                                    "byte_length": len(tile),
+                                    "sha256": sha256_bytes(tile),
+                                }
+                            )
+                    if neutral_tile_indexes:
+                        neutral_indexes_by_tier[tier_id] = neutral_tile_indexes
                 metadata_step = {
                     "step": step.label,
                     "horizon": step.horizon,
@@ -965,8 +992,15 @@ def _generate_run(
                     "tile_count": source.grid.tiles_x * source.grid.tiles_y,
                     "full_grid_crc32": crc_values,
                 }
-                if neutral_tile_indexes:
-                    metadata_step["neutral_tile_indexes"] = neutral_tile_indexes
+                if neutral_indexes_by_tier.get(None):
+                    metadata_step["neutral_tile_indexes"] = neutral_indexes_by_tier[None]
+                tier_neutral_indexes = {
+                    tier_id: indexes
+                    for tier_id, indexes in neutral_indexes_by_tier.items()
+                    if tier_id is not None
+                }
+                if tier_neutral_indexes:
+                    metadata_step["tier_neutral_tile_indexes"] = tier_neutral_indexes
                 metadata_steps.append(metadata_step)
             content = _variant_metadata_content(source, metadata_steps)
             metadata_records.append(
@@ -1089,6 +1123,46 @@ def _metadata_without_revision(metadata: dict[str, Any]) -> dict[str, Any]:
     return {key: value for key, value in metadata.items() if key not in {"revision", "revision_sha256"}}
 
 
+def _declared_tile_grids(
+    metadata_path: Path,
+    metadata: dict[str, Any],
+    grid: GridSpec,
+) -> tuple[tuple[str | None, GridSpec], ...]:
+    declared_tiers = metadata.get("tile_tiers")
+    if declared_tiers is None:
+        return ((None, grid),)
+    detail_grid = _detail_tile_grid(grid)
+    expected_tiers = [
+        {
+            "id": DETAIL_TILE_TIER_ID,
+            **detail_grid.tile_matrix_payload(),
+            "url_template": f"tiers/{DETAIL_TILE_TIER_ID}/{{step}}/t{{tile_y}}_{{tile_x}}.xvt",
+        }
+    ]
+    if declared_tiers != expected_tiers:
+        raise ValueError(f"{metadata_path} tile tier declaration differs from the contract")
+    return _tile_grids(grid)
+
+
+def _validate_neutral_indexes(
+    metadata_path: Path,
+    label: str,
+    indexes: Any,
+    expected_tiles: int,
+    declaration: str,
+) -> bool:
+    if not isinstance(indexes, list):
+        raise ValueError(f"{metadata_path} {label} {declaration} must be a list")
+    previous_index = -1
+    for index in indexes:
+        if isinstance(index, bool) or not isinstance(index, int) or not 0 <= index < expected_tiles:
+            raise ValueError(f"{metadata_path} {label} has an invalid {declaration}")
+        if index <= previous_index:
+            raise ValueError(f"{metadata_path} {label} {declaration} are not strictly sorted")
+        previous_index = index
+    return bool(indexes)
+
+
 def _validate_tile_identity(tile: ParsedTile, grid: GridSpec, tile_x: int, tile_y: int) -> None:
     valid_width, valid_height = _valid_core(grid, tile_x, tile_y)
     expected = (
@@ -1129,15 +1203,31 @@ def _validate_tile_identity(tile: ParsedTile, grid: GridSpec, tile_x: int, tile_
         raise ValueError(f"tile ({tile_x}, {tile_y}) padding flag is incorrect")
 
 
-def _tile_path(metadata_path: Path, step: str, tile_x: int, tile_y: int) -> Path:
-    return metadata_path.parent / step / f"t{tile_y}_{tile_x}.xvt"
+def _tile_path(
+    metadata_path: Path,
+    step: str,
+    tile_x: int,
+    tile_y: int,
+    tier_id: str | None = None,
+) -> Path:
+    root = metadata_path.parent
+    if tier_id is not None:
+        root = root / "tiers" / tier_id
+    return root / step / f"t{tile_y}_{tile_x}.xvt"
 
 
 def _validate_variant_declaration(
     metadata_path: Path,
     metadata: dict[str, Any],
-) -> tuple[GridSpec, tuple[ChannelSpec, ...], list[dict[str, Any]], int]:
+) -> tuple[
+    GridSpec,
+    tuple[ChannelSpec, ...],
+    list[dict[str, Any]],
+    tuple[tuple[str | None, GridSpec], ...],
+    int,
+]:
     grid = _grid_from_metadata(metadata)
+    tile_grids = _declared_tile_grids(metadata_path, metadata, grid)
     channel_names = metadata.get("channels") or []
     channels = tuple(CHANNELS.get(str(name)) for name in channel_names)
     if not channels or any(channel is None for channel in channels):
@@ -1159,22 +1249,40 @@ def _validate_variant_declaration(
         label = str(step.get("step") or "")
         if int(step.get("tile_count") or 0) != expected_tiles:
             raise ValueError(f"{metadata_path} {label} has an incomplete tile matrix declaration")
-        neutral_indexes = step.get("neutral_tile_indexes", [])
-        if not isinstance(neutral_indexes, list):
-            raise ValueError(f"{metadata_path} {label} neutral tile indexes must be a list")
-        previous_index = -1
-        for index in neutral_indexes:
-            if isinstance(index, bool) or not isinstance(index, int) or not 0 <= index < expected_tiles:
-                raise ValueError(f"{metadata_path} {label} has an invalid neutral tile index")
-            if index <= previous_index:
-                raise ValueError(f"{metadata_path} {label} neutral tile indexes are not strictly sorted")
-            previous_index = index
-        has_neutral_tiles = has_neutral_tiles or bool(neutral_indexes)
+        has_neutral_tiles = _validate_neutral_indexes(
+            metadata_path,
+            label,
+            step.get("neutral_tile_indexes", []),
+            expected_tiles,
+            "neutral tile indexes",
+        ) or has_neutral_tiles
+        tier_neutral_indexes = step.get("tier_neutral_tile_indexes", {})
+        if not isinstance(tier_neutral_indexes, dict):
+            raise ValueError(f"{metadata_path} {label} tier neutral tile indexes must be an object")
+        expected_tier_ids = {tier_id for tier_id, _tile_grid in tile_grids if tier_id is not None}
+        if not set(tier_neutral_indexes).issubset(expected_tier_ids):
+            raise ValueError(f"{metadata_path} {label} declares an unknown neutral tile tier")
+        for tier_id, tile_grid in tile_grids:
+            if tier_id is None or tier_id not in tier_neutral_indexes:
+                continue
+            indexes = tier_neutral_indexes[tier_id]
+            if not indexes:
+                raise ValueError(f"{metadata_path} {label} declares an empty neutral tile tier")
+            has_neutral_tiles = _validate_neutral_indexes(
+                metadata_path,
+                label,
+                indexes,
+                tile_grid.tiles_x * tile_grid.tiles_y,
+                f"{tier_id} neutral tile indexes",
+            ) or has_neutral_tiles
     if has_neutral_tiles and neutral_values is None:
         raise ValueError(f"{metadata_path} declares neutral tiles without neutral values")
     if neutral_values is not None and not has_neutral_tiles:
         raise ValueError(f"{metadata_path} declares unused neutral values")
-    return grid, typed_channels, steps, len(steps) * expected_tiles
+    declared_tiles_per_step = sum(
+        tile_grid.tiles_x * tile_grid.tiles_y for _tier_id, tile_grid in tile_grids
+    )
+    return grid, typed_channels, steps, tile_grids, len(steps) * declared_tiles_per_step
 
 
 def _validate_variant(
@@ -1182,93 +1290,118 @@ def _validate_variant(
     metadata: dict[str, Any],
     tile_records: dict[str, dict[str, Any]],
 ) -> tuple[int, int, set[str]]:
-    grid, typed_channels, steps, _declared_tiles = _validate_variant_declaration(metadata_path, metadata)
+    _grid, typed_channels, steps, tile_grids, _declared_tiles = _validate_variant_declaration(
+        metadata_path,
+        metadata,
+    )
     tile_count = 0
     validated_paths: set[str] = set()
     revision_root = metadata_path.parents[2]
     for step in steps:
         label = str(step.get("step") or "")
-        marked_neutral_tiles = set(step.get("neutral_tile_indexes") or [])
-        validates_neutral_tiles = metadata.get("neutral_values") is not None
-        reconstructed = {
-            channel.name: bytearray(channel.missing_bytes * (grid.width * grid.height))
-            for channel in typed_channels
-        }
-        parsed_tiles: dict[tuple[int, int], ParsedTile] = {}
-        for tile_y in range(grid.tiles_y):
-            for tile_x in range(grid.tiles_x):
-                path = _tile_path(metadata_path, label, tile_x, tile_y)
-                data = path.read_bytes()
-                logical_path = path.relative_to(revision_root).as_posix()
-                tile_record = tile_records.get(logical_path)
-                if tile_record is None:
-                    raise ValueError(f"{logical_path} is absent from the revision record")
-                if len(data) != int(tile_record.get("byte_length") or -1):
-                    raise ValueError(f"{logical_path} byte length differs from revision record")
-                if sha256_bytes(data) != tile_record.get("sha256"):
-                    raise ValueError(f"{logical_path} SHA-256 differs from revision record")
-                tile = parse_xvt(data)
-                parsed_tiles[(tile_x, tile_y)] = tile
-                validated_paths.add(logical_path)
-                _validate_tile_identity(tile, grid, tile_x, tile_y)
-                if tuple(section.channel for section in tile.sections) != typed_channels:
-                    raise ValueError(f"{path} channel order differs from metadata")
-                tile_is_neutral = True
-                for section in tile.sections:
-                    decoded = _decoded_section(section)
-                    tile_is_neutral = tile_is_neutral and decoded == (
-                        section.channel.neutral_bytes * section.decoded_cell_count
-                    )
-                    cell_bytes = section.channel.cell_bytes
-                    for core_y in range(tile.valid_core_height):
-                        source_offset = ((core_y + HALO) * grid.payload_width + HALO) * cell_bytes
-                        target_y = tile_y * grid.core_height + core_y
-                        target_offset = (target_y * grid.width + tile_x * grid.core_width) * cell_bytes
-                        length = tile.valid_core_width * cell_bytes
-                        reconstructed[section.channel.name][target_offset : target_offset + length] = decoded[
-                            source_offset : source_offset + length
-                        ]
-                if validates_neutral_tiles and (
-                    (tile_y * grid.tiles_x + tile_x in marked_neutral_tiles) != tile_is_neutral
-                ):
-                    raise ValueError(f"{path} neutral tile declaration differs from its payload")
-                tile_count += 1
         declared_crc = step.get("full_grid_crc32") or {}
-        for channel in typed_channels:
-            decoded = bytes(reconstructed[channel.name])
-            encoded = pack_cloud_codes(decoded) if channel.is_cloud else decoded
-            actual_crc = f"{zlib.crc32(encoded) & 0xFFFFFFFF:08x}"
-            if declared_crc.get(channel.name) != actual_crc:
-                raise ValueError(f"{metadata_path} {label} {channel.name} full-grid CRC mismatch")
-        for tile_y in range(grid.tiles_y):
-            for tile_x in range(grid.tiles_x):
-                path = _tile_path(metadata_path, label, tile_x, tile_y)
-                tile = parsed_tiles[(tile_x, tile_y)]
-                x_start = tile_x * grid.core_width - HALO
-                y_start = tile_y * grid.core_height - HALO
-                for section in tile.sections:
-                    decoded = _decoded_section(section)
-                    expected_grid = bytes(reconstructed[section.channel.name])
-                    cell_bytes = section.channel.cell_bytes
-                    for payload_y in range(grid.payload_height):
-                        source_y = y_start + payload_y
-                        row = decoded[
-                            payload_y * grid.payload_width * cell_bytes :
-                            (payload_y + 1) * grid.payload_width * cell_bytes
-                        ]
-                        expected_row = bytearray(section.channel.missing_bytes * grid.payload_width)
-                        if 0 <= source_y < grid.height:
-                            copy_x0 = max(0, x_start)
-                            copy_x1 = min(grid.width, x_start + grid.payload_width)
-                            if copy_x1 > copy_x0:
-                                source_offset = (source_y * grid.width + copy_x0) * cell_bytes
-                                output_offset = (copy_x0 - x_start) * cell_bytes
-                                length = (copy_x1 - copy_x0) * cell_bytes
-                                expected_row[output_offset : output_offset + length] = expected_grid[
-                                    source_offset : source_offset + length
-                                ]
-                        if row != bytes(expected_row):
-                            raise ValueError(f"{path} halo or outside-domain padding differs from its global grid")
+        tier_neutral_indexes = step.get("tier_neutral_tile_indexes") or {}
+        for tier_id, tile_grid in tile_grids:
+            marked_neutral_tiles = set(
+                step.get("neutral_tile_indexes") or []
+                if tier_id is None
+                else tier_neutral_indexes.get(tier_id) or []
+            )
+            validates_neutral_tiles = metadata.get("neutral_values") is not None
+            reconstructed = {
+                channel.name: bytearray(channel.missing_bytes * (tile_grid.width * tile_grid.height))
+                for channel in typed_channels
+            }
+            parsed_tiles: dict[tuple[int, int], ParsedTile] = {}
+            for tile_y in range(tile_grid.tiles_y):
+                for tile_x in range(tile_grid.tiles_x):
+                    path = _tile_path(metadata_path, label, tile_x, tile_y, tier_id)
+                    data = path.read_bytes()
+                    logical_path = path.relative_to(revision_root).as_posix()
+                    tile_record = tile_records.get(logical_path)
+                    if tile_record is None:
+                        raise ValueError(f"{logical_path} is absent from the revision record")
+                    if len(data) != int(tile_record.get("byte_length") or -1):
+                        raise ValueError(f"{logical_path} byte length differs from revision record")
+                    if sha256_bytes(data) != tile_record.get("sha256"):
+                        raise ValueError(f"{logical_path} SHA-256 differs from revision record")
+                    tile = parse_xvt(data)
+                    parsed_tiles[(tile_x, tile_y)] = tile
+                    validated_paths.add(logical_path)
+                    _validate_tile_identity(tile, tile_grid, tile_x, tile_y)
+                    if tuple(section.channel for section in tile.sections) != typed_channels:
+                        raise ValueError(f"{path} channel order differs from metadata")
+                    tile_is_neutral = True
+                    for section in tile.sections:
+                        decoded = _decoded_section(section)
+                        tile_is_neutral = tile_is_neutral and decoded == (
+                            section.channel.neutral_bytes * section.decoded_cell_count
+                        )
+                        cell_bytes = section.channel.cell_bytes
+                        for core_y in range(tile.valid_core_height):
+                            source_offset = (
+                                (core_y + HALO) * tile_grid.payload_width + HALO
+                            ) * cell_bytes
+                            target_y = tile_y * tile_grid.core_height + core_y
+                            target_offset = (
+                                target_y * tile_grid.width + tile_x * tile_grid.core_width
+                            ) * cell_bytes
+                            length = tile.valid_core_width * cell_bytes
+                            reconstructed[section.channel.name][
+                                target_offset : target_offset + length
+                            ] = decoded[source_offset : source_offset + length]
+                    tile_index = tile_y * tile_grid.tiles_x + tile_x
+                    if validates_neutral_tiles and (
+                        (tile_index in marked_neutral_tiles) != tile_is_neutral
+                    ):
+                        raise ValueError(f"{path} neutral tile declaration differs from its payload")
+                    tile_count += 1
+            for channel in typed_channels:
+                decoded = bytes(reconstructed[channel.name])
+                encoded = pack_cloud_codes(decoded) if channel.is_cloud else decoded
+                actual_crc = f"{zlib.crc32(encoded) & 0xFFFFFFFF:08x}"
+                if declared_crc.get(channel.name) != actual_crc:
+                    raise ValueError(
+                        f"{metadata_path} {label} {channel.name} full-grid CRC mismatch"
+                    )
+            for tile_y in range(tile_grid.tiles_y):
+                for tile_x in range(tile_grid.tiles_x):
+                    path = _tile_path(metadata_path, label, tile_x, tile_y, tier_id)
+                    tile = parsed_tiles[(tile_x, tile_y)]
+                    x_start = tile_x * tile_grid.core_width - HALO
+                    y_start = tile_y * tile_grid.core_height - HALO
+                    for section in tile.sections:
+                        decoded = _decoded_section(section)
+                        expected_grid = bytes(reconstructed[section.channel.name])
+                        cell_bytes = section.channel.cell_bytes
+                        for payload_y in range(tile_grid.payload_height):
+                            source_y = y_start + payload_y
+                            row = decoded[
+                                payload_y * tile_grid.payload_width * cell_bytes :
+                                (payload_y + 1) * tile_grid.payload_width * cell_bytes
+                            ]
+                            expected_row = bytearray(
+                                section.channel.missing_bytes * tile_grid.payload_width
+                            )
+                            if 0 <= source_y < tile_grid.height:
+                                copy_x0 = max(0, x_start)
+                                copy_x1 = min(
+                                    tile_grid.width,
+                                    x_start + tile_grid.payload_width,
+                                )
+                                if copy_x1 > copy_x0:
+                                    source_offset = (
+                                        source_y * tile_grid.width + copy_x0
+                                    ) * cell_bytes
+                                    output_offset = (copy_x0 - x_start) * cell_bytes
+                                    length = (copy_x1 - copy_x0) * cell_bytes
+                                    expected_row[output_offset : output_offset + length] = (
+                                        expected_grid[source_offset : source_offset + length]
+                                    )
+                            if row != bytes(expected_row):
+                                raise ValueError(
+                                    f"{path} halo or outside-domain padding differs from its global grid"
+                                )
     return len(steps), tile_count, validated_paths
 
 
@@ -1370,7 +1503,7 @@ def validate_value_tile_publication(
                         recorded_tiles,
                     )
                 else:
-                    _grid, _channels, steps, variant_tiles = _validate_variant_declaration(
+                    _grid, _channels, steps, _tile_grids, variant_tiles = _validate_variant_declaration(
                         metadata_path,
                         metadata,
                     )

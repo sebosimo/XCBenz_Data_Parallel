@@ -40,6 +40,21 @@ the immutable tile payload. The physical `.xvt` files remain published so
 older clients keep working; compatible frontend clients may synthesize these
 tiles locally and avoid their HTTP requests.
 
+New revisions also publish an additive `detail` tile tier at the same model
+resolution. Fine-grid products use 128 by 64 cell cores and Wind uses 64 by 32
+cell cores, so both cover the same 2.56 by 1.28 degree area. Metadata keeps the
+original `tile_matrix` and paths for compatibility, then declares the smaller
+matrix under `tile_tiers` with immutable `tiers/detail/` paths. Each step may
+carry independent neutral indexes for that tier. Full validation reconstructs
+the source grid and checks CRCs, halos, padding, hashes, and neutral declarations
+for both matrices.
+
+In the repository fixture, this tier raises tile file count from 160 to 496 and
+raw immutable tile storage from 2,417,600 to 4,791,776 bytes. Do not infer
+production publication cost from unit-test timing. Repeat the existing Coding
+Server and Infomaniak staging measurements before enabling a tiered producer in
+production.
+
 Each newly processed forecast run receives tiles during its normal pipeline
 run when `ENABLE_VALUE_TILES=true`. Retention merges the new immutable revision
 with still-retained earlier revisions. Historical backfill is not required for

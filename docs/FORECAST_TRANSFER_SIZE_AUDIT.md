@@ -372,6 +372,30 @@ declared neutral payloads and excludes their URLs from foreground and warm
 requests. Legacy files remain present for old-client compatibility, and the
 prefetch scheduler remains unchanged for all non-neutral tiles.
 
+The next implementation slice added a same-resolution detail tier with 128 by
+64 fine-grid cores and 64 by 32 Wind cores. The original matrix and URLs remain
+available. The frontend selects the detail tier only when it stays within ten
+requests and reduces payload cells by at least 20% when it adds requests. For a
+Switzerland-centered view, the measured geometry is:
+
+| Relative zoom | Base payload cells | Detail payload cells | Selected reduction |
+| --- | ---: | ---: | ---: |
+| 1x | 110,808 in 6 requests | 77,220 in 9 requests | 30.3% |
+| 2x | 73,872 in 4 requests | 51,480 in 6 requests | 30.3% |
+| 4x | 36,936 in 2 requests | 17,160 in 2 requests | 53.5% |
+| 16x | 36,936 in 2 requests | 8,580 in 1 request | 76.8% |
+
+These are exact encoded payload cell counts before compression. Compression
+changes the byte ratio by product, but the model values and grid spacing do not
+change.
+
+The representative one-step, eight-variant backend fixture grows from 160 base
+files and 2,417,600 bytes to 496 files and 4,791,776 bytes after adding the
+detail tier. That is 3.1 times as many tile files and 98.2% more immutable tile
+storage. This is a deliberate server-side cache tradeoff for smaller viewport
+responses. A staging publication must measure generation time, retained-tree
+traversal, upload, and superseded-tree deletion before production rollout.
+
 ## Bundling and compression
 
 Current separate XVT files each start a new gzip stream. The audit compared
@@ -504,11 +528,11 @@ forecast-value change.
 
 ### Phase 2: lossless spatial transfer
 
-1. Define at least two static tile tiers at unchanged model resolution.
-2. Generate immutable metadata and tile paths for each tier.
-3. Select a tier by viewport source-cell dimensions and expected overfetch.
-4. Add per-step sparse occupancy indexes and synthesize neutral tiles in the frontend. Implemented additively on 2026-08-22.
-5. Preserve the current foreground and progressive prefetch scheduler.
+1. Define at least two static tile tiers at unchanged model resolution. Implemented on 2026-08-22.
+2. Generate immutable metadata and tile paths for each tier. Implemented on 2026-08-22.
+3. Select a tier by viewport source-cell dimensions and expected overfetch. Implemented on 2026-08-22.
+4. Add per-step sparse occupancy indexes and synthesize neutral tiles in the frontend. Implemented on 2026-08-22.
+5. Preserve the current foreground and progressive prefetch scheduler. Implemented on 2026-08-22.
 
 Expected result: roughly half to two thirds less tile data for the default
 Switzerland view, with larger relative gains at zoom.

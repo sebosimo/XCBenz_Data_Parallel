@@ -274,31 +274,46 @@ def validate_value_tiles(manifest: dict[str, Any]) -> None:
     if not steps:
         raise ValidationError(f"{metadata_url} has no steps")
     step = steps[0]
-    tile_matrix = metadata.get("tile_matrix") or {}
-    template = str(tile_matrix.get("url_template") or "")
-    if not template:
-        raise ValidationError(f"{metadata_url} has no tile URL template")
-    relative_tile = template.format(step=step["step"], tile_y=0, tile_x=0)
-    tile_url = resolve_url(relative_tile, context_url=metadata_url)
-    tile_result = fetch(tile_url)
-    _require_cache_header(tile_result.headers, "immutable", tile_url)
-    content_type = str(tile_result.headers.get("Content-Type") or "").split(";", 1)[0].strip().lower()
-    if content_type not in {"application/octet-stream", "application/vnd.xcbenz.xvt"}:
-        raise ValidationError(f"{tile_url} has unexpected Content-Type {content_type!r}")
-    parse_xvt(tile_result.data)
-    logical_path = f"{variant_key}/{step['step']}/t0_0.xvt"
-    tile_record = next(
-        (item for item in (record.get("tiles") or []) if item.get("logical_path") == logical_path),
-        None,
+    tile_matrices = [(None, metadata.get("tile_matrix") or {})]
+    tile_matrices.extend(
+        (str(tier.get("id") or ""), tier) for tier in (metadata.get("tile_tiers") or [])
     )
-    if not tile_record:
-        raise ValidationError(f"{revision_url} does not record {logical_path}")
-    if (
-        int(tile_record.get("byte_length") or -1) != len(tile_result.data)
-        or tile_record.get("sha256") != sha256_bytes(tile_result.data)
-    ):
-        raise ValidationError(f"{tile_url} differs from its revision record")
-    log(f"value tiles OK: {model_key}/{run_key}/{variant_key}/{step['step']} bytes={len(tile_result.data)}")
+    validated_bytes = 0
+    for tier_id, tile_matrix in tile_matrices:
+        template = str(tile_matrix.get("url_template") or "")
+        if not template:
+            raise ValidationError(f"{metadata_url} has no tile URL template")
+        relative_tile = template.format(step=step["step"], tile_y=0, tile_x=0)
+        tile_url = resolve_url(relative_tile, context_url=metadata_url)
+        tile_result = fetch(tile_url)
+        _require_cache_header(tile_result.headers, "immutable", tile_url)
+        content_type = (
+            str(tile_result.headers.get("Content-Type") or "")
+            .split(";", 1)[0]
+            .strip()
+            .lower()
+        )
+        if content_type not in {"application/octet-stream", "application/vnd.xcbenz.xvt"}:
+            raise ValidationError(f"{tile_url} has unexpected Content-Type {content_type!r}")
+        parse_xvt(tile_result.data)
+        tier_path = "" if tier_id is None else f"tiers/{tier_id}/"
+        logical_path = f"{variant_key}/{tier_path}{step['step']}/t0_0.xvt"
+        tile_record = next(
+            (item for item in (record.get("tiles") or []) if item.get("logical_path") == logical_path),
+            None,
+        )
+        if not tile_record:
+            raise ValidationError(f"{revision_url} does not record {logical_path}")
+        if (
+            int(tile_record.get("byte_length") or -1) != len(tile_result.data)
+            or tile_record.get("sha256") != sha256_bytes(tile_result.data)
+        ):
+            raise ValidationError(f"{tile_url} differs from its revision record")
+        validated_bytes += len(tile_result.data)
+    log(
+        f"value tiles OK: {model_key}/{run_key}/{variant_key}/{step['step']} "
+        f"tiers={len(tile_matrices)} bytes={validated_bytes}"
+    )
 
 
 def main() -> int:

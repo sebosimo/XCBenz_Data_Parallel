@@ -387,8 +387,8 @@ class ValueTileGenerationTests(unittest.TestCase):
             second_run = second["models"]["icon-ch1"]["runs"]["20260716_0300"]
 
             self.assertEqual(first_run["revision_sha256"], second_run["revision_sha256"])
-            self.assertEqual(first["counts"], {"models": 1, "runs": 1, "variants": 8, "tiles": 160})
-            self.assertEqual(counts, {"runs": 1, "variants": 8, "steps": 8, "tiles": 160})
+            self.assertEqual(first["counts"], {"models": 1, "runs": 1, "variants": 8, "tiles": 496})
+            self.assertEqual(counts, {"runs": 1, "variants": 8, "steps": 8, "tiles": 496})
             self.assertEqual(whole_grid.read_bytes(), original)
             self.assertEqual(
                 set(first_run["variants"]),
@@ -427,7 +427,7 @@ class ValueTileGenerationTests(unittest.TestCase):
                 validate_value_tile_publication(web_root)
 
             restored = generate_value_tiles(web_root)
-            self.assertEqual(restored["counts"]["tiles"], 160)
+            self.assertEqual(restored["counts"]["tiles"], 496)
             self.assertIsNone(prune_value_tile_manifest(web_root, {"icon-ch1": set()}))
             self.assertFalse((web_root / "value_tiles").exists())
         finally:
@@ -449,13 +449,41 @@ class ValueTileGenerationTests(unittest.TestCase):
 
             self.assertEqual(metadata["neutral_values"], {"rain": 0})
             self.assertEqual(
+                metadata["tile_tiers"],
+                [
+                    {
+                        "id": "detail",
+                        "core_width": 128,
+                        "core_height": 64,
+                        "halo": 1,
+                        "tiles_x": 7,
+                        "tiles_y": 6,
+                        "tile_order": "y_then_x",
+                        "url_template": "tiers/detail/{step}/t{tile_y}_{tile_x}.xvt",
+                    }
+                ],
+            )
+            self.assertEqual(
                 metadata["steps"][0]["neutral_tile_indexes"],
                 [6, 7, 8, 11, 12, 13],
             )
+            self.assertEqual(
+                metadata["steps"][0]["tier_neutral_tile_indexes"]["detail"],
+                [
+                    *range(8, 13),
+                    *range(15, 20),
+                    *range(22, 27),
+                    *range(29, 34),
+                ],
+            )
             self.assertEqual(len(list((metadata_path.parent / "H00").glob("*.xvt"))), 20)
             self.assertEqual(
+                len(list((metadata_path.parent / "tiers/detail/H00").glob("*.xvt"))),
+                42,
+            )
+            self.assertEqual(
                 validate_value_tile_publication(web_root),
-                {"runs": 1, "variants": 8, "steps": 8, "tiles": 160},
+                {"runs": 1, "variants": 8, "steps": 8, "tiles": 496},
             )
         finally:
             shutil.rmtree(workspace, ignore_errors=True)
@@ -482,7 +510,7 @@ class ValueTileGenerationTests(unittest.TestCase):
 
             self.assertEqual(
                 manifest["counts"],
-                {"models": 1, "runs": 2, "variants": 16, "tiles": 256},
+                {"models": 1, "runs": 2, "variants": 16, "tiles": 792},
             )
             runs = manifest["models"]["icon-ch1"]["runs"]
             current_record = json.loads(
@@ -526,7 +554,7 @@ class ValueTileGenerationTests(unittest.TestCase):
 
             self.assertEqual(
                 manifest["counts"],
-                {"models": 1, "runs": 1, "variants": 8, "tiles": 160},
+                {"models": 1, "runs": 1, "variants": 8, "tiles": 496},
             )
             self.assertEqual(
                 set(manifest["models"]["icon-ch1"]["runs"]),
@@ -679,12 +707,20 @@ class ValueTileRemoteValidationTests(unittest.TestCase):
             with self.assertRaisesRegex(remote.ValidationError, "still published"):
                 remote.require_missing(capability_declaration()["manifest"])
 
-    def test_remote_smoke_validates_identity_tile_hash_mime_and_cache(self):
+    def test_remote_smoke_validates_base_and_detail_tile_hash_mime_and_cache(self):
         from scripts import validate_remote_web_exports as remote
 
         grid = GridSpec("test", 2, 2, 100_000, 0, 0, 1, 1, 2, 2)
         tile = encode_xvt(grid, 0, 0, [(CHANNELS["rain"], bytes([1, 2, 3, 4]))])
+        detail_grid = GridSpec("test", 2, 2, 100_000, 0, 0, 1, 1, 1, 1)
+        detail_tile = encode_xvt(
+            detail_grid,
+            0,
+            0,
+            [(CHANNELS["rain"], bytes([1, 2, 3, 4]))],
+        )
         logical_path = "rain/surface/H00/t0_0.xvt"
+        detail_logical_path = "rain/surface/tiers/detail/H00/t0_0.xvt"
         record = {
             "model": "icon-ch1",
             "run": "20260716_0300",
@@ -693,7 +729,12 @@ class ValueTileRemoteValidationTests(unittest.TestCase):
                     "logical_path": logical_path,
                     "byte_length": len(tile),
                     "sha256": sha256_bytes(tile),
-                }
+                },
+                {
+                    "logical_path": detail_logical_path,
+                    "byte_length": len(detail_tile),
+                    "sha256": sha256_bytes(detail_tile),
+                },
             ],
         }
         digest = sha256_bytes(canonical_json_bytes(record))
@@ -720,6 +761,12 @@ class ValueTileRemoteValidationTests(unittest.TestCase):
         wrapper = {"revision": revision, "revision_sha256": digest, "record": record}
         metadata = {
             "tile_matrix": {"url_template": "{step}/t{tile_y}_{tile_x}.xvt"},
+            "tile_tiers": [
+                {
+                    "id": "detail",
+                    "url_template": "tiers/detail/{step}/t{tile_y}_{tile_x}.xvt",
+                }
+            ],
             "steps": [{"step": "H00"}],
         }
 
@@ -734,21 +781,38 @@ class ValueTileRemoteValidationTests(unittest.TestCase):
             raise AssertionError(path)
 
         tile_url = remote.resolve_url("H00/t0_0.xvt", context_url=remote.resolve_url(metadata_url))
-        with mock.patch.object(remote, "fetch_json", side_effect=fake_fetch_json), mock.patch.object(
-            remote,
-            "fetch",
-            return_value=remote.FetchResult(
-                tile_url,
-                tile,
+        detail_tile_url = remote.resolve_url(
+            "tiers/detail/H00/t0_0.xvt",
+            context_url=remote.resolve_url(metadata_url),
+        )
+
+        def fake_fetch(path: str):
+            if path == tile_url:
+                payload = tile
+            elif path == detail_tile_url:
+                payload = detail_tile
+            else:
+                raise AssertionError(path)
+            return remote.FetchResult(
+                path,
+                payload,
                 {
                     "Cache-Control": "public, max-age=31536000, immutable",
                     "Content-Type": "application/octet-stream",
                 },
-            ),
+            )
+
+        with mock.patch.object(remote, "fetch_json", side_effect=fake_fetch_json), mock.patch.object(
+            remote,
+            "fetch",
+            side_effect=fake_fetch,
         ) as fetch_mock:
             remote.validate_value_tiles({"capabilities": {"spatial_value_tiles": capability_declaration()}})
 
-        fetch_mock.assert_called_once_with(tile_url)
+        self.assertEqual(
+            fetch_mock.call_args_list,
+            [mock.call(tile_url), mock.call(detail_tile_url)],
+        )
 
 
 class ValueTileRetentionIntegrationTests(unittest.TestCase):
