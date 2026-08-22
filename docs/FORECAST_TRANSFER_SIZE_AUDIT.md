@@ -35,6 +35,69 @@ The frontend work lives on the matching
 compact file first and falls back only when that resource returns HTTP 404.
 The version-1 file remains published throughout the rollout.
 
+The lossless spatial slice is also implemented on the backend and frontend
+branches. It adds neutral-tile indexes and a same-grid-resolution `detail`
+tier, while keeping the original tile matrix, immutable URLs, fallback files,
+and progressive prefetch behavior.
+
+### Staging acceptance, 2026-08-22
+
+The adaptive tier was generated from an independent copy of the eight forecast
+runs retained by the production weather server, then published to the guarded
+`https://data.xcbenz.com/value-tiles-staging/` root. Production was not changed.
+
+Observed candidate costs:
+
+| Measurement | Base-only retained tree | Base plus detail candidate |
+| --- | ---: | ---: |
+| Tile-tree files | 193,169 | 598,553 |
+| Tile-tree bytes | 2,458,317,202 | 4,928,219,298 |
+| XVT files | 193,040 | 598,424 |
+| XVT bytes | 2,417,341,440 | 4,805,263,872 |
+
+The detail tier therefore made the tile tree 3.10 times as many files and
+100.5% larger by bytes. Generating both tiers for all 120 variants and fully
+reconstructing all eight runs took 935.9 seconds. The complete publication
+validator, with full reconstruction repeated for the latest CH1 and CH2 runs,
+took another 326.9 seconds and passed 90,160 profiles, 1,120 bundles, every map
+family, all eight tile runs, and all 598,424 tiles.
+
+The isolated staging upload contained 616,600 files and 7,923,185,380 logical
+bytes. It completed in 257 seconds. Rsync sent 2,333,184,032 bytes, 70.6% less
+than the uncompressed candidate size. The atomic staging switch reported one
+second of prior-tree deletion and 635,884 files after current live-owned
+subtrees were copied in. Remote validation fetched the compact manifest and a
+base and detail tile successfully, then verified that the production manifest
+hash had not changed.
+
+Observed HTTPS transfer sizes with production content encoding:
+
+| Resource or default Switzerland selection | Base or legacy | Detail or compact | Change |
+| --- | ---: | ---: | ---: |
+| Root manifest | 109,611 bytes | 7,657 bytes | 93.0% smaller |
+| CH2 Wind H000 | 36,893 bytes in 6 requests | 25,840 bytes in 9 requests | 30.0% smaller |
+| CH2 Cloud4 H000 | 108,244 bytes in 6 requests | 78,548 bytes in 9 requests | 27.4% smaller |
+
+These viewport requests use the exact grid values required by the existing
+renderer. The saving comes from transferring fewer cells outside the viewport,
+not from lowering model resolution or quantizing values further. Representative
+tile responses were immutable for one year. The compact root manifest was
+cached for one hour; the legacy root remained revalidated on every load.
+
+The staging result confirms the user-facing saving and also exposes the main
+production tradeoff: small immutable files roughly triple filesystem traversal
+and double tile storage. Before enabling this tier in production, compare the
+extra generation time with the forecast freshness budget and decide whether a
+static indexed archive should replace the individual detail files. The archive
+would target file and request overhead, not further value compression.
+
+The latest four successful production forecast publications on the same day
+took 19.9 to 23.9 minutes. The 15.6-minute staging measurement includes work
+already performed for the base tier, so it must not simply be added to those
+durations. Run the same retained inputs once with the production base-only code
+and once with this branch to measure the incremental wall time before enabling
+the detail tier in production.
+
 ## Executive summary
 
 The largest findings are:
@@ -45,9 +108,9 @@ The largest findings are:
 - On a representative forecast hour, an exact viewport crop would reduce
   compressed Wind data from 36.6 KB to 12.6 KB, Sun/Rain from 20.8 KB to
   9.2 KB, and Cloud plus Rain from 48.1 KB to 23.2 KB.
-- The current public root manifest is 6,778,287 bytes of JSON and transfers as
-  109,601 bytes with gzip. A normalized proof of concept was 45,020 bytes raw
-  and 3,370 bytes with gzip level 9.
+- The staging root manifest is 6,778,307 bytes of JSON and transfers as 109,611
+  bytes with gzip. Its implemented lossless compact form is 44,124 bytes raw
+  and transfers as 7,657 bytes, a 93.0% wire reduction.
 - Emagram bundles store five base variables and five values calculated from
   those variables. Removing the calculated variables cuts their raw profile
   payload in half without losing information.
@@ -205,12 +268,12 @@ The static frontend must continue to work from normal object or static hosting.
 
 ### Root manifest
 
-Observed public root manifest on 2026-08-22:
+Observed staging root manifest after implementation on 2026-08-22:
 
 | Representation | Raw bytes | Gzip bytes |
 | --- | ---: | ---: |
-| Current | 6,778,287 | 109,601 |
-| Normalized proof of concept | 45,020 | 3,370 |
+| Version 1 | 6,778,307 | 109,611 |
+| Lossless compact version 2 | 44,124 | 7,657 |
 
 The current JSON repeats model, run, location, product, and URL structure. Gzip
 handles repeated strings well, but the browser still transfers 109.6 KB and
@@ -534,8 +597,9 @@ forecast-value change.
 4. Add per-step sparse occupancy indexes and synthesize neutral tiles in the frontend. Implemented on 2026-08-22.
 5. Preserve the current foreground and progressive prefetch scheduler. Implemented on 2026-08-22.
 
-Expected result: roughly half to two thirds less tile data for the default
-Switzerland view, with larger relative gains at zoom.
+Observed staging result: 27.4% less compressed Cloud4 data and 30.0% less
+compressed Wind data for the default Switzerland view, with larger geometric
+gains at zoom.
 
 ### Phase 3: lossless emagram compaction
 
