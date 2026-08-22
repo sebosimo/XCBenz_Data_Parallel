@@ -755,6 +755,7 @@ class ValueTileRetentionIntegrationTests(unittest.TestCase):
 
             self.assertFalse((web_root / "value_tiles").exists())
             root_manifest = json.loads((web_root / "manifest.json").read_text(encoding="utf-8"))
+            self.assertTrue((web_root / "manifest.compact.json").is_file())
             self.assertNotIn("capabilities", root_manifest)
             self.assertEqual(
                 root_manifest["products"]["maps"]["satellite_cloud"],

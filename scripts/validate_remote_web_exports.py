@@ -17,6 +17,7 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
+from compact_manifest import COMPACT_MANIFEST_FILENAME, expand_compact_manifest
 from value_tiles import (
     canonical_json_bytes,
     capability_declaration,
@@ -147,6 +148,17 @@ def validate_models(manifest: dict[str, Any]) -> list[tuple[str, str, str]]:
             raise ValidationError(f"{model_key} {run_key} {location_id} has no emagram_bundle")
         selected.append((model_key, run_key, location_id))
     return selected
+
+
+def validate_compact_manifest(manifest: dict[str, Any]) -> None:
+    compact, compact_url, _headers = fetch_json(f"web_exports/{COMPACT_MANIFEST_FILENAME}")
+    try:
+        expanded = expand_compact_manifest(compact)
+    except (KeyError, TypeError, ValueError) as exc:
+        raise ValidationError(f"{compact_url} is invalid: {exc}") from exc
+    if expanded != manifest:
+        raise ValidationError(f"{compact_url} does not expand to web_exports/manifest.json")
+    log(f"compact manifest OK: bytes={len(json.dumps(compact, separators=(',', ':')))}")
 
 
 def validate_bundle(manifest: dict[str, Any], model_key: str, run_key: str, location_id: str) -> None:
@@ -295,6 +307,7 @@ def main() -> int:
         fetch_json("web_exports/locations.json")
         if "models" not in manifest or "products" not in manifest:
             raise ValidationError(f"{manifest_url} does not look like a web_exports manifest")
+        validate_compact_manifest(manifest)
         validate_expected_value_tile_state(manifest, EXPECTED_VALUE_TILES_STATE)
         if EXPECTED_VALUE_TILES_STATE == "disabled":
             require_missing(capability_declaration()["manifest"])

@@ -22,6 +22,19 @@ channels have more spatial or numeric detail than their rendering needs.
 The recommended changes keep progressive prefetch. They make every foreground
 and prefetched forecast cheaper.
 
+## Implementation status
+
+Phase 1 started on 2026-08-22. The backend now writes
+`web_exports/manifest.compact.json` beside the existing manifest. The compact
+contract shares location metadata and forecast schedules, then reconstructs
+the version-1 object without losing fields. Local and remote publication checks
+compare the expanded compact object with `manifest.json`.
+
+The frontend work lives on the matching
+`codex/forecast-transfer-manifests` branch in `XCBenz_Web`. It requests the
+compact file first and falls back only when that resource returns HTTP 404.
+The version-1 file remains published throughout the rollout.
+
 ## Executive summary
 
 The largest findings are:

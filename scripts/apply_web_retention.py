@@ -13,6 +13,7 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
+from compact_manifest import COMPACT_MANIFEST_FILENAME, build_compact_manifest
 from value_tiles import (
     capability_declaration,
     merge_value_tile_manifests,
@@ -438,6 +439,7 @@ def rebuild_main_manifest(
         manifest["counts"]["region_forecasts"] += model_manifest["counts"]["region_forecasts"]
 
     write_json(WEB_DIR / "manifest.json", manifest)
+    write_json(WEB_DIR / COMPACT_MANIFEST_FILENAME, build_compact_manifest(manifest), pretty=False)
     log(
         "Rebuilt web manifest: "
         f"profiles={manifest['counts']['profiles']}, "

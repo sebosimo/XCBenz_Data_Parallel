@@ -11,6 +11,7 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
+from compact_manifest import COMPACT_MANIFEST_FILENAME, expand_compact_manifest
 from value_tiles import (
     capability_declaration,
     parse_value_tile_run_selection,
@@ -26,6 +27,7 @@ from web_export_support import load_json as load_web_json, resolve_publication_u
 
 
 WEB_MANIFEST = Path("web_exports/manifest.json")
+COMPACT_WEB_MANIFEST = Path("web_exports") / COMPACT_MANIFEST_FILENAME
 ROOT_MANIFEST = Path("manifest.json")
 EMAGRAM_BUNDLE_VARIABLES = (
     "p",
@@ -255,6 +257,9 @@ def main() -> int:
     try:
         root = load_json(ROOT_MANIFEST)
         web = load_json(WEB_MANIFEST)
+        compact_web = load_json(COMPACT_WEB_MANIFEST)
+        if expand_compact_manifest(compact_web) != web:
+            raise ValueError(f"{COMPACT_WEB_MANIFEST} does not expand to {WEB_MANIFEST}")
     except Exception as exc:  # noqa: BLE001 - this is a CI guard.
         return fail(str(exc))
 

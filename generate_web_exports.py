@@ -13,6 +13,7 @@ from pathlib import Path
 from typing import Any
 
 import numpy as np
+from compact_manifest import COMPACT_MANIFEST_FILENAME, build_compact_manifest
 from pipeline_orchestration.job_plan import profile_chunk_ids
 from web_profiles import (
     EMAGRAM_BUNDLE_VARIABLES,
@@ -719,6 +720,8 @@ def export_model(model: dict[str, Any], locations: dict[str, Any]) -> dict[str, 
 def validate_manifest(manifest: dict[str, Any]) -> None:
     if not (WEB_DIR / "manifest.json").exists():
         raise RuntimeError("web_exports/manifest.json was not written")
+    if not (WEB_DIR / COMPACT_MANIFEST_FILENAME).exists():
+        raise RuntimeError(f"web_exports/{COMPACT_MANIFEST_FILENAME} was not written")
     if not (WEB_DIR / "locations.json").exists():
         raise RuntimeError("web_exports/locations.json was not written")
 
@@ -842,6 +845,7 @@ def main() -> None:
     export_value_tiles_capability(manifest)
 
     write_json(WEB_DIR / "manifest.json", manifest, pretty=True)
+    write_json(WEB_DIR / COMPACT_MANIFEST_FILENAME, build_compact_manifest(manifest))
     validate_manifest(manifest)
     log(
         "Wrote web_exports: "
