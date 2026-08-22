@@ -31,6 +31,15 @@ The tile pass does not download or decode the model a second time and does not
 change the upstream map accumulators. It adds filesystem reads, tile encoding,
 validation, and publication work after the current browser files exist.
 
+Variant metadata may also declare `neutral_values` and a sorted
+`neutral_tile_indexes` list for each step. An index uses the existing
+`y_then_x` tile order and is emitted only when every channel in the complete
+tile payload, including its one-cell halo and any outside-domain padding, is
+the declared neutral value. Full validation checks each declaration against
+the immutable tile payload. The physical `.xvt` files remain published so
+older clients keep working; compatible frontend clients may synthesize these
+tiles locally and avoid their HTTP requests.
+
 Each newly processed forecast run receives tiles during its normal pipeline
 run when `ENABLE_VALUE_TILES=true`. Retention merges the new immutable revision
 with still-retained earlier revisions. Historical backfill is not required for

@@ -356,13 +356,21 @@ Individual empty Cloud channel counts were:
 - Middle: 12 of 726
 - High: 116 of 726
 
-A per-step occupancy bitmap can tell the frontend that a tile has its neutral
+A per-step sparse index can tell the frontend that a tile has its neutral
 value. The frontend can synthesize that tile locally and avoid the request.
-This is lossless when the bitmap distinguishes neutral, missing, and absent
-states where required.
+This is lossless when the index covers the complete payload, including the
+halo and padding, and distinguishes neutral, missing, and absent states where
+required.
 
 The index is small. A matrix of 20 tiles needs 20 bits per step and variant
 before normal JSON or binary framing.
+
+Implementation status, 2026-08-22: the backend now publishes additive sorted
+`neutral_tile_indexes` lists and explicit channel `neutral_values`, and fully
+validates them against retained immutable tile files. The frontend synthesizes
+declared neutral payloads and excludes their URLs from foreground and warm
+requests. Legacy files remain present for old-client compatibility, and the
+prefetch scheduler remains unchanged for all non-neutral tiles.
 
 ## Bundling and compression
 
@@ -499,7 +507,7 @@ forecast-value change.
 1. Define at least two static tile tiers at unchanged model resolution.
 2. Generate immutable metadata and tile paths for each tier.
 3. Select a tier by viewport source-cell dimensions and expected overfetch.
-4. Add per-step occupancy bitmaps and synthesize neutral tiles in the frontend.
+4. Add per-step sparse occupancy indexes and synthesize neutral tiles in the frontend. Implemented additively on 2026-08-22.
 5. Preserve the current foreground and progressive prefetch scheduler.
 
 Expected result: roughly half to two thirds less tile data for the default

@@ -147,6 +147,7 @@ class ChannelSpec:
     scale: float | None = None
     offset: float | None = None
     units: tuple[str, ...] = ()
+    neutral: int = 0
 
     @property
     def is_cloud(self) -> bool:
@@ -159,6 +160,10 @@ class ChannelSpec:
     @property
     def missing_bytes(self) -> bytes:
         return bytes((self.missing & 0xFF,)) * self.component_count
+
+    @property
+    def neutral_bytes(self) -> bytes:
+        return bytes((self.neutral & 0xFF,)) * self.component_count
 
     def contract_payload(self) -> dict[str, Any]:
         payload: dict[str, Any] = {
@@ -392,20 +397,22 @@ def _extract_window(decoded: bytes, grid: GridSpec, channel: ChannelSpec, tile_x
     return bytes(result)
 
 
-def encode_xvt(
+def _encode_xvt_with_neutral_state(
     grid: GridSpec,
     tile_x: int,
     tile_y: int,
     channels: Sequence[tuple[ChannelSpec, bytes]],
-) -> bytes:
+) -> tuple[bytes, bool]:
     if not channels:
         raise ValueError("an XVT tile needs at least one channel")
     if len({channel.id for channel, _values in channels}) != len(channels):
         raise ValueError("XVT channel ids must be unique")
     valid_width, valid_height = _valid_core(grid, tile_x, tile_y)
     section_payloads: list[bytes] = []
+    neutral = True
     for channel, decoded in channels:
         window = _extract_window(decoded, grid, channel, tile_x, tile_y)
+        neutral = neutral and window == channel.neutral_bytes * (grid.payload_width * grid.payload_height)
         section_payloads.append(pack_cloud_codes(window) if channel.is_cloud else window)
     payload = b"".join(section_payloads)
     header_bytes = BASE_HEADER.size + SECTION_HEADER.size * len(channels)
@@ -455,7 +462,17 @@ def encode_xvt(
             )
         )
         offset += len(section)
-    return base + bytes(directory) + payload
+    return base + bytes(directory) + payload, neutral
+
+
+def encode_xvt(
+    grid: GridSpec,
+    tile_x: int,
+    tile_y: int,
+    channels: Sequence[tuple[ChannelSpec, bytes]],
+) -> bytes:
+    tile, _neutral = _encode_xvt_with_neutral_state(grid, tile_x, tile_y, channels)
+    return tile
 
 
 def parse_xvt(payload: bytes) -> ParsedTile:
@@ -866,7 +883,7 @@ def _load_decoded(path: Path, grid: GridSpec, channel: ChannelSpec) -> tuple[byt
 
 
 def _variant_metadata_content(source: VariantSource, steps: list[dict[str, Any]]) -> dict[str, Any]:
-    return {
+    content = {
         "contract": CONTRACT,
         "contract_version": CONTRACT_VERSION,
         "package": PACKAGE,
@@ -882,6 +899,9 @@ def _variant_metadata_content(source: VariantSource, steps: list[dict[str, Any]]
         "source_whole_grid_metadata": list(source.source_metadata),
         "steps": steps,
     }
+    if any(step.get("neutral_tile_indexes") for step in steps):
+        content["neutral_values"] = {channel.name: channel.neutral for channel in source.channels}
+    return content
 
 
 def _generate_run(
@@ -908,9 +928,10 @@ def _generate_run(
                     channel.name: f"{zlib.crc32(raw) & 0xFFFFFFFF:08x}"
                     for channel, (raw, _decoded) in zip(source.channels, loaded)
                 }
+                neutral_tile_indexes: list[int] = []
                 for tile_y in range(source.grid.tiles_y):
                     for tile_x in range(source.grid.tiles_x):
-                        tile = encode_xvt(
+                        tile, neutral = _encode_xvt_with_neutral_state(
                             source.grid,
                             tile_x,
                             tile_y,
@@ -919,6 +940,8 @@ def _generate_run(
                                 for channel, (_raw, decoded) in zip(source.channels, loaded)
                             ],
                         )
+                        if neutral:
+                            neutral_tile_indexes.append(tile_y * source.grid.tiles_x + tile_x)
                         logical_path = (
                             Path(source.product)
                             / source.variant
@@ -935,15 +958,16 @@ def _generate_run(
                                 "sha256": sha256_bytes(tile),
                             }
                         )
-                metadata_steps.append(
-                    {
-                        "step": step.label,
-                        "horizon": step.horizon,
-                        "valid_time": step.valid_time,
-                        "tile_count": source.grid.tiles_x * source.grid.tiles_y,
-                        "full_grid_crc32": crc_values,
-                    }
-                )
+                metadata_step = {
+                    "step": step.label,
+                    "horizon": step.horizon,
+                    "valid_time": step.valid_time,
+                    "tile_count": source.grid.tiles_x * source.grid.tiles_y,
+                    "full_grid_crc32": crc_values,
+                }
+                if neutral_tile_indexes:
+                    metadata_step["neutral_tile_indexes"] = neutral_tile_indexes
+                metadata_steps.append(metadata_step)
             content = _variant_metadata_content(source, metadata_steps)
             metadata_records.append(
                 {
@@ -1125,10 +1149,31 @@ def _validate_variant_declaration(
     if not steps:
         raise ValueError(f"{metadata_path} has no steps")
     expected_tiles = grid.tiles_x * grid.tiles_y
+    neutral_values = metadata.get("neutral_values")
+    if neutral_values is not None and neutral_values != {
+        channel.name: channel.neutral for channel in typed_channels
+    }:
+        raise ValueError(f"{metadata_path} neutral value declaration differs from the contract")
+    has_neutral_tiles = False
     for step in steps:
         label = str(step.get("step") or "")
         if int(step.get("tile_count") or 0) != expected_tiles:
             raise ValueError(f"{metadata_path} {label} has an incomplete tile matrix declaration")
+        neutral_indexes = step.get("neutral_tile_indexes", [])
+        if not isinstance(neutral_indexes, list):
+            raise ValueError(f"{metadata_path} {label} neutral tile indexes must be a list")
+        previous_index = -1
+        for index in neutral_indexes:
+            if isinstance(index, bool) or not isinstance(index, int) or not 0 <= index < expected_tiles:
+                raise ValueError(f"{metadata_path} {label} has an invalid neutral tile index")
+            if index <= previous_index:
+                raise ValueError(f"{metadata_path} {label} neutral tile indexes are not strictly sorted")
+            previous_index = index
+        has_neutral_tiles = has_neutral_tiles or bool(neutral_indexes)
+    if has_neutral_tiles and neutral_values is None:
+        raise ValueError(f"{metadata_path} declares neutral tiles without neutral values")
+    if neutral_values is not None and not has_neutral_tiles:
+        raise ValueError(f"{metadata_path} declares unused neutral values")
     return grid, typed_channels, steps, len(steps) * expected_tiles
 
 
@@ -1143,6 +1188,8 @@ def _validate_variant(
     revision_root = metadata_path.parents[2]
     for step in steps:
         label = str(step.get("step") or "")
+        marked_neutral_tiles = set(step.get("neutral_tile_indexes") or [])
+        validates_neutral_tiles = metadata.get("neutral_values") is not None
         reconstructed = {
             channel.name: bytearray(channel.missing_bytes * (grid.width * grid.height))
             for channel in typed_channels
@@ -1166,8 +1213,12 @@ def _validate_variant(
                 _validate_tile_identity(tile, grid, tile_x, tile_y)
                 if tuple(section.channel for section in tile.sections) != typed_channels:
                     raise ValueError(f"{path} channel order differs from metadata")
+                tile_is_neutral = True
                 for section in tile.sections:
                     decoded = _decoded_section(section)
+                    tile_is_neutral = tile_is_neutral and decoded == (
+                        section.channel.neutral_bytes * section.decoded_cell_count
+                    )
                     cell_bytes = section.channel.cell_bytes
                     for core_y in range(tile.valid_core_height):
                         source_offset = ((core_y + HALO) * grid.payload_width + HALO) * cell_bytes
@@ -1177,6 +1228,10 @@ def _validate_variant(
                         reconstructed[section.channel.name][target_offset : target_offset + length] = decoded[
                             source_offset : source_offset + length
                         ]
+                if validates_neutral_tiles and (
+                    (tile_y * grid.tiles_x + tile_x in marked_neutral_tiles) != tile_is_neutral
+                ):
+                    raise ValueError(f"{path} neutral tile declaration differs from its payload")
                 tile_count += 1
         declared_crc = step.get("full_grid_crc32") or {}
         for channel in typed_channels:

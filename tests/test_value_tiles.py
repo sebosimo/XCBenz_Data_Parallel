@@ -433,6 +433,33 @@ class ValueTileGenerationTests(unittest.TestCase):
         finally:
             shutil.rmtree(workspace, ignore_errors=True)
 
+    def test_generation_marks_full_payload_neutral_tiles_without_removing_legacy_files(self):
+        workspace = _temp_workspace()
+        try:
+            web_root = workspace / "web_exports"
+            _write_complete_whole_grid(web_root)
+            rain_step = web_root / "rain_maps/icon-ch1/20260716_0300/surface/steps/H00.bin"
+            rain_step.write_bytes(bytes(FINE_GRID.width * FINE_GRID.height))
+
+            manifest = generate_value_tiles(web_root)
+            run_entry = manifest["models"]["icon-ch1"]["runs"]["20260716_0300"]
+            metadata_url = run_entry["variants"]["rain/surface"]["metadata"]
+            metadata_path = web_root / metadata_url.replace("web_exports/", "", 1)
+            metadata = json.loads(metadata_path.read_text(encoding="utf-8"))
+
+            self.assertEqual(metadata["neutral_values"], {"rain": 0})
+            self.assertEqual(
+                metadata["steps"][0]["neutral_tile_indexes"],
+                [6, 7, 8, 11, 12, 13],
+            )
+            self.assertEqual(len(list((metadata_path.parent / "H00").glob("*.xvt"))), 20)
+            self.assertEqual(
+                validate_value_tile_publication(web_root),
+                {"runs": 1, "variants": 8, "steps": 8, "tiles": 160},
+            )
+        finally:
+            shutil.rmtree(workspace, ignore_errors=True)
+
     def test_generation_supports_retained_legacy_and_expanded_grid_runs(self):
         workspace = _temp_workspace()
         try:
