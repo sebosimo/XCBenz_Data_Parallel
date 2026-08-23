@@ -14,6 +14,7 @@ from typing import Any
 
 import numpy as np
 from compact_manifest import COMPACT_MANIFEST_FILENAME, build_compact_manifest
+from compact_product_manifest import COMPACT_PRODUCT_MANIFEST_FILENAME, write_compact_product_manifest
 from pipeline_orchestration.job_plan import profile_chunk_ids
 from web_profiles import (
     EMAGRAM_BUNDLE_VARIABLES,
@@ -485,6 +486,7 @@ def export_wind_maps(source_manifest: dict[str, Any]) -> dict[str, Any] | None:
 
     manifest_path = WEB_DIR / "wind_maps" / "manifest.json"
     write_json(manifest_path, wind_manifest, pretty=True)
+    write_compact_product_manifest(manifest_path.with_name(COMPACT_PRODUCT_MANIFEST_FILENAME), wind_manifest)
     wind_manifest["url"] = rel(manifest_path)
     return wind_manifest
 

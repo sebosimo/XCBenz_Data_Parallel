@@ -12,6 +12,11 @@ if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
 from compact_manifest import COMPACT_MANIFEST_FILENAME, expand_compact_manifest
+from compact_product_manifest import (
+    COMPACT_PRODUCT_MANIFEST_FILENAME,
+    expand_compact_product_manifest,
+    project_product_manifest_for_startup,
+)
 from value_tiles import (
     capability_declaration,
     parse_value_tile_run_selection,
@@ -35,6 +40,8 @@ EMAGRAM_BUNDLE_VARIABLES = (
     "qv",
     "u",
     "v",
+)
+EMAGRAM_BUNDLE_LEGACY_VARIABLES = EMAGRAM_BUNDLE_VARIABLES + (
     "temperature_c",
     "pressure_hpa",
     "dewpoint_c",
@@ -91,7 +98,7 @@ def validate_bundles(latest_runs: dict[str, str]) -> tuple[int, int]:
             raise ValueError(f"{bundle_path} dtype is {encoding.get('dtype')!r}")
         if encoding.get("format") != "float32-le-step-variable-level":
             raise ValueError(f"{bundle_path} format is {encoding.get('format')!r}")
-        if tuple(variables) != EMAGRAM_BUNDLE_VARIABLES:
+        if tuple(variables) not in (EMAGRAM_BUNDLE_VARIABLES, EMAGRAM_BUNDLE_LEGACY_VARIABLES):
             raise ValueError(f"{bundle_path} variables are unexpected")
         model_key = bundle_path.parts[2] if len(bundle_path.parts) > 3 else ""
         run_tag = bundle_path.parts[3] if len(bundle_path.parts) > 3 else ""
@@ -309,7 +316,12 @@ def main() -> int:
             return fail(f"web manifest has no {product} map product")
         if not Path(path).exists():
             return fail(f"{product} map manifest path does not exist: {path}")
-        product_manifests[product] = load_json(Path(path))
+        product_manifest = load_json(Path(path))
+        compact_product_path = Path(path).with_name(COMPACT_PRODUCT_MANIFEST_FILENAME)
+        compact_product = load_json(compact_product_path)
+        if expand_compact_product_manifest(compact_product) != project_product_manifest_for_startup(product_manifest):
+            return fail(f"{compact_product_path} does not match the startup contract for {path}")
+        product_manifests[product] = product_manifest
 
     run_set_errors = map_run_set_mismatches(web, product_manifests)
     if run_set_errors:

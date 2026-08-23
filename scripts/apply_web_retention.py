@@ -14,6 +14,7 @@ if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
 from compact_manifest import COMPACT_MANIFEST_FILENAME, build_compact_manifest
+from compact_product_manifest import COMPACT_PRODUCT_MANIFEST_FILENAME, write_compact_product_manifest
 from value_tiles import (
     capability_declaration,
     merge_value_tile_manifests,
@@ -49,6 +50,8 @@ EMAGRAM_BUNDLE_VARIABLES = (
     "qv",
     "u",
     "v",
+)
+EMAGRAM_BUNDLE_LEGACY_VARIABLES = EMAGRAM_BUNDLE_VARIABLES + (
     "temperature_c",
     "pressure_hpa",
     "dewpoint_c",
@@ -195,7 +198,7 @@ def validate_emagram_bundles() -> int:
             raise ValueError(f"{bundle_path} has unexpected dtype {encoding.get('dtype')!r}")
         if encoding.get("format") != "float32-le-step-variable-level":
             raise ValueError(f"{bundle_path} has unexpected format {encoding.get('format')!r}")
-        if tuple(variables) != EMAGRAM_BUNDLE_VARIABLES:
+        if tuple(variables) not in (EMAGRAM_BUNDLE_VARIABLES, EMAGRAM_BUNDLE_LEGACY_VARIABLES):
             raise ValueError(f"{bundle_path} has unexpected variables {variables!r}")
 
         step_count = int(encoding.get("step_count") or 0)
@@ -276,6 +279,7 @@ def rebuild_wind_manifest() -> dict[str, Any] | None:
     manifest["grid_stride"] = manifest["grid_stride"] or 2
     manifest["level_filter"] = sorted(levels_seen)
     write_json(root / "manifest.json", manifest)
+    write_compact_product_manifest(root / COMPACT_PRODUCT_MANIFEST_FILENAME, manifest)
     return manifest
 
 

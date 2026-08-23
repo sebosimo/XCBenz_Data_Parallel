@@ -22,6 +22,8 @@ EMAGRAM_BUNDLE_VARIABLES = (
     "qv",
     "u",
     "v",
+)
+EMAGRAM_BUNDLE_LEGACY_VARIABLES = EMAGRAM_BUNDLE_VARIABLES + (
     "temperature_c",
     "pressure_hpa",
     "dewpoint_c",
@@ -133,11 +135,6 @@ def build_bundle_step_values(
         "qv": qv,
         "u": u,
         "v": v,
-        "temperature_c": temperature_to_celsius(t) if t is not None else None,
-        "pressure_hpa": pressure_to_hpa(p) if p is not None else None,
-        "dewpoint_c": dewpoint_from_specific_humidity(p, qv) if p is not None and qv is not None else None,
-        "wind_speed_ms": wind_speed(u, v) if u is not None and v is not None else None,
-        "wind_dir_deg": wind_direction_from(u, v) if u is not None and v is not None else None,
     }
     for variable_index, variable_name in enumerate(EMAGRAM_BUNDLE_VARIABLES):
         variable_values = arrays.get(variable_name)
@@ -150,8 +147,12 @@ def build_bundle_step_values(
     return values
 
 
-def expected_byte_length(step_count: int, level_count: int) -> int:
-    return int(step_count) * len(EMAGRAM_BUNDLE_VARIABLES) * int(level_count) * 4
+def expected_byte_length(
+    step_count: int,
+    level_count: int,
+    variables: tuple[str, ...] = EMAGRAM_BUNDLE_VARIABLES,
+) -> int:
+    return int(step_count) * len(variables) * int(level_count) * 4
 
 
 def _write_json(path: Path, payload: Any, *, pretty: bool = False) -> None:
@@ -184,7 +185,7 @@ def write_profile_chunk(
     data_path.write_bytes(values.tobytes())
     metadata_path = output_dir / "chunk.json"
     payload = {
-        "schema_version": 1,
+        "schema_version": 2,
         "product": "emagram_profile_chunk",
         "model": model_key,
         "run": run_tag,
@@ -262,7 +263,7 @@ def write_emagram_bundle(
         exports.append(item)
 
     payload = {
-        "schema_version": 1,
+        "schema_version": 2,
         "product": "emagram_bundle",
         "model": model_key,
         "run": run_tag,

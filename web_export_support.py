@@ -14,6 +14,8 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Callable, Iterable
 
+from compact_product_manifest import COMPACT_PRODUCT_MANIFEST_FILENAME, write_compact_product_manifest
+
 
 JsonObject = dict[str, Any]
 Log = Callable[[str], None]
@@ -270,6 +272,7 @@ def export_split_binary_maps(
         return None
     manifest_path = output_root / "manifest.json"
     write_json(manifest_path, manifest, pretty=True)
+    write_compact_product_manifest(output_root / COMPACT_PRODUCT_MANIFEST_FILENAME, manifest)
     manifest["url"] = path_url(manifest_path)
     return manifest
 
@@ -322,4 +325,5 @@ def rebuild_split_binary_manifest(
     if not manifest["models"]:
         return None
     write_json(root / "manifest.json", manifest, pretty=True)
+    write_compact_product_manifest(root / COMPACT_PRODUCT_MANIFEST_FILENAME, manifest)
     return manifest

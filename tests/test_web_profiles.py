@@ -21,7 +21,7 @@ def _temp_workspace():
 
 
 class WebProfileTests(unittest.TestCase):
-    def test_build_bundle_step_values_derives_display_variables(self):
+    def test_build_bundle_step_values_stores_only_lossless_base_variables(self):
         values = build_bundle_step_values(
             p=np.asarray([90000.0, 80000.0], dtype=np.float32),
             t=np.asarray([283.15, 273.15], dtype=np.float32),
@@ -32,9 +32,9 @@ class WebProfileTests(unittest.TestCase):
         )
 
         self.assertEqual(values.shape, (len(EMAGRAM_BUNDLE_VARIABLES), 2))
-        self.assertAlmostEqual(values[EMAGRAM_BUNDLE_VARIABLES.index("temperature_c"), 0], 10.0, places=4)
-        self.assertAlmostEqual(values[EMAGRAM_BUNDLE_VARIABLES.index("pressure_hpa"), 1], 800.0, places=4)
-        self.assertAlmostEqual(values[EMAGRAM_BUNDLE_VARIABLES.index("wind_speed_ms"), 0], 5.0, places=4)
+        self.assertEqual(EMAGRAM_BUNDLE_VARIABLES, ("p", "t", "qv", "u", "v"))
+        self.assertAlmostEqual(values[EMAGRAM_BUNDLE_VARIABLES.index("t"), 0], 283.15, places=4)
+        self.assertAlmostEqual(values[EMAGRAM_BUNDLE_VARIABLES.index("p"), 1], 80000.0, places=4)
 
     def test_chunk_merge_writes_stable_bundle_contract(self):
         tmp = _temp_workspace()
@@ -80,6 +80,7 @@ class WebProfileTests(unittest.TestCase):
             )
 
             bundle = json.loads((out / "bundle.json").read_text(encoding="utf-8"))
+            self.assertEqual(bundle["schema_version"], 2)
             self.assertEqual([step["step"] for step in bundle["steps"]], ["H000", "H031"])
             self.assertEqual(bundle["encoding"]["dtype"], "float32")
             self.assertEqual(bundle["encoding"]["variables"], list(EMAGRAM_BUNDLE_VARIABLES))

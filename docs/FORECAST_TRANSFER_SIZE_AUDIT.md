@@ -40,6 +40,29 @@ branches. It adds neutral-tile indexes and a same-grid-resolution `detail`
 tier, while keeping the original tile matrix, immutable URLs, fallback files,
 and progressive prefetch behavior.
 
+Phase 1 product indexes and Phase 3 emagram compaction were implemented on
+2026-08-23 on the matching
+`codex/compact-product-manifests-emagram-bundles` branches. Forecast map
+directories now contain a lean `manifest.compact.json` startup index beside
+the complete version-1 manifest. The compact index shares schedules, derives
+standard step URLs, stores equal byte lengths once, and leaves grid, encoding,
+source, style, and step statistics in each product's `metadata.json`. The
+frontend fetches the compact index first and accepts the complete manifest only
+as an HTTP-404 fallback.
+
+Measured against the four public product manifests on 2026-08-23, their
+combined gzip size fell from 100,858 to 11,158 bytes, or 88.9%. Individual
+compact responses were 2,630 to 3,041 bytes: Cloud was 93.6% smaller, Wind
+90.1%, Sun/Rain 83.2%, and Rain 74.1%. The comparison uses a browser-startup
+projection rather than claiming that omitted statistics disappeared; they
+remain in the metadata already fetched before a selected binary frame.
+
+Emagram bundles now publish only pressure, temperature, specific humidity,
+and the two wind components. The frontend reconstructs temperature in Celsius,
+pressure in hectopascals, dew point, wind speed, and wind direction, requests
+the selected step with an exact byte range, and retains a whole-file fallback
+when an intermediary returns HTTP 200. Background warming remains enabled.
+
 ### Staging acceptance, 2026-08-22
 
 The adaptive tier was generated from an independent copy of the eight forecast
@@ -590,11 +613,12 @@ not necessary for the first implementation phase.
 ### Phase 1: lossless metadata cleanup
 
 1. Define a normalized root manifest contract with shared model, run, location,
-   and product tables.
-2. Produce lean map product manifests.
+   and product tables. Implemented on 2026-08-22.
+2. Produce lean map product manifests. Implemented on 2026-08-23.
 3. Add frontend decoders for the new version while retaining the old version
-   during migration.
-4. Add raw, compressed, and parsed-size regression checks.
+   during migration. Implemented on 2026-08-23.
+4. Add raw and compressed size regression checks. Implemented on 2026-08-23;
+   parsed-size and browser-timing measurements remain operational follow-up.
 
 Expected result: more than 90% less startup forecast metadata, with no map or
 forecast-value change.
@@ -613,10 +637,13 @@ gains at zoom.
 
 ### Phase 3: lossless emagram compaction
 
-1. Publish only five base float32 variables.
+1. Publish only five base float32 variables. Implemented on 2026-08-23.
 2. Derive display variables in TypeScript with cross-language fixture tests.
-3. Fetch the selected step by byte range before warming the rest.
+   Implemented on 2026-08-23.
+3. Fetch the selected step by byte range before warming the rest. Implemented
+   on 2026-08-23.
 4. Keep a whole-bundle fallback for hosts or intermediaries that ignore ranges.
+   Implemented on 2026-08-23.
 
 Expected result: 50% less raw profile binary and a much smaller selected-hour
 foreground request.

@@ -18,6 +18,11 @@ if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
 from compact_manifest import COMPACT_MANIFEST_FILENAME, expand_compact_manifest
+from compact_product_manifest import (
+    COMPACT_PRODUCT_MANIFEST_FILENAME,
+    expand_compact_product_manifest,
+    project_product_manifest_for_startup,
+)
 from value_tiles import (
     canonical_json_bytes,
     capability_declaration,
@@ -196,6 +201,14 @@ def validate_map_product(manifest: dict[str, Any], product: str) -> None:
     if not map_path:
         raise ValidationError(f"manifest has no {product} map product")
     map_manifest, map_manifest_url, _headers = fetch_json(map_path)
+    compact_manifest_url = map_manifest_url.rsplit("/", 1)[0] + "/" + COMPACT_PRODUCT_MANIFEST_FILENAME
+    compact_product, _compact_url, _compact_headers = fetch_json(compact_manifest_url)
+    try:
+        expanded_product = expand_compact_product_manifest(compact_product)
+    except (KeyError, TypeError, ValueError) as exc:
+        raise ValidationError(f"{compact_manifest_url} is invalid: {exc}") from exc
+    if expanded_product != project_product_manifest_for_startup(map_manifest):
+        raise ValidationError(f"{compact_manifest_url} does not match the startup contract for {map_manifest_url}")
     models = map_manifest.get("models") or {}
     model_key, model_entry = choose_first(models, f"{product} models")
     run_key, run_entry = choose_first(model_entry.get("runs") or {}, f"{product} runs")
