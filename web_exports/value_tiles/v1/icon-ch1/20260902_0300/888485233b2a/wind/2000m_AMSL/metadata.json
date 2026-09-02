@@ -1,0 +1,490 @@
+{
+  "contract": "xcbenz-spatial-value-tiles",
+  "contract_version": "1.0.0",
+  "package": "immutable-chunks-cloud-dual-v1",
+  "model": "icon-ch1",
+  "run": "20260902_0300",
+  "product": "wind",
+  "variant": "2000m_AMSL",
+  "grid_id": "icon_ch_common_safe_004deg_v1",
+  "grid": {
+    "projection": "EPSG:4326",
+    "coordinate_scale": 100000,
+    "width": 391,
+    "height": 191,
+    "lon": {
+      "origin": 80000,
+      "step": 4000,
+      "direction": "east"
+    },
+    "lat": {
+      "origin": 4240000,
+      "step": 4000,
+      "direction": "north"
+    },
+    "storage_order": "row_major_y_then_x",
+    "cell_reference": "center"
+  },
+  "tile_matrix": {
+    "core_width": 80,
+    "core_height": 56,
+    "halo": 1,
+    "tiles_x": 5,
+    "tiles_y": 4,
+    "tile_order": "y_then_x",
+    "url_template": "{step}/t{tile_y}_{tile_x}.xvt"
+  },
+  "tile_tiers": [
+    {
+      "id": "detail",
+      "core_width": 64,
+      "core_height": 32,
+      "halo": 1,
+      "tiles_x": 7,
+      "tiles_y": 6,
+      "tile_order": "y_then_x",
+      "url_template": "tiers/detail/{step}/t{tile_y}_{tile_x}.xvt"
+    }
+  ],
+  "channels": [
+    "wind_uv"
+  ],
+  "encodings": [
+    {
+      "channel_id": 1,
+      "channel": "wind_uv",
+      "encoding_id": 1,
+      "format": "int8-interleaved-u-v",
+      "dtype": "int8",
+      "component_count": 2,
+      "missing": -128,
+      "scale": 0.25,
+      "offset": 0.0,
+      "units": [
+        "m/s",
+        "m/s"
+      ]
+    }
+  ],
+  "source_whole_grid_metadata": [
+    "web_exports/wind_maps/icon-ch1/20260902_0300/2000m_AMSL/metadata.json"
+  ],
+  "steps": [
+    {
+      "step": "H00",
+      "horizon": 0,
+      "valid_time": "2026-09-02T03:00:00+00:00",
+      "tile_count": 20,
+      "full_grid_crc32": {
+        "wind_uv": "cb4432ae"
+      }
+    },
+    {
+      "step": "H01",
+      "horizon": 1,
+      "valid_time": "2026-09-02T04:00:00+00:00",
+      "tile_count": 20,
+      "full_grid_crc32": {
+        "wind_uv": "3a34f1d9"
+      }
+    },
+    {
+      "step": "H02",
+      "horizon": 2,
+      "valid_time": "2026-09-02T05:00:00+00:00",
+      "tile_count": 20,
+      "full_grid_crc32": {
+        "wind_uv": "d12ef399"
+      }
+    },
+    {
+      "step": "H03",
+      "horizon": 3,
+      "valid_time": "2026-09-02T06:00:00+00:00",
+      "tile_count": 20,
+      "full_grid_crc32": {
+        "wind_uv": "8aa275cb"
+      }
+    },
+    {
+      "step": "H04",
+      "horizon": 4,
+      "valid_time": "2026-09-02T07:00:00+00:00",
+      "tile_count": 20,
+      "full_grid_crc32": {
+        "wind_uv": "48d8ba16"
+      }
+    },
+    {
+      "step": "H05",
+      "horizon": 5,
+      "valid_time": "2026-09-02T08:00:00+00:00",
+      "tile_count": 20,
+      "full_grid_crc32": {
+        "wind_uv": "bdb34dcd"
+      }
+    },
+    {
+      "step": "H06",
+      "horizon": 6,
+      "valid_time": "2026-09-02T09:00:00+00:00",
+      "tile_count": 20,
+      "full_grid_crc32": {
+        "wind_uv": "76623e12"
+      }
+    },
+    {
+      "step": "H07",
+      "horizon": 7,
+      "valid_time": "2026-09-02T10:00:00+00:00",
+      "tile_count": 20,
+      "full_grid_crc32": {
+        "wind_uv": "aaad04bf"
+      }
+    },
+    {
+      "step": "H08",
+      "horizon": 8,
+      "valid_time": "2026-09-02T11:00:00+00:00",
+      "tile_count": 20,
+      "full_grid_crc32": {
+        "wind_uv": "f8b249e6"
+      }
+    },
+    {
+      "step": "H09",
+      "horizon": 9,
+      "valid_time": "2026-09-02T12:00:00+00:00",
+      "tile_count": 20,
+      "full_grid_crc32": {
+        "wind_uv": "668e1dfd"
+      }
+    },
+    {
+      "step": "H10",
+      "horizon": 10,
+      "valid_time": "2026-09-02T13:00:00+00:00",
+      "tile_count": 20,
+      "full_grid_crc32": {
+        "wind_uv": "53810077"
+      }
+    },
+    {
+      "step": "H11",
+      "horizon": 11,
+      "valid_time": "2026-09-02T14:00:00+00:00",
+      "tile_count": 20,
+      "full_grid_crc32": {
+        "wind_uv": "9f436f38"
+      }
+    },
+    {
+      "step": "H12",
+      "horizon": 12,
+      "valid_time": "2026-09-02T15:00:00+00:00",
+      "tile_count": 20,
+      "full_grid_crc32": {
+        "wind_uv": "8d2f4dd5"
+      }
+    },
+    {
+      "step": "H13",
+      "horizon": 13,
+      "valid_time": "2026-09-02T16:00:00+00:00",
+      "tile_count": 20,
+      "full_grid_crc32": {
+        "wind_uv": "86c2b830"
+      }
+    },
+    {
+      "step": "H14",
+      "horizon": 14,
+      "valid_time": "2026-09-02T17:00:00+00:00",
+      "tile_count": 20,
+      "full_grid_crc32": {
+        "wind_uv": "ae7d3922"
+      }
+    },
+    {
+      "step": "H15",
+      "horizon": 15,
+      "valid_time": "2026-09-02T18:00:00+00:00",
+      "tile_count": 20,
+      "full_grid_crc32": {
+        "wind_uv": "0e595970"
+      }
+    },
+    {
+      "step": "H16",
+      "horizon": 16,
+      "valid_time": "2026-09-02T19:00:00+00:00",
+      "tile_count": 20,
+      "full_grid_crc32": {
+        "wind_uv": "c7224e5b"
+      }
+    },
+    {
+      "step": "H17",
+      "horizon": 17,
+      "valid_time": "2026-09-02T20:00:00+00:00",
+      "tile_count": 20,
+      "full_grid_crc32": {
+        "wind_uv": "9f27cc0b"
+      }
+    },
+    {
+      "step": "H18",
+      "horizon": 18,
+      "valid_time": "2026-09-02T21:00:00+00:00",
+      "tile_count": 20,
+      "full_grid_crc32": {
+        "wind_uv": "721c8848"
+      }
+    },
+    {
+      "step": "H19",
+      "horizon": 19,
+      "valid_time": "2026-09-02T22:00:00+00:00",
+      "tile_count": 20,
+      "full_grid_crc32": {
+        "wind_uv": "11ae1f95"
+      }
+    },
+    {
+      "step": "H20",
+      "horizon": 20,
+      "valid_time": "2026-09-02T23:00:00+00:00",
+      "tile_count": 20,
+      "full_grid_crc32": {
+        "wind_uv": "93cb6aa7"
+      }
+    },
+    {
+      "step": "H21",
+      "horizon": 21,
+      "valid_time": "2026-09-03T00:00:00+00:00",
+      "tile_count": 20,
+      "full_grid_crc32": {
+        "wind_uv": "c3a10d21"
+      }
+    },
+    {
+      "step": "H22",
+      "horizon": 22,
+      "valid_time": "2026-09-03T01:00:00+00:00",
+      "tile_count": 20,
+      "full_grid_crc32": {
+        "wind_uv": "1484afbb"
+      }
+    },
+    {
+      "step": "H23",
+      "horizon": 23,
+      "valid_time": "2026-09-03T02:00:00+00:00",
+      "tile_count": 20,
+      "full_grid_crc32": {
+        "wind_uv": "7666dd4a"
+      }
+    },
+    {
+      "step": "H24",
+      "horizon": 24,
+      "valid_time": "2026-09-03T03:00:00+00:00",
+      "tile_count": 20,
+      "full_grid_crc32": {
+        "wind_uv": "7d2aee2e"
+      }
+    },
+    {
+      "step": "H25",
+      "horizon": 25,
+      "valid_time": "2026-09-03T04:00:00+00:00",
+      "tile_count": 20,
+      "full_grid_crc32": {
+        "wind_uv": "78deaf59"
+      }
+    },
+    {
+      "step": "H26",
+      "horizon": 26,
+      "valid_time": "2026-09-03T05:00:00+00:00",
+      "tile_count": 20,
+      "full_grid_crc32": {
+        "wind_uv": "016a64a7"
+      }
+    },
+    {
+      "step": "H27",
+      "horizon": 27,
+      "valid_time": "2026-09-03T06:00:00+00:00",
+      "tile_count": 20,
+      "full_grid_crc32": {
+        "wind_uv": "cb4ed5b6"
+      }
+    },
+    {
+      "step": "H28",
+      "horizon": 28,
+      "valid_time": "2026-09-03T07:00:00+00:00",
+      "tile_count": 20,
+      "full_grid_crc32": {
+        "wind_uv": "90b64e68"
+      }
+    },
+    {
+      "step": "H29",
+      "horizon": 29,
+      "valid_time": "2026-09-03T08:00:00+00:00",
+      "tile_count": 20,
+      "full_grid_crc32": {
+        "wind_uv": "15e78fd6"
+      }
+    },
+    {
+      "step": "H30",
+      "horizon": 30,
+      "valid_time": "2026-09-03T09:00:00+00:00",
+      "tile_count": 20,
+      "full_grid_crc32": {
+        "wind_uv": "eb10feac"
+      }
+    },
+    {
+      "step": "H31",
+      "horizon": 31,
+      "valid_time": "2026-09-03T10:00:00+00:00",
+      "tile_count": 20,
+      "full_grid_crc32": {
+        "wind_uv": "72b299bf"
+      }
+    },
+    {
+      "step": "H32",
+      "horizon": 32,
+      "valid_time": "2026-09-03T11:00:00+00:00",
+      "tile_count": 20,
+      "full_grid_crc32": {
+        "wind_uv": "95fb785b"
+      }
+    },
+    {
+      "step": "H33",
+      "horizon": 33,
+      "valid_time": "2026-09-03T12:00:00+00:00",
+      "tile_count": 20,
+      "full_grid_crc32": {
+        "wind_uv": "2fa1f3de"
+      }
+    },
+    {
+      "step": "H34",
+      "horizon": 34,
+      "valid_time": "2026-09-03T13:00:00+00:00",
+      "tile_count": 20,
+      "full_grid_crc32": {
+        "wind_uv": "bf4daf04"
+      }
+    },
+    {
+      "step": "H35",
+      "horizon": 35,
+      "valid_time": "2026-09-03T14:00:00+00:00",
+      "tile_count": 20,
+      "full_grid_crc32": {
+        "wind_uv": "2a593026"
+      }
+    },
+    {
+      "step": "H36",
+      "horizon": 36,
+      "valid_time": "2026-09-03T15:00:00+00:00",
+      "tile_count": 20,
+      "full_grid_crc32": {
+        "wind_uv": "3835c4e1"
+      }
+    },
+    {
+      "step": "H37",
+      "horizon": 37,
+      "valid_time": "2026-09-03T16:00:00+00:00",
+      "tile_count": 20,
+      "full_grid_crc32": {
+        "wind_uv": "14d9f1f8"
+      }
+    },
+    {
+      "step": "H38",
+      "horizon": 38,
+      "valid_time": "2026-09-03T17:00:00+00:00",
+      "tile_count": 20,
+      "full_grid_crc32": {
+        "wind_uv": "e34dcf41"
+      }
+    },
+    {
+      "step": "H39",
+      "horizon": 39,
+      "valid_time": "2026-09-03T18:00:00+00:00",
+      "tile_count": 20,
+      "full_grid_crc32": {
+        "wind_uv": "5e05d40c"
+      }
+    },
+    {
+      "step": "H40",
+      "horizon": 40,
+      "valid_time": "2026-09-03T19:00:00+00:00",
+      "tile_count": 20,
+      "full_grid_crc32": {
+        "wind_uv": "20fa1584"
+      }
+    },
+    {
+      "step": "H41",
+      "horizon": 41,
+      "valid_time": "2026-09-03T20:00:00+00:00",
+      "tile_count": 20,
+      "full_grid_crc32": {
+        "wind_uv": "da74f464"
+      }
+    },
+    {
+      "step": "H42",
+      "horizon": 42,
+      "valid_time": "2026-09-03T21:00:00+00:00",
+      "tile_count": 20,
+      "full_grid_crc32": {
+        "wind_uv": "d881ff7a"
+      }
+    },
+    {
+      "step": "H43",
+      "horizon": 43,
+      "valid_time": "2026-09-03T22:00:00+00:00",
+      "tile_count": 20,
+      "full_grid_crc32": {
+        "wind_uv": "9337029f"
+      }
+    },
+    {
+      "step": "H44",
+      "horizon": 44,
+      "valid_time": "2026-09-03T23:00:00+00:00",
+      "tile_count": 20,
+      "full_grid_crc32": {
+        "wind_uv": "ce1b3ceb"
+      }
+    },
+    {
+      "step": "H45",
+      "horizon": 45,
+      "valid_time": "2026-09-04T00:00:00+00:00",
+      "tile_count": 20,
+      "full_grid_crc32": {
+        "wind_uv": "937ded6c"
+      }
+    }
+  ],
+  "revision": "888485233b2a",
+  "revision_sha256": "888485233b2a556f4250edcf24a951b8fa26322228154372293ab56ba6808e9f"
+}

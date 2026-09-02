@@ -1,0 +1,455 @@
+{
+  "schema_version": 1,
+  "product": "cloud_map_layer",
+  "model": "icon-ch1",
+  "run": "20260902_0600",
+  "domain": {
+    "id": "icon-ch-common-safe",
+    "label": "ICON-CH Common Safe Domain",
+    "bbox": [
+      0.8,
+      42.4,
+      16.4,
+      50.0
+    ]
+  },
+  "product_name": "low",
+  "source_variable": "CLCL",
+  "source_label": "Low cloud cover",
+  "ref_time": "2026-09-02T06:00:00+00:00",
+  "grid": {
+    "projection": "EPSG:4326",
+    "width": 781,
+    "height": 381,
+    "lon": {
+      "start": 0.800000011920929,
+      "end": 16.39998435974121,
+      "step": 0.019999980926513672,
+      "count": 781
+    },
+    "lat": {
+      "start": 42.400001525878906,
+      "end": 49.99872589111328,
+      "step": 0.01999664306640625,
+      "count": 381
+    }
+  },
+  "encoding": {
+    "format": "packed-uint4-cloud-cover",
+    "dtype": "uint8",
+    "components": [
+      "cloud_cover_pct"
+    ],
+    "units": [
+      "%"
+    ],
+    "bits_per_value": 4,
+    "quantization_step_pct": 10,
+    "add_offset": 0.0,
+    "missing_code": 15,
+    "reserved_codes": [
+      11,
+      12,
+      13,
+      14
+    ],
+    "nibble_order": "even_cell_low_nibble_odd_cell_high_nibble",
+    "pad_nibble_code": 15
+  },
+  "style": {
+    "map_bbox": [
+      0.8,
+      42.4,
+      16.4,
+      50.0
+    ],
+    "display_component": "cloud_cover_pct",
+    "display_units": "%",
+    "bounds_pct": [
+      0,
+      10,
+      25,
+      50,
+      75,
+      90,
+      100
+    ]
+  },
+  "steps": [
+    {
+      "step": "H00",
+      "horizon": 0,
+      "valid_time": "2026-09-02T06:00:00+00:00",
+      "byte_length": 148781,
+      "min_cloud_cover_pct": 0.0,
+      "max_cloud_cover_pct": 100.0,
+      "mean_cloud_cover_pct": 14.03945541381836,
+      "missing_cell_count": 0,
+      "url": "web_exports/cloud_maps/icon-ch1/20260902_0600/low/steps/H00.bin"
+    },
+    {
+      "step": "H01",
+      "horizon": 1,
+      "valid_time": "2026-09-02T07:00:00+00:00",
+      "byte_length": 148781,
+      "min_cloud_cover_pct": 0.0,
+      "max_cloud_cover_pct": 100.0,
+      "mean_cloud_cover_pct": 11.409807205200195,
+      "missing_cell_count": 0,
+      "url": "web_exports/cloud_maps/icon-ch1/20260902_0600/low/steps/H01.bin"
+    },
+    {
+      "step": "H02",
+      "horizon": 2,
+      "valid_time": "2026-09-02T08:00:00+00:00",
+      "byte_length": 148781,
+      "min_cloud_cover_pct": 0.0,
+      "max_cloud_cover_pct": 100.0,
+      "mean_cloud_cover_pct": 10.875109672546387,
+      "missing_cell_count": 0,
+      "url": "web_exports/cloud_maps/icon-ch1/20260902_0600/low/steps/H02.bin"
+    },
+    {
+      "step": "H03",
+      "horizon": 3,
+      "valid_time": "2026-09-02T09:00:00+00:00",
+      "byte_length": 148781,
+      "min_cloud_cover_pct": 0.0,
+      "max_cloud_cover_pct": 100.0,
+      "mean_cloud_cover_pct": 11.193062782287598,
+      "missing_cell_count": 0,
+      "url": "web_exports/cloud_maps/icon-ch1/20260902_0600/low/steps/H03.bin"
+    },
+    {
+      "step": "H04",
+      "horizon": 4,
+      "valid_time": "2026-09-02T10:00:00+00:00",
+      "byte_length": 148781,
+      "min_cloud_cover_pct": 0.0,
+      "max_cloud_cover_pct": 99.82556915283203,
+      "mean_cloud_cover_pct": 13.191740989685059,
+      "missing_cell_count": 0,
+      "url": "web_exports/cloud_maps/icon-ch1/20260902_0600/low/steps/H04.bin"
+    },
+    {
+      "step": "H05",
+      "horizon": 5,
+      "valid_time": "2026-09-02T11:00:00+00:00",
+      "byte_length": 148781,
+      "min_cloud_cover_pct": 0.0,
+      "max_cloud_cover_pct": 100.0,
+      "mean_cloud_cover_pct": 15.64528751373291,
+      "missing_cell_count": 0,
+      "url": "web_exports/cloud_maps/icon-ch1/20260902_0600/low/steps/H05.bin"
+    },
+    {
+      "step": "H06",
+      "horizon": 6,
+      "valid_time": "2026-09-02T12:00:00+00:00",
+      "byte_length": 148781,
+      "min_cloud_cover_pct": 0.0,
+      "max_cloud_cover_pct": 100.0,
+      "mean_cloud_cover_pct": 18.1932373046875,
+      "missing_cell_count": 0,
+      "url": "web_exports/cloud_maps/icon-ch1/20260902_0600/low/steps/H06.bin"
+    },
+    {
+      "step": "H07",
+      "horizon": 7,
+      "valid_time": "2026-09-02T13:00:00+00:00",
+      "byte_length": 148781,
+      "min_cloud_cover_pct": 0.0,
+      "max_cloud_cover_pct": 100.0,
+      "mean_cloud_cover_pct": 18.910402297973633,
+      "missing_cell_count": 0,
+      "url": "web_exports/cloud_maps/icon-ch1/20260902_0600/low/steps/H07.bin"
+    },
+    {
+      "step": "H08",
+      "horizon": 8,
+      "valid_time": "2026-09-02T14:00:00+00:00",
+      "byte_length": 148781,
+      "min_cloud_cover_pct": 0.0,
+      "max_cloud_cover_pct": 100.0,
+      "mean_cloud_cover_pct": 17.461414337158203,
+      "missing_cell_count": 0,
+      "url": "web_exports/cloud_maps/icon-ch1/20260902_0600/low/steps/H08.bin"
+    },
+    {
+      "step": "H09",
+      "horizon": 9,
+      "valid_time": "2026-09-02T15:00:00+00:00",
+      "byte_length": 148781,
+      "min_cloud_cover_pct": 0.0,
+      "max_cloud_cover_pct": 100.0,
+      "mean_cloud_cover_pct": 15.044629096984863,
+      "missing_cell_count": 0,
+      "url": "web_exports/cloud_maps/icon-ch1/20260902_0600/low/steps/H09.bin"
+    },
+    {
+      "step": "H10",
+      "horizon": 10,
+      "valid_time": "2026-09-02T16:00:00+00:00",
+      "byte_length": 148781,
+      "min_cloud_cover_pct": 0.0,
+      "max_cloud_cover_pct": 100.0,
+      "mean_cloud_cover_pct": 12.436542510986328,
+      "missing_cell_count": 0,
+      "url": "web_exports/cloud_maps/icon-ch1/20260902_0600/low/steps/H10.bin"
+    },
+    {
+      "step": "H11",
+      "horizon": 11,
+      "valid_time": "2026-09-02T17:00:00+00:00",
+      "byte_length": 148781,
+      "min_cloud_cover_pct": 0.0,
+      "max_cloud_cover_pct": 100.0,
+      "mean_cloud_cover_pct": 9.823307991027832,
+      "missing_cell_count": 0,
+      "url": "web_exports/cloud_maps/icon-ch1/20260902_0600/low/steps/H11.bin"
+    },
+    {
+      "step": "H12",
+      "horizon": 12,
+      "valid_time": "2026-09-02T18:00:00+00:00",
+      "byte_length": 148781,
+      "min_cloud_cover_pct": 0.0,
+      "max_cloud_cover_pct": 100.0,
+      "mean_cloud_cover_pct": 8.35581111907959,
+      "missing_cell_count": 0,
+      "url": "web_exports/cloud_maps/icon-ch1/20260902_0600/low/steps/H12.bin"
+    },
+    {
+      "step": "H13",
+      "horizon": 13,
+      "valid_time": "2026-09-02T19:00:00+00:00",
+      "byte_length": 148781,
+      "min_cloud_cover_pct": 0.0,
+      "max_cloud_cover_pct": 100.0,
+      "mean_cloud_cover_pct": 7.595658302307129,
+      "missing_cell_count": 0,
+      "url": "web_exports/cloud_maps/icon-ch1/20260902_0600/low/steps/H13.bin"
+    },
+    {
+      "step": "H14",
+      "horizon": 14,
+      "valid_time": "2026-09-02T20:00:00+00:00",
+      "byte_length": 148781,
+      "min_cloud_cover_pct": 0.0,
+      "max_cloud_cover_pct": 100.0,
+      "mean_cloud_cover_pct": 7.048421859741211,
+      "missing_cell_count": 0,
+      "url": "web_exports/cloud_maps/icon-ch1/20260902_0600/low/steps/H14.bin"
+    },
+    {
+      "step": "H15",
+      "horizon": 15,
+      "valid_time": "2026-09-02T21:00:00+00:00",
+      "byte_length": 148781,
+      "min_cloud_cover_pct": 0.0,
+      "max_cloud_cover_pct": 100.0,
+      "mean_cloud_cover_pct": 6.516878128051758,
+      "missing_cell_count": 0,
+      "url": "web_exports/cloud_maps/icon-ch1/20260902_0600/low/steps/H15.bin"
+    },
+    {
+      "step": "H16",
+      "horizon": 16,
+      "valid_time": "2026-09-02T22:00:00+00:00",
+      "byte_length": 148781,
+      "min_cloud_cover_pct": 0.0,
+      "max_cloud_cover_pct": 100.0,
+      "mean_cloud_cover_pct": 6.226625919342041,
+      "missing_cell_count": 0,
+      "url": "web_exports/cloud_maps/icon-ch1/20260902_0600/low/steps/H16.bin"
+    },
+    {
+      "step": "H17",
+      "horizon": 17,
+      "valid_time": "2026-09-02T23:00:00+00:00",
+      "byte_length": 148781,
+      "min_cloud_cover_pct": 0.0,
+      "max_cloud_cover_pct": 100.0,
+      "mean_cloud_cover_pct": 6.302852630615234,
+      "missing_cell_count": 0,
+      "url": "web_exports/cloud_maps/icon-ch1/20260902_0600/low/steps/H17.bin"
+    },
+    {
+      "step": "H18",
+      "horizon": 18,
+      "valid_time": "2026-09-03T00:00:00+00:00",
+      "byte_length": 148781,
+      "min_cloud_cover_pct": 0.0,
+      "max_cloud_cover_pct": 100.0,
+      "mean_cloud_cover_pct": 6.623407363891602,
+      "missing_cell_count": 0,
+      "url": "web_exports/cloud_maps/icon-ch1/20260902_0600/low/steps/H18.bin"
+    },
+    {
+      "step": "H19",
+      "horizon": 19,
+      "valid_time": "2026-09-03T01:00:00+00:00",
+      "byte_length": 148781,
+      "min_cloud_cover_pct": 0.0,
+      "max_cloud_cover_pct": 100.0,
+      "mean_cloud_cover_pct": 6.784276008605957,
+      "missing_cell_count": 0,
+      "url": "web_exports/cloud_maps/icon-ch1/20260902_0600/low/steps/H19.bin"
+    },
+    {
+      "step": "H20",
+      "horizon": 20,
+      "valid_time": "2026-09-03T02:00:00+00:00",
+      "byte_length": 148781,
+      "min_cloud_cover_pct": 0.0,
+      "max_cloud_cover_pct": 100.0,
+      "mean_cloud_cover_pct": 6.972783088684082,
+      "missing_cell_count": 0,
+      "url": "web_exports/cloud_maps/icon-ch1/20260902_0600/low/steps/H20.bin"
+    },
+    {
+      "step": "H21",
+      "horizon": 21,
+      "valid_time": "2026-09-03T03:00:00+00:00",
+      "byte_length": 148781,
+      "min_cloud_cover_pct": 0.0,
+      "max_cloud_cover_pct": 100.0,
+      "mean_cloud_cover_pct": 7.396454811096191,
+      "missing_cell_count": 0,
+      "url": "web_exports/cloud_maps/icon-ch1/20260902_0600/low/steps/H21.bin"
+    },
+    {
+      "step": "H22",
+      "horizon": 22,
+      "valid_time": "2026-09-03T04:00:00+00:00",
+      "byte_length": 148781,
+      "min_cloud_cover_pct": 0.0,
+      "max_cloud_cover_pct": 100.0,
+      "mean_cloud_cover_pct": 8.07719612121582,
+      "missing_cell_count": 0,
+      "url": "web_exports/cloud_maps/icon-ch1/20260902_0600/low/steps/H22.bin"
+    },
+    {
+      "step": "H23",
+      "horizon": 23,
+      "valid_time": "2026-09-03T05:00:00+00:00",
+      "byte_length": 148781,
+      "min_cloud_cover_pct": 0.0,
+      "max_cloud_cover_pct": 100.0,
+      "mean_cloud_cover_pct": 9.117974281311035,
+      "missing_cell_count": 0,
+      "url": "web_exports/cloud_maps/icon-ch1/20260902_0600/low/steps/H23.bin"
+    },
+    {
+      "step": "H24",
+      "horizon": 24,
+      "valid_time": "2026-09-03T06:00:00+00:00",
+      "byte_length": 148781,
+      "min_cloud_cover_pct": 0.0,
+      "max_cloud_cover_pct": 100.0,
+      "mean_cloud_cover_pct": 9.353354454040527,
+      "missing_cell_count": 0,
+      "url": "web_exports/cloud_maps/icon-ch1/20260902_0600/low/steps/H24.bin"
+    },
+    {
+      "step": "H25",
+      "horizon": 25,
+      "valid_time": "2026-09-03T07:00:00+00:00",
+      "byte_length": 148781,
+      "min_cloud_cover_pct": 0.0,
+      "max_cloud_cover_pct": 100.0,
+      "mean_cloud_cover_pct": 8.708127975463867,
+      "missing_cell_count": 0,
+      "url": "web_exports/cloud_maps/icon-ch1/20260902_0600/low/steps/H25.bin"
+    },
+    {
+      "step": "H26",
+      "horizon": 26,
+      "valid_time": "2026-09-03T08:00:00+00:00",
+      "byte_length": 148781,
+      "min_cloud_cover_pct": 0.0,
+      "max_cloud_cover_pct": 100.0,
+      "mean_cloud_cover_pct": 9.717000007629395,
+      "missing_cell_count": 0,
+      "url": "web_exports/cloud_maps/icon-ch1/20260902_0600/low/steps/H26.bin"
+    },
+    {
+      "step": "H27",
+      "horizon": 27,
+      "valid_time": "2026-09-03T09:00:00+00:00",
+      "byte_length": 148781,
+      "min_cloud_cover_pct": 0.0,
+      "max_cloud_cover_pct": 100.0,
+      "mean_cloud_cover_pct": 12.035163879394531,
+      "missing_cell_count": 0,
+      "url": "web_exports/cloud_maps/icon-ch1/20260902_0600/low/steps/H27.bin"
+    },
+    {
+      "step": "H28",
+      "horizon": 28,
+      "valid_time": "2026-09-03T10:00:00+00:00",
+      "byte_length": 148781,
+      "min_cloud_cover_pct": 0.0,
+      "max_cloud_cover_pct": 100.0,
+      "mean_cloud_cover_pct": 14.847834587097168,
+      "missing_cell_count": 0,
+      "url": "web_exports/cloud_maps/icon-ch1/20260902_0600/low/steps/H28.bin"
+    },
+    {
+      "step": "H29",
+      "horizon": 29,
+      "valid_time": "2026-09-03T11:00:00+00:00",
+      "byte_length": 148781,
+      "min_cloud_cover_pct": 0.0,
+      "max_cloud_cover_pct": 100.0,
+      "mean_cloud_cover_pct": 16.06563949584961,
+      "missing_cell_count": 0,
+      "url": "web_exports/cloud_maps/icon-ch1/20260902_0600/low/steps/H29.bin"
+    },
+    {
+      "step": "H30",
+      "horizon": 30,
+      "valid_time": "2026-09-03T12:00:00+00:00",
+      "byte_length": 148781,
+      "min_cloud_cover_pct": 0.0,
+      "max_cloud_cover_pct": 100.0,
+      "mean_cloud_cover_pct": 15.628296852111816,
+      "missing_cell_count": 0,
+      "url": "web_exports/cloud_maps/icon-ch1/20260902_0600/low/steps/H30.bin"
+    },
+    {
+      "step": "H31",
+      "horizon": 31,
+      "valid_time": "2026-09-03T13:00:00+00:00",
+      "byte_length": 148781,
+      "min_cloud_cover_pct": 0.0,
+      "max_cloud_cover_pct": 100.0,
+      "mean_cloud_cover_pct": 14.95466136932373,
+      "missing_cell_count": 0,
+      "url": "web_exports/cloud_maps/icon-ch1/20260902_0600/low/steps/H31.bin"
+    },
+    {
+      "step": "H32",
+      "horizon": 32,
+      "valid_time": "2026-09-03T14:00:00+00:00",
+      "byte_length": 148781,
+      "min_cloud_cover_pct": 0.0,
+      "max_cloud_cover_pct": 100.0,
+      "mean_cloud_cover_pct": 14.714970588684082,
+      "missing_cell_count": 0,
+      "url": "web_exports/cloud_maps/icon-ch1/20260902_0600/low/steps/H32.bin"
+    },
+    {
+      "step": "H33",
+      "horizon": 33,
+      "valid_time": "2026-09-03T15:00:00+00:00",
+      "byte_length": 148781,
+      "min_cloud_cover_pct": 0.0,
+      "max_cloud_cover_pct": 100.0,
+      "mean_cloud_cover_pct": 14.941444396972656,
+      "missing_cell_count": 0,
+      "url": "web_exports/cloud_maps/icon-ch1/20260902_0600/low/steps/H33.bin"
+    }
+  ],
+  "source": "cache_cloud_maps/ch1/20260902_0600/low/metadata.json"
+}

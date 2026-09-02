@@ -1,0 +1,502 @@
+{
+  "schema_version": 1,
+  "product": "rain_map_surface",
+  "model": "icon-ch1",
+  "run": "20260902_0300",
+  "domain": {
+    "id": "icon-ch-common-safe",
+    "label": "ICON-CH Common Safe Domain",
+    "bbox": [
+      0.8,
+      42.4,
+      16.4,
+      50.0
+    ]
+  },
+  "product_name": "surface",
+  "source_variable": "TOT_PREC",
+  "derived_component": "deaccumulated_step_precipitation",
+  "ref_time": "2026-09-02T03:00:00+00:00",
+  "grid": {
+    "projection": "EPSG:4326",
+    "width": 781,
+    "height": 381,
+    "lon": {
+      "start": 0.800000011920929,
+      "end": 16.39998435974121,
+      "step": 0.019999980926513672,
+      "count": 781
+    },
+    "lat": {
+      "start": 42.400001525878906,
+      "end": 49.99872589111328,
+      "step": 0.01999664306640625,
+      "count": 381
+    }
+  },
+  "encoding": {
+    "format": "uint8-interleaved-components",
+    "dtype": "uint8",
+    "components": [
+      "precipitation_mm"
+    ],
+    "units": [
+      "mm"
+    ],
+    "scale_factor": 0.2,
+    "add_offset": 0.0,
+    "missing_value": 255
+  },
+  "style": {
+    "map_bbox": [
+      0.8,
+      42.4,
+      16.4,
+      50.0
+    ],
+    "display_component": "precipitation_mm",
+    "display_units": "mm",
+    "bounds_mm": [
+      0,
+      0.2,
+      0.5,
+      1,
+      2,
+      4,
+      8,
+      15,
+      25,
+      40,
+      50
+    ],
+    "colors": [
+      "#f7fbff",
+      "#deebf7",
+      "#c6dbef",
+      "#9ecae1",
+      "#6baed6",
+      "#4292c6",
+      "#2171b5",
+      "#08519c",
+      "#08306b",
+      "#5b21b6"
+    ]
+  },
+  "steps": [
+    {
+      "step": "H00",
+      "horizon": 0,
+      "valid_time": "2026-09-02T03:00:00+00:00",
+      "byte_length": 297561,
+      "max_precipitation_mm": 0.0,
+      "clipped_precipitation_cell_count": 0,
+      "url": "web_exports/rain_maps/icon-ch1/20260902_0300/surface/steps/H00.bin"
+    },
+    {
+      "step": "H01",
+      "horizon": 1,
+      "valid_time": "2026-09-02T04:00:00+00:00",
+      "byte_length": 297561,
+      "max_precipitation_mm": 2.8129544258117676,
+      "clipped_precipitation_cell_count": 0,
+      "url": "web_exports/rain_maps/icon-ch1/20260902_0300/surface/steps/H01.bin"
+    },
+    {
+      "step": "H02",
+      "horizon": 2,
+      "valid_time": "2026-09-02T05:00:00+00:00",
+      "byte_length": 297561,
+      "max_precipitation_mm": 0.42593449354171753,
+      "clipped_precipitation_cell_count": 0,
+      "url": "web_exports/rain_maps/icon-ch1/20260902_0300/surface/steps/H02.bin"
+    },
+    {
+      "step": "H03",
+      "horizon": 3,
+      "valid_time": "2026-09-02T06:00:00+00:00",
+      "byte_length": 297561,
+      "max_precipitation_mm": 0.30016109347343445,
+      "clipped_precipitation_cell_count": 0,
+      "url": "web_exports/rain_maps/icon-ch1/20260902_0300/surface/steps/H03.bin"
+    },
+    {
+      "step": "H04",
+      "horizon": 4,
+      "valid_time": "2026-09-02T07:00:00+00:00",
+      "byte_length": 297561,
+      "max_precipitation_mm": 0.36647137999534607,
+      "clipped_precipitation_cell_count": 0,
+      "url": "web_exports/rain_maps/icon-ch1/20260902_0300/surface/steps/H04.bin"
+    },
+    {
+      "step": "H05",
+      "horizon": 5,
+      "valid_time": "2026-09-02T08:00:00+00:00",
+      "byte_length": 297561,
+      "max_precipitation_mm": 0.06295517832040787,
+      "clipped_precipitation_cell_count": 0,
+      "url": "web_exports/rain_maps/icon-ch1/20260902_0300/surface/steps/H05.bin"
+    },
+    {
+      "step": "H06",
+      "horizon": 6,
+      "valid_time": "2026-09-02T09:00:00+00:00",
+      "byte_length": 297561,
+      "max_precipitation_mm": 0.002644625026732683,
+      "clipped_precipitation_cell_count": 0,
+      "url": "web_exports/rain_maps/icon-ch1/20260902_0300/surface/steps/H06.bin"
+    },
+    {
+      "step": "H07",
+      "horizon": 7,
+      "valid_time": "2026-09-02T10:00:00+00:00",
+      "byte_length": 297561,
+      "max_precipitation_mm": 0.0013889623805880547,
+      "clipped_precipitation_cell_count": 0,
+      "url": "web_exports/rain_maps/icon-ch1/20260902_0300/surface/steps/H07.bin"
+    },
+    {
+      "step": "H08",
+      "horizon": 8,
+      "valid_time": "2026-09-02T11:00:00+00:00",
+      "byte_length": 297561,
+      "max_precipitation_mm": 3.4318182468414307,
+      "clipped_precipitation_cell_count": 0,
+      "url": "web_exports/rain_maps/icon-ch1/20260902_0300/surface/steps/H08.bin"
+    },
+    {
+      "step": "H09",
+      "horizon": 9,
+      "valid_time": "2026-09-02T12:00:00+00:00",
+      "byte_length": 297561,
+      "max_precipitation_mm": 39.10318374633789,
+      "clipped_precipitation_cell_count": 0,
+      "url": "web_exports/rain_maps/icon-ch1/20260902_0300/surface/steps/H09.bin"
+    },
+    {
+      "step": "H10",
+      "horizon": 10,
+      "valid_time": "2026-09-02T13:00:00+00:00",
+      "byte_length": 297561,
+      "max_precipitation_mm": 40.72581100463867,
+      "clipped_precipitation_cell_count": 0,
+      "url": "web_exports/rain_maps/icon-ch1/20260902_0300/surface/steps/H10.bin"
+    },
+    {
+      "step": "H11",
+      "horizon": 11,
+      "valid_time": "2026-09-02T14:00:00+00:00",
+      "byte_length": 297561,
+      "max_precipitation_mm": 35.191890716552734,
+      "clipped_precipitation_cell_count": 0,
+      "url": "web_exports/rain_maps/icon-ch1/20260902_0300/surface/steps/H11.bin"
+    },
+    {
+      "step": "H12",
+      "horizon": 12,
+      "valid_time": "2026-09-02T15:00:00+00:00",
+      "byte_length": 297561,
+      "max_precipitation_mm": 31.375282287597656,
+      "clipped_precipitation_cell_count": 0,
+      "url": "web_exports/rain_maps/icon-ch1/20260902_0300/surface/steps/H12.bin"
+    },
+    {
+      "step": "H13",
+      "horizon": 13,
+      "valid_time": "2026-09-02T16:00:00+00:00",
+      "byte_length": 297561,
+      "max_precipitation_mm": 63.12334442138672,
+      "clipped_precipitation_cell_count": 2,
+      "url": "web_exports/rain_maps/icon-ch1/20260902_0300/surface/steps/H13.bin"
+    },
+    {
+      "step": "H14",
+      "horizon": 14,
+      "valid_time": "2026-09-02T17:00:00+00:00",
+      "byte_length": 297561,
+      "max_precipitation_mm": 43.2999267578125,
+      "clipped_precipitation_cell_count": 0,
+      "url": "web_exports/rain_maps/icon-ch1/20260902_0300/surface/steps/H14.bin"
+    },
+    {
+      "step": "H15",
+      "horizon": 15,
+      "valid_time": "2026-09-02T18:00:00+00:00",
+      "byte_length": 297561,
+      "max_precipitation_mm": 31.78166961669922,
+      "clipped_precipitation_cell_count": 0,
+      "url": "web_exports/rain_maps/icon-ch1/20260902_0300/surface/steps/H15.bin"
+    },
+    {
+      "step": "H16",
+      "horizon": 16,
+      "valid_time": "2026-09-02T19:00:00+00:00",
+      "byte_length": 297561,
+      "max_precipitation_mm": 30.48942756652832,
+      "clipped_precipitation_cell_count": 0,
+      "url": "web_exports/rain_maps/icon-ch1/20260902_0300/surface/steps/H16.bin"
+    },
+    {
+      "step": "H17",
+      "horizon": 17,
+      "valid_time": "2026-09-02T20:00:00+00:00",
+      "byte_length": 297561,
+      "max_precipitation_mm": 13.467585563659668,
+      "clipped_precipitation_cell_count": 0,
+      "url": "web_exports/rain_maps/icon-ch1/20260902_0300/surface/steps/H17.bin"
+    },
+    {
+      "step": "H18",
+      "horizon": 18,
+      "valid_time": "2026-09-02T21:00:00+00:00",
+      "byte_length": 297561,
+      "max_precipitation_mm": 19.593460083007812,
+      "clipped_precipitation_cell_count": 0,
+      "url": "web_exports/rain_maps/icon-ch1/20260902_0300/surface/steps/H18.bin"
+    },
+    {
+      "step": "H19",
+      "horizon": 19,
+      "valid_time": "2026-09-02T22:00:00+00:00",
+      "byte_length": 297561,
+      "max_precipitation_mm": 3.3695425987243652,
+      "clipped_precipitation_cell_count": 0,
+      "url": "web_exports/rain_maps/icon-ch1/20260902_0300/surface/steps/H19.bin"
+    },
+    {
+      "step": "H20",
+      "horizon": 20,
+      "valid_time": "2026-09-02T23:00:00+00:00",
+      "byte_length": 297561,
+      "max_precipitation_mm": 0.7454646825790405,
+      "clipped_precipitation_cell_count": 0,
+      "url": "web_exports/rain_maps/icon-ch1/20260902_0300/surface/steps/H20.bin"
+    },
+    {
+      "step": "H21",
+      "horizon": 21,
+      "valid_time": "2026-09-03T00:00:00+00:00",
+      "byte_length": 297561,
+      "max_precipitation_mm": 0.28803953528404236,
+      "clipped_precipitation_cell_count": 0,
+      "url": "web_exports/rain_maps/icon-ch1/20260902_0300/surface/steps/H21.bin"
+    },
+    {
+      "step": "H22",
+      "horizon": 22,
+      "valid_time": "2026-09-03T01:00:00+00:00",
+      "byte_length": 297561,
+      "max_precipitation_mm": 17.174427032470703,
+      "clipped_precipitation_cell_count": 0,
+      "url": "web_exports/rain_maps/icon-ch1/20260902_0300/surface/steps/H22.bin"
+    },
+    {
+      "step": "H23",
+      "horizon": 23,
+      "valid_time": "2026-09-03T02:00:00+00:00",
+      "byte_length": 297561,
+      "max_precipitation_mm": 17.921550750732422,
+      "clipped_precipitation_cell_count": 0,
+      "url": "web_exports/rain_maps/icon-ch1/20260902_0300/surface/steps/H23.bin"
+    },
+    {
+      "step": "H24",
+      "horizon": 24,
+      "valid_time": "2026-09-03T03:00:00+00:00",
+      "byte_length": 297561,
+      "max_precipitation_mm": 15.52401065826416,
+      "clipped_precipitation_cell_count": 0,
+      "url": "web_exports/rain_maps/icon-ch1/20260902_0300/surface/steps/H24.bin"
+    },
+    {
+      "step": "H25",
+      "horizon": 25,
+      "valid_time": "2026-09-03T04:00:00+00:00",
+      "byte_length": 297561,
+      "max_precipitation_mm": 10.256231307983398,
+      "clipped_precipitation_cell_count": 0,
+      "url": "web_exports/rain_maps/icon-ch1/20260902_0300/surface/steps/H25.bin"
+    },
+    {
+      "step": "H26",
+      "horizon": 26,
+      "valid_time": "2026-09-03T05:00:00+00:00",
+      "byte_length": 297561,
+      "max_precipitation_mm": 10.117562294006348,
+      "clipped_precipitation_cell_count": 0,
+      "url": "web_exports/rain_maps/icon-ch1/20260902_0300/surface/steps/H26.bin"
+    },
+    {
+      "step": "H27",
+      "horizon": 27,
+      "valid_time": "2026-09-03T06:00:00+00:00",
+      "byte_length": 297561,
+      "max_precipitation_mm": 6.7421369552612305,
+      "clipped_precipitation_cell_count": 0,
+      "url": "web_exports/rain_maps/icon-ch1/20260902_0300/surface/steps/H27.bin"
+    },
+    {
+      "step": "H28",
+      "horizon": 28,
+      "valid_time": "2026-09-03T07:00:00+00:00",
+      "byte_length": 297561,
+      "max_precipitation_mm": 0.45301929116249084,
+      "clipped_precipitation_cell_count": 0,
+      "url": "web_exports/rain_maps/icon-ch1/20260902_0300/surface/steps/H28.bin"
+    },
+    {
+      "step": "H29",
+      "horizon": 29,
+      "valid_time": "2026-09-03T08:00:00+00:00",
+      "byte_length": 297561,
+      "max_precipitation_mm": 0.005986316595226526,
+      "clipped_precipitation_cell_count": 0,
+      "url": "web_exports/rain_maps/icon-ch1/20260902_0300/surface/steps/H29.bin"
+    },
+    {
+      "step": "H30",
+      "horizon": 30,
+      "valid_time": "2026-09-03T09:00:00+00:00",
+      "byte_length": 297561,
+      "max_precipitation_mm": 0.0019216123037040234,
+      "clipped_precipitation_cell_count": 0,
+      "url": "web_exports/rain_maps/icon-ch1/20260902_0300/surface/steps/H30.bin"
+    },
+    {
+      "step": "H31",
+      "horizon": 31,
+      "valid_time": "2026-09-03T10:00:00+00:00",
+      "byte_length": 297561,
+      "max_precipitation_mm": 0.00018864359299186617,
+      "clipped_precipitation_cell_count": 0,
+      "url": "web_exports/rain_maps/icon-ch1/20260902_0300/surface/steps/H31.bin"
+    },
+    {
+      "step": "H32",
+      "horizon": 32,
+      "valid_time": "2026-09-03T11:00:00+00:00",
+      "byte_length": 297561,
+      "max_precipitation_mm": 14.829193115234375,
+      "clipped_precipitation_cell_count": 0,
+      "url": "web_exports/rain_maps/icon-ch1/20260902_0300/surface/steps/H32.bin"
+    },
+    {
+      "step": "H33",
+      "horizon": 33,
+      "valid_time": "2026-09-03T12:00:00+00:00",
+      "byte_length": 297561,
+      "max_precipitation_mm": 11.772153854370117,
+      "clipped_precipitation_cell_count": 0,
+      "url": "web_exports/rain_maps/icon-ch1/20260902_0300/surface/steps/H33.bin"
+    },
+    {
+      "step": "H34",
+      "horizon": 34,
+      "valid_time": "2026-09-03T13:00:00+00:00",
+      "byte_length": 297561,
+      "max_precipitation_mm": 7.516819000244141,
+      "clipped_precipitation_cell_count": 0,
+      "url": "web_exports/rain_maps/icon-ch1/20260902_0300/surface/steps/H34.bin"
+    },
+    {
+      "step": "H35",
+      "horizon": 35,
+      "valid_time": "2026-09-03T14:00:00+00:00",
+      "byte_length": 297561,
+      "max_precipitation_mm": 0.7010805606842041,
+      "clipped_precipitation_cell_count": 0,
+      "url": "web_exports/rain_maps/icon-ch1/20260902_0300/surface/steps/H35.bin"
+    },
+    {
+      "step": "H36",
+      "horizon": 36,
+      "valid_time": "2026-09-03T15:00:00+00:00",
+      "byte_length": 297561,
+      "max_precipitation_mm": 0.8180969953536987,
+      "clipped_precipitation_cell_count": 0,
+      "url": "web_exports/rain_maps/icon-ch1/20260902_0300/surface/steps/H36.bin"
+    },
+    {
+      "step": "H37",
+      "horizon": 37,
+      "valid_time": "2026-09-03T16:00:00+00:00",
+      "byte_length": 297561,
+      "max_precipitation_mm": 0.3664899170398712,
+      "clipped_precipitation_cell_count": 0,
+      "url": "web_exports/rain_maps/icon-ch1/20260902_0300/surface/steps/H37.bin"
+    },
+    {
+      "step": "H38",
+      "horizon": 38,
+      "valid_time": "2026-09-03T17:00:00+00:00",
+      "byte_length": 297561,
+      "max_precipitation_mm": 0.020053252577781677,
+      "clipped_precipitation_cell_count": 0,
+      "url": "web_exports/rain_maps/icon-ch1/20260902_0300/surface/steps/H38.bin"
+    },
+    {
+      "step": "H39",
+      "horizon": 39,
+      "valid_time": "2026-09-03T18:00:00+00:00",
+      "byte_length": 297561,
+      "max_precipitation_mm": 0.016306748613715172,
+      "clipped_precipitation_cell_count": 0,
+      "url": "web_exports/rain_maps/icon-ch1/20260902_0300/surface/steps/H39.bin"
+    },
+    {
+      "step": "H40",
+      "horizon": 40,
+      "valid_time": "2026-09-03T19:00:00+00:00",
+      "byte_length": 297561,
+      "max_precipitation_mm": 0.009613207541406155,
+      "clipped_precipitation_cell_count": 0,
+      "url": "web_exports/rain_maps/icon-ch1/20260902_0300/surface/steps/H40.bin"
+    },
+    {
+      "step": "H41",
+      "horizon": 41,
+      "valid_time": "2026-09-03T20:00:00+00:00",
+      "byte_length": 297561,
+      "max_precipitation_mm": 0.07224749028682709,
+      "clipped_precipitation_cell_count": 0,
+      "url": "web_exports/rain_maps/icon-ch1/20260902_0300/surface/steps/H41.bin"
+    },
+    {
+      "step": "H42",
+      "horizon": 42,
+      "valid_time": "2026-09-03T21:00:00+00:00",
+      "byte_length": 297561,
+      "max_precipitation_mm": 0.013232431374490261,
+      "clipped_precipitation_cell_count": 0,
+      "url": "web_exports/rain_maps/icon-ch1/20260902_0300/surface/steps/H42.bin"
+    },
+    {
+      "step": "H43",
+      "horizon": 43,
+      "valid_time": "2026-09-03T22:00:00+00:00",
+      "byte_length": 297561,
+      "max_precipitation_mm": 0.0,
+      "clipped_precipitation_cell_count": 0,
+      "url": "web_exports/rain_maps/icon-ch1/20260902_0300/surface/steps/H43.bin"
+    },
+    {
+      "step": "H44",
+      "horizon": 44,
+      "valid_time": "2026-09-03T23:00:00+00:00",
+      "byte_length": 297561,
+      "max_precipitation_mm": 0.0,
+      "clipped_precipitation_cell_count": 0,
+      "url": "web_exports/rain_maps/icon-ch1/20260902_0300/surface/steps/H44.bin"
+    },
+    {
+      "step": "H45",
+      "horizon": 45,
+      "valid_time": "2026-09-04T00:00:00+00:00",
+      "byte_length": 297561,
+      "max_precipitation_mm": 0.0,
+      "clipped_precipitation_cell_count": 0,
+      "url": "web_exports/rain_maps/icon-ch1/20260902_0300/surface/steps/H45.bin"
+    }
+  ],
+  "source": "cache_rain_maps/ch1/20260902_0300/surface/metadata.json"
+}

@@ -1,0 +1,292 @@
+{
+  "contract": "xcbenz-spatial-value-tiles",
+  "contract_version": "1.0.0",
+  "package": "immutable-chunks-cloud-dual-v1",
+  "generated_at": "2026-09-02T08:52:36+00:00",
+  "models": {
+    "icon-ch1": {
+      "runs": {
+        "20260901_0300": {
+          "run": "20260901_0300",
+          "revision": "f36513279b9a",
+          "revision_sha256": "f36513279b9a473e646162a2b8a788445564c9316e10290a8329fc5948e0ba0c",
+          "tile_count": 42718,
+          "revision_record": "web_exports/value_tiles/v1/icon-ch1/20260901_0300/f36513279b9a/revision.json",
+          "variants": {
+            "cloud/cloud4": {
+              "metadata": "web_exports/value_tiles/v1/icon-ch1/20260901_0300/f36513279b9a/cloud/cloud4/metadata.json"
+            },
+            "cloud/high": {
+              "metadata": "web_exports/value_tiles/v1/icon-ch1/20260901_0300/f36513279b9a/cloud/high/metadata.json"
+            },
+            "cloud/low": {
+              "metadata": "web_exports/value_tiles/v1/icon-ch1/20260901_0300/f36513279b9a/cloud/low/metadata.json"
+            },
+            "cloud/mid": {
+              "metadata": "web_exports/value_tiles/v1/icon-ch1/20260901_0300/f36513279b9a/cloud/mid/metadata.json"
+            },
+            "cloud/total": {
+              "metadata": "web_exports/value_tiles/v1/icon-ch1/20260901_0300/f36513279b9a/cloud/total/metadata.json"
+            },
+            "rain/surface": {
+              "metadata": "web_exports/value_tiles/v1/icon-ch1/20260901_0300/f36513279b9a/rain/surface/metadata.json"
+            },
+            "sunrain/surface": {
+              "metadata": "web_exports/value_tiles/v1/icon-ch1/20260901_0300/f36513279b9a/sunrain/surface/metadata.json"
+            },
+            "wind/1000m_AMSL": {
+              "metadata": "web_exports/value_tiles/v1/icon-ch1/20260901_0300/f36513279b9a/wind/1000m_AMSL/metadata.json"
+            },
+            "wind/10m_AGL": {
+              "metadata": "web_exports/value_tiles/v1/icon-ch1/20260901_0300/f36513279b9a/wind/10m_AGL/metadata.json"
+            },
+            "wind/1500m_AMSL": {
+              "metadata": "web_exports/value_tiles/v1/icon-ch1/20260901_0300/f36513279b9a/wind/1500m_AMSL/metadata.json"
+            },
+            "wind/2000m_AMSL": {
+              "metadata": "web_exports/value_tiles/v1/icon-ch1/20260901_0300/f36513279b9a/wind/2000m_AMSL/metadata.json"
+            },
+            "wind/2500m_AMSL": {
+              "metadata": "web_exports/value_tiles/v1/icon-ch1/20260901_0300/f36513279b9a/wind/2500m_AMSL/metadata.json"
+            },
+            "wind/3000m_AMSL": {
+              "metadata": "web_exports/value_tiles/v1/icon-ch1/20260901_0300/f36513279b9a/wind/3000m_AMSL/metadata.json"
+            },
+            "wind/4000m_AMSL": {
+              "metadata": "web_exports/value_tiles/v1/icon-ch1/20260901_0300/f36513279b9a/wind/4000m_AMSL/metadata.json"
+            },
+            "wind/800m_AGL": {
+              "metadata": "web_exports/value_tiles/v1/icon-ch1/20260901_0300/f36513279b9a/wind/800m_AGL/metadata.json"
+            }
+          }
+        },
+        "20260902_0300": {
+          "run": "20260902_0300",
+          "revision": "888485233b2a",
+          "revision_sha256": "888485233b2a556f4250edcf24a951b8fa26322228154372293ab56ba6808e9f",
+          "tile_count": 42718,
+          "revision_record": "web_exports/value_tiles/v1/icon-ch1/20260902_0300/888485233b2a/revision.json",
+          "variants": {
+            "cloud/cloud4": {
+              "metadata": "web_exports/value_tiles/v1/icon-ch1/20260902_0300/888485233b2a/cloud/cloud4/metadata.json"
+            },
+            "cloud/high": {
+              "metadata": "web_exports/value_tiles/v1/icon-ch1/20260902_0300/888485233b2a/cloud/high/metadata.json"
+            },
+            "cloud/low": {
+              "metadata": "web_exports/value_tiles/v1/icon-ch1/20260902_0300/888485233b2a/cloud/low/metadata.json"
+            },
+            "cloud/mid": {
+              "metadata": "web_exports/value_tiles/v1/icon-ch1/20260902_0300/888485233b2a/cloud/mid/metadata.json"
+            },
+            "cloud/total": {
+              "metadata": "web_exports/value_tiles/v1/icon-ch1/20260902_0300/888485233b2a/cloud/total/metadata.json"
+            },
+            "rain/surface": {
+              "metadata": "web_exports/value_tiles/v1/icon-ch1/20260902_0300/888485233b2a/rain/surface/metadata.json"
+            },
+            "sunrain/surface": {
+              "metadata": "web_exports/value_tiles/v1/icon-ch1/20260902_0300/888485233b2a/sunrain/surface/metadata.json"
+            },
+            "wind/1000m_AMSL": {
+              "metadata": "web_exports/value_tiles/v1/icon-ch1/20260902_0300/888485233b2a/wind/1000m_AMSL/metadata.json"
+            },
+            "wind/10m_AGL": {
+              "metadata": "web_exports/value_tiles/v1/icon-ch1/20260902_0300/888485233b2a/wind/10m_AGL/metadata.json"
+            },
+            "wind/1500m_AMSL": {
+              "metadata": "web_exports/value_tiles/v1/icon-ch1/20260902_0300/888485233b2a/wind/1500m_AMSL/metadata.json"
+            },
+            "wind/2000m_AMSL": {
+              "metadata": "web_exports/value_tiles/v1/icon-ch1/20260902_0300/888485233b2a/wind/2000m_AMSL/metadata.json"
+            },
+            "wind/2500m_AMSL": {
+              "metadata": "web_exports/value_tiles/v1/icon-ch1/20260902_0300/888485233b2a/wind/2500m_AMSL/metadata.json"
+            },
+            "wind/3000m_AMSL": {
+              "metadata": "web_exports/value_tiles/v1/icon-ch1/20260902_0300/888485233b2a/wind/3000m_AMSL/metadata.json"
+            },
+            "wind/4000m_AMSL": {
+              "metadata": "web_exports/value_tiles/v1/icon-ch1/20260902_0300/888485233b2a/wind/4000m_AMSL/metadata.json"
+            },
+            "wind/800m_AGL": {
+              "metadata": "web_exports/value_tiles/v1/icon-ch1/20260902_0300/888485233b2a/wind/800m_AGL/metadata.json"
+            }
+          }
+        },
+        "20260902_0600": {
+          "run": "20260902_0600",
+          "revision": "601ccc12852f",
+          "revision_sha256": "601ccc12852f9e9f0672a16ab0222e64f00ed274e58c92db82efb91d9c0fa4c3",
+          "tile_count": 31558,
+          "revision_record": "web_exports/value_tiles/v1/icon-ch1/20260902_0600/601ccc12852f/revision.json",
+          "variants": {
+            "cloud/cloud4": {
+              "metadata": "web_exports/value_tiles/v1/icon-ch1/20260902_0600/601ccc12852f/cloud/cloud4/metadata.json"
+            },
+            "cloud/high": {
+              "metadata": "web_exports/value_tiles/v1/icon-ch1/20260902_0600/601ccc12852f/cloud/high/metadata.json"
+            },
+            "cloud/low": {
+              "metadata": "web_exports/value_tiles/v1/icon-ch1/20260902_0600/601ccc12852f/cloud/low/metadata.json"
+            },
+            "cloud/mid": {
+              "metadata": "web_exports/value_tiles/v1/icon-ch1/20260902_0600/601ccc12852f/cloud/mid/metadata.json"
+            },
+            "cloud/total": {
+              "metadata": "web_exports/value_tiles/v1/icon-ch1/20260902_0600/601ccc12852f/cloud/total/metadata.json"
+            },
+            "rain/surface": {
+              "metadata": "web_exports/value_tiles/v1/icon-ch1/20260902_0600/601ccc12852f/rain/surface/metadata.json"
+            },
+            "sunrain/surface": {
+              "metadata": "web_exports/value_tiles/v1/icon-ch1/20260902_0600/601ccc12852f/sunrain/surface/metadata.json"
+            },
+            "wind/1000m_AMSL": {
+              "metadata": "web_exports/value_tiles/v1/icon-ch1/20260902_0600/601ccc12852f/wind/1000m_AMSL/metadata.json"
+            },
+            "wind/10m_AGL": {
+              "metadata": "web_exports/value_tiles/v1/icon-ch1/20260902_0600/601ccc12852f/wind/10m_AGL/metadata.json"
+            },
+            "wind/1500m_AMSL": {
+              "metadata": "web_exports/value_tiles/v1/icon-ch1/20260902_0600/601ccc12852f/wind/1500m_AMSL/metadata.json"
+            },
+            "wind/2000m_AMSL": {
+              "metadata": "web_exports/value_tiles/v1/icon-ch1/20260902_0600/601ccc12852f/wind/2000m_AMSL/metadata.json"
+            },
+            "wind/2500m_AMSL": {
+              "metadata": "web_exports/value_tiles/v1/icon-ch1/20260902_0600/601ccc12852f/wind/2500m_AMSL/metadata.json"
+            },
+            "wind/3000m_AMSL": {
+              "metadata": "web_exports/value_tiles/v1/icon-ch1/20260902_0600/601ccc12852f/wind/3000m_AMSL/metadata.json"
+            },
+            "wind/4000m_AMSL": {
+              "metadata": "web_exports/value_tiles/v1/icon-ch1/20260902_0600/601ccc12852f/wind/4000m_AMSL/metadata.json"
+            },
+            "wind/800m_AGL": {
+              "metadata": "web_exports/value_tiles/v1/icon-ch1/20260902_0600/601ccc12852f/wind/800m_AGL/metadata.json"
+            }
+          }
+        }
+      }
+    },
+    "icon-ch2": {
+      "runs": {
+        "20260901_1800": {
+          "run": "20260901_1800",
+          "revision": "c92f2656a95c",
+          "revision_sha256": "c92f2656a95c3ed6213440f6646aef2b882687967c2c31089e7e683f815cbd4e",
+          "tile_count": 112468,
+          "revision_record": "web_exports/value_tiles/v1/icon-ch2/20260901_1800/c92f2656a95c/revision.json",
+          "variants": {
+            "cloud/cloud4": {
+              "metadata": "web_exports/value_tiles/v1/icon-ch2/20260901_1800/c92f2656a95c/cloud/cloud4/metadata.json"
+            },
+            "cloud/high": {
+              "metadata": "web_exports/value_tiles/v1/icon-ch2/20260901_1800/c92f2656a95c/cloud/high/metadata.json"
+            },
+            "cloud/low": {
+              "metadata": "web_exports/value_tiles/v1/icon-ch2/20260901_1800/c92f2656a95c/cloud/low/metadata.json"
+            },
+            "cloud/mid": {
+              "metadata": "web_exports/value_tiles/v1/icon-ch2/20260901_1800/c92f2656a95c/cloud/mid/metadata.json"
+            },
+            "cloud/total": {
+              "metadata": "web_exports/value_tiles/v1/icon-ch2/20260901_1800/c92f2656a95c/cloud/total/metadata.json"
+            },
+            "rain/surface": {
+              "metadata": "web_exports/value_tiles/v1/icon-ch2/20260901_1800/c92f2656a95c/rain/surface/metadata.json"
+            },
+            "sunrain/surface": {
+              "metadata": "web_exports/value_tiles/v1/icon-ch2/20260901_1800/c92f2656a95c/sunrain/surface/metadata.json"
+            },
+            "wind/1000m_AMSL": {
+              "metadata": "web_exports/value_tiles/v1/icon-ch2/20260901_1800/c92f2656a95c/wind/1000m_AMSL/metadata.json"
+            },
+            "wind/10m_AGL": {
+              "metadata": "web_exports/value_tiles/v1/icon-ch2/20260901_1800/c92f2656a95c/wind/10m_AGL/metadata.json"
+            },
+            "wind/1500m_AMSL": {
+              "metadata": "web_exports/value_tiles/v1/icon-ch2/20260901_1800/c92f2656a95c/wind/1500m_AMSL/metadata.json"
+            },
+            "wind/2000m_AMSL": {
+              "metadata": "web_exports/value_tiles/v1/icon-ch2/20260901_1800/c92f2656a95c/wind/2000m_AMSL/metadata.json"
+            },
+            "wind/2500m_AMSL": {
+              "metadata": "web_exports/value_tiles/v1/icon-ch2/20260901_1800/c92f2656a95c/wind/2500m_AMSL/metadata.json"
+            },
+            "wind/3000m_AMSL": {
+              "metadata": "web_exports/value_tiles/v1/icon-ch2/20260901_1800/c92f2656a95c/wind/3000m_AMSL/metadata.json"
+            },
+            "wind/4000m_AMSL": {
+              "metadata": "web_exports/value_tiles/v1/icon-ch2/20260901_1800/c92f2656a95c/wind/4000m_AMSL/metadata.json"
+            },
+            "wind/800m_AGL": {
+              "metadata": "web_exports/value_tiles/v1/icon-ch2/20260901_1800/c92f2656a95c/wind/800m_AGL/metadata.json"
+            }
+          }
+        },
+        "20260902_0000": {
+          "run": "20260902_0000",
+          "revision": "db63f9931ed2",
+          "revision_sha256": "db63f9931ed267852bab479377630aae01a476a9633f7b646584e1c260b37004",
+          "tile_count": 112468,
+          "revision_record": "web_exports/value_tiles/v1/icon-ch2/20260902_0000/db63f9931ed2/revision.json",
+          "variants": {
+            "cloud/cloud4": {
+              "metadata": "web_exports/value_tiles/v1/icon-ch2/20260902_0000/db63f9931ed2/cloud/cloud4/metadata.json"
+            },
+            "cloud/high": {
+              "metadata": "web_exports/value_tiles/v1/icon-ch2/20260902_0000/db63f9931ed2/cloud/high/metadata.json"
+            },
+            "cloud/low": {
+              "metadata": "web_exports/value_tiles/v1/icon-ch2/20260902_0000/db63f9931ed2/cloud/low/metadata.json"
+            },
+            "cloud/mid": {
+              "metadata": "web_exports/value_tiles/v1/icon-ch2/20260902_0000/db63f9931ed2/cloud/mid/metadata.json"
+            },
+            "cloud/total": {
+              "metadata": "web_exports/value_tiles/v1/icon-ch2/20260902_0000/db63f9931ed2/cloud/total/metadata.json"
+            },
+            "rain/surface": {
+              "metadata": "web_exports/value_tiles/v1/icon-ch2/20260902_0000/db63f9931ed2/rain/surface/metadata.json"
+            },
+            "sunrain/surface": {
+              "metadata": "web_exports/value_tiles/v1/icon-ch2/20260902_0000/db63f9931ed2/sunrain/surface/metadata.json"
+            },
+            "wind/1000m_AMSL": {
+              "metadata": "web_exports/value_tiles/v1/icon-ch2/20260902_0000/db63f9931ed2/wind/1000m_AMSL/metadata.json"
+            },
+            "wind/10m_AGL": {
+              "metadata": "web_exports/value_tiles/v1/icon-ch2/20260902_0000/db63f9931ed2/wind/10m_AGL/metadata.json"
+            },
+            "wind/1500m_AMSL": {
+              "metadata": "web_exports/value_tiles/v1/icon-ch2/20260902_0000/db63f9931ed2/wind/1500m_AMSL/metadata.json"
+            },
+            "wind/2000m_AMSL": {
+              "metadata": "web_exports/value_tiles/v1/icon-ch2/20260902_0000/db63f9931ed2/wind/2000m_AMSL/metadata.json"
+            },
+            "wind/2500m_AMSL": {
+              "metadata": "web_exports/value_tiles/v1/icon-ch2/20260902_0000/db63f9931ed2/wind/2500m_AMSL/metadata.json"
+            },
+            "wind/3000m_AMSL": {
+              "metadata": "web_exports/value_tiles/v1/icon-ch2/20260902_0000/db63f9931ed2/wind/3000m_AMSL/metadata.json"
+            },
+            "wind/4000m_AMSL": {
+              "metadata": "web_exports/value_tiles/v1/icon-ch2/20260902_0000/db63f9931ed2/wind/4000m_AMSL/metadata.json"
+            },
+            "wind/800m_AGL": {
+              "metadata": "web_exports/value_tiles/v1/icon-ch2/20260902_0000/db63f9931ed2/wind/800m_AGL/metadata.json"
+            }
+          }
+        }
+      }
+    }
+  },
+  "counts": {
+    "models": 2,
+    "runs": 5,
+    "variants": 75,
+    "tiles": 341930
+  }
+}

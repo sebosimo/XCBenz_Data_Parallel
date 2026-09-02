@@ -1,0 +1,1165 @@
+{
+  "contract": "xcbenz-spatial-value-tiles",
+  "contract_version": "1.0.0",
+  "package": "immutable-chunks-cloud-dual-v1",
+  "model": "icon-ch2",
+  "run": "20260901_1800",
+  "product": "wind",
+  "variant": "1000m_AMSL",
+  "grid_id": "icon_ch_common_safe_004deg_v1",
+  "grid": {
+    "projection": "EPSG:4326",
+    "coordinate_scale": 100000,
+    "width": 391,
+    "height": 191,
+    "lon": {
+      "origin": 80000,
+      "step": 4000,
+      "direction": "east"
+    },
+    "lat": {
+      "origin": 4240000,
+      "step": 4000,
+      "direction": "north"
+    },
+    "storage_order": "row_major_y_then_x",
+    "cell_reference": "center"
+  },
+  "tile_matrix": {
+    "core_width": 80,
+    "core_height": 56,
+    "halo": 1,
+    "tiles_x": 5,
+    "tiles_y": 4,
+    "tile_order": "y_then_x",
+    "url_template": "{step}/t{tile_y}_{tile_x}.xvt"
+  },
+  "tile_tiers": [
+    {
+      "id": "detail",
+      "core_width": 64,
+      "core_height": 32,
+      "halo": 1,
+      "tiles_x": 7,
+      "tiles_y": 6,
+      "tile_order": "y_then_x",
+      "url_template": "tiers/detail/{step}/t{tile_y}_{tile_x}.xvt"
+    }
+  ],
+  "channels": [
+    "wind_uv"
+  ],
+  "encodings": [
+    {
+      "channel_id": 1,
+      "channel": "wind_uv",
+      "encoding_id": 1,
+      "format": "int8-interleaved-u-v",
+      "dtype": "int8",
+      "component_count": 2,
+      "missing": -128,
+      "scale": 0.25,
+      "offset": 0.0,
+      "units": [
+        "m/s",
+        "m/s"
+      ]
+    }
+  ],
+  "source_whole_grid_metadata": [
+    "web_exports/wind_maps/icon-ch2/20260901_1800/1000m_AMSL/metadata.json"
+  ],
+  "steps": [
+    {
+      "step": "H000",
+      "horizon": 0,
+      "valid_time": "2026-09-01T18:00:00+00:00",
+      "tile_count": 20,
+      "full_grid_crc32": {
+        "wind_uv": "a519ce66"
+      }
+    },
+    {
+      "step": "H001",
+      "horizon": 1,
+      "valid_time": "2026-09-01T19:00:00+00:00",
+      "tile_count": 20,
+      "full_grid_crc32": {
+        "wind_uv": "46325c06"
+      }
+    },
+    {
+      "step": "H002",
+      "horizon": 2,
+      "valid_time": "2026-09-01T20:00:00+00:00",
+      "tile_count": 20,
+      "full_grid_crc32": {
+        "wind_uv": "a4038d24"
+      }
+    },
+    {
+      "step": "H003",
+      "horizon": 3,
+      "valid_time": "2026-09-01T21:00:00+00:00",
+      "tile_count": 20,
+      "full_grid_crc32": {
+        "wind_uv": "b7fe7ea0"
+      }
+    },
+    {
+      "step": "H004",
+      "horizon": 4,
+      "valid_time": "2026-09-01T22:00:00+00:00",
+      "tile_count": 20,
+      "full_grid_crc32": {
+        "wind_uv": "25d38ac9"
+      }
+    },
+    {
+      "step": "H005",
+      "horizon": 5,
+      "valid_time": "2026-09-01T23:00:00+00:00",
+      "tile_count": 20,
+      "full_grid_crc32": {
+        "wind_uv": "a4b5fc9b"
+      }
+    },
+    {
+      "step": "H006",
+      "horizon": 6,
+      "valid_time": "2026-09-02T00:00:00+00:00",
+      "tile_count": 20,
+      "full_grid_crc32": {
+        "wind_uv": "22d87656"
+      }
+    },
+    {
+      "step": "H007",
+      "horizon": 7,
+      "valid_time": "2026-09-02T01:00:00+00:00",
+      "tile_count": 20,
+      "full_grid_crc32": {
+        "wind_uv": "55f8c00a"
+      }
+    },
+    {
+      "step": "H008",
+      "horizon": 8,
+      "valid_time": "2026-09-02T02:00:00+00:00",
+      "tile_count": 20,
+      "full_grid_crc32": {
+        "wind_uv": "b0052d51"
+      }
+    },
+    {
+      "step": "H009",
+      "horizon": 9,
+      "valid_time": "2026-09-02T03:00:00+00:00",
+      "tile_count": 20,
+      "full_grid_crc32": {
+        "wind_uv": "1d3d8f55"
+      }
+    },
+    {
+      "step": "H010",
+      "horizon": 10,
+      "valid_time": "2026-09-02T04:00:00+00:00",
+      "tile_count": 20,
+      "full_grid_crc32": {
+        "wind_uv": "68aab305"
+      }
+    },
+    {
+      "step": "H011",
+      "horizon": 11,
+      "valid_time": "2026-09-02T05:00:00+00:00",
+      "tile_count": 20,
+      "full_grid_crc32": {
+        "wind_uv": "fb0f533e"
+      }
+    },
+    {
+      "step": "H012",
+      "horizon": 12,
+      "valid_time": "2026-09-02T06:00:00+00:00",
+      "tile_count": 20,
+      "full_grid_crc32": {
+        "wind_uv": "5eb7de26"
+      }
+    },
+    {
+      "step": "H013",
+      "horizon": 13,
+      "valid_time": "2026-09-02T07:00:00+00:00",
+      "tile_count": 20,
+      "full_grid_crc32": {
+        "wind_uv": "6dca085b"
+      }
+    },
+    {
+      "step": "H014",
+      "horizon": 14,
+      "valid_time": "2026-09-02T08:00:00+00:00",
+      "tile_count": 20,
+      "full_grid_crc32": {
+        "wind_uv": "e41b7a27"
+      }
+    },
+    {
+      "step": "H015",
+      "horizon": 15,
+      "valid_time": "2026-09-02T09:00:00+00:00",
+      "tile_count": 20,
+      "full_grid_crc32": {
+        "wind_uv": "3598a401"
+      }
+    },
+    {
+      "step": "H016",
+      "horizon": 16,
+      "valid_time": "2026-09-02T10:00:00+00:00",
+      "tile_count": 20,
+      "full_grid_crc32": {
+        "wind_uv": "ebda883e"
+      }
+    },
+    {
+      "step": "H017",
+      "horizon": 17,
+      "valid_time": "2026-09-02T11:00:00+00:00",
+      "tile_count": 20,
+      "full_grid_crc32": {
+        "wind_uv": "6bf31edd"
+      }
+    },
+    {
+      "step": "H018",
+      "horizon": 18,
+      "valid_time": "2026-09-02T12:00:00+00:00",
+      "tile_count": 20,
+      "full_grid_crc32": {
+        "wind_uv": "f85cc040"
+      }
+    },
+    {
+      "step": "H019",
+      "horizon": 19,
+      "valid_time": "2026-09-02T13:00:00+00:00",
+      "tile_count": 20,
+      "full_grid_crc32": {
+        "wind_uv": "0b980705"
+      }
+    },
+    {
+      "step": "H020",
+      "horizon": 20,
+      "valid_time": "2026-09-02T14:00:00+00:00",
+      "tile_count": 20,
+      "full_grid_crc32": {
+        "wind_uv": "fe481b7d"
+      }
+    },
+    {
+      "step": "H021",
+      "horizon": 21,
+      "valid_time": "2026-09-02T15:00:00+00:00",
+      "tile_count": 20,
+      "full_grid_crc32": {
+        "wind_uv": "bdf76a98"
+      }
+    },
+    {
+      "step": "H022",
+      "horizon": 22,
+      "valid_time": "2026-09-02T16:00:00+00:00",
+      "tile_count": 20,
+      "full_grid_crc32": {
+        "wind_uv": "71c090b6"
+      }
+    },
+    {
+      "step": "H023",
+      "horizon": 23,
+      "valid_time": "2026-09-02T17:00:00+00:00",
+      "tile_count": 20,
+      "full_grid_crc32": {
+        "wind_uv": "740a9b8a"
+      }
+    },
+    {
+      "step": "H024",
+      "horizon": 24,
+      "valid_time": "2026-09-02T18:00:00+00:00",
+      "tile_count": 20,
+      "full_grid_crc32": {
+        "wind_uv": "41296aff"
+      }
+    },
+    {
+      "step": "H025",
+      "horizon": 25,
+      "valid_time": "2026-09-02T19:00:00+00:00",
+      "tile_count": 20,
+      "full_grid_crc32": {
+        "wind_uv": "e79b3f12"
+      }
+    },
+    {
+      "step": "H026",
+      "horizon": 26,
+      "valid_time": "2026-09-02T20:00:00+00:00",
+      "tile_count": 20,
+      "full_grid_crc32": {
+        "wind_uv": "b3f714eb"
+      }
+    },
+    {
+      "step": "H027",
+      "horizon": 27,
+      "valid_time": "2026-09-02T21:00:00+00:00",
+      "tile_count": 20,
+      "full_grid_crc32": {
+        "wind_uv": "fc01f6a7"
+      }
+    },
+    {
+      "step": "H028",
+      "horizon": 28,
+      "valid_time": "2026-09-02T22:00:00+00:00",
+      "tile_count": 20,
+      "full_grid_crc32": {
+        "wind_uv": "337c4d20"
+      }
+    },
+    {
+      "step": "H029",
+      "horizon": 29,
+      "valid_time": "2026-09-02T23:00:00+00:00",
+      "tile_count": 20,
+      "full_grid_crc32": {
+        "wind_uv": "8627450c"
+      }
+    },
+    {
+      "step": "H030",
+      "horizon": 30,
+      "valid_time": "2026-09-03T00:00:00+00:00",
+      "tile_count": 20,
+      "full_grid_crc32": {
+        "wind_uv": "fc85abd7"
+      }
+    },
+    {
+      "step": "H031",
+      "horizon": 31,
+      "valid_time": "2026-09-03T01:00:00+00:00",
+      "tile_count": 20,
+      "full_grid_crc32": {
+        "wind_uv": "187368d3"
+      }
+    },
+    {
+      "step": "H032",
+      "horizon": 32,
+      "valid_time": "2026-09-03T02:00:00+00:00",
+      "tile_count": 20,
+      "full_grid_crc32": {
+        "wind_uv": "dffca22e"
+      }
+    },
+    {
+      "step": "H033",
+      "horizon": 33,
+      "valid_time": "2026-09-03T03:00:00+00:00",
+      "tile_count": 20,
+      "full_grid_crc32": {
+        "wind_uv": "49142d38"
+      }
+    },
+    {
+      "step": "H034",
+      "horizon": 34,
+      "valid_time": "2026-09-03T04:00:00+00:00",
+      "tile_count": 20,
+      "full_grid_crc32": {
+        "wind_uv": "baa1aae5"
+      }
+    },
+    {
+      "step": "H035",
+      "horizon": 35,
+      "valid_time": "2026-09-03T05:00:00+00:00",
+      "tile_count": 20,
+      "full_grid_crc32": {
+        "wind_uv": "99b83412"
+      }
+    },
+    {
+      "step": "H036",
+      "horizon": 36,
+      "valid_time": "2026-09-03T06:00:00+00:00",
+      "tile_count": 20,
+      "full_grid_crc32": {
+        "wind_uv": "780c8fe0"
+      }
+    },
+    {
+      "step": "H037",
+      "horizon": 37,
+      "valid_time": "2026-09-03T07:00:00+00:00",
+      "tile_count": 20,
+      "full_grid_crc32": {
+        "wind_uv": "5825493c"
+      }
+    },
+    {
+      "step": "H038",
+      "horizon": 38,
+      "valid_time": "2026-09-03T08:00:00+00:00",
+      "tile_count": 20,
+      "full_grid_crc32": {
+        "wind_uv": "a362041d"
+      }
+    },
+    {
+      "step": "H039",
+      "horizon": 39,
+      "valid_time": "2026-09-03T09:00:00+00:00",
+      "tile_count": 20,
+      "full_grid_crc32": {
+        "wind_uv": "a90b8501"
+      }
+    },
+    {
+      "step": "H040",
+      "horizon": 40,
+      "valid_time": "2026-09-03T10:00:00+00:00",
+      "tile_count": 20,
+      "full_grid_crc32": {
+        "wind_uv": "755451cf"
+      }
+    },
+    {
+      "step": "H041",
+      "horizon": 41,
+      "valid_time": "2026-09-03T11:00:00+00:00",
+      "tile_count": 20,
+      "full_grid_crc32": {
+        "wind_uv": "3d07af07"
+      }
+    },
+    {
+      "step": "H042",
+      "horizon": 42,
+      "valid_time": "2026-09-03T12:00:00+00:00",
+      "tile_count": 20,
+      "full_grid_crc32": {
+        "wind_uv": "08a0d054"
+      }
+    },
+    {
+      "step": "H043",
+      "horizon": 43,
+      "valid_time": "2026-09-03T13:00:00+00:00",
+      "tile_count": 20,
+      "full_grid_crc32": {
+        "wind_uv": "addc05a6"
+      }
+    },
+    {
+      "step": "H044",
+      "horizon": 44,
+      "valid_time": "2026-09-03T14:00:00+00:00",
+      "tile_count": 20,
+      "full_grid_crc32": {
+        "wind_uv": "8688ba62"
+      }
+    },
+    {
+      "step": "H045",
+      "horizon": 45,
+      "valid_time": "2026-09-03T15:00:00+00:00",
+      "tile_count": 20,
+      "full_grid_crc32": {
+        "wind_uv": "31ede13d"
+      }
+    },
+    {
+      "step": "H046",
+      "horizon": 46,
+      "valid_time": "2026-09-03T16:00:00+00:00",
+      "tile_count": 20,
+      "full_grid_crc32": {
+        "wind_uv": "08c445ec"
+      }
+    },
+    {
+      "step": "H047",
+      "horizon": 47,
+      "valid_time": "2026-09-03T17:00:00+00:00",
+      "tile_count": 20,
+      "full_grid_crc32": {
+        "wind_uv": "c354b276"
+      }
+    },
+    {
+      "step": "H048",
+      "horizon": 48,
+      "valid_time": "2026-09-03T18:00:00+00:00",
+      "tile_count": 20,
+      "full_grid_crc32": {
+        "wind_uv": "6e120fdf"
+      }
+    },
+    {
+      "step": "H049",
+      "horizon": 49,
+      "valid_time": "2026-09-03T19:00:00+00:00",
+      "tile_count": 20,
+      "full_grid_crc32": {
+        "wind_uv": "fec62369"
+      }
+    },
+    {
+      "step": "H050",
+      "horizon": 50,
+      "valid_time": "2026-09-03T20:00:00+00:00",
+      "tile_count": 20,
+      "full_grid_crc32": {
+        "wind_uv": "134a1b45"
+      }
+    },
+    {
+      "step": "H051",
+      "horizon": 51,
+      "valid_time": "2026-09-03T21:00:00+00:00",
+      "tile_count": 20,
+      "full_grid_crc32": {
+        "wind_uv": "89c8d5f2"
+      }
+    },
+    {
+      "step": "H052",
+      "horizon": 52,
+      "valid_time": "2026-09-03T22:00:00+00:00",
+      "tile_count": 20,
+      "full_grid_crc32": {
+        "wind_uv": "083189fb"
+      }
+    },
+    {
+      "step": "H053",
+      "horizon": 53,
+      "valid_time": "2026-09-03T23:00:00+00:00",
+      "tile_count": 20,
+      "full_grid_crc32": {
+        "wind_uv": "5b25b6b3"
+      }
+    },
+    {
+      "step": "H054",
+      "horizon": 54,
+      "valid_time": "2026-09-04T00:00:00+00:00",
+      "tile_count": 20,
+      "full_grid_crc32": {
+        "wind_uv": "9afa9d32"
+      }
+    },
+    {
+      "step": "H055",
+      "horizon": 55,
+      "valid_time": "2026-09-04T01:00:00+00:00",
+      "tile_count": 20,
+      "full_grid_crc32": {
+        "wind_uv": "34cd6166"
+      }
+    },
+    {
+      "step": "H056",
+      "horizon": 56,
+      "valid_time": "2026-09-04T02:00:00+00:00",
+      "tile_count": 20,
+      "full_grid_crc32": {
+        "wind_uv": "bcc9044e"
+      }
+    },
+    {
+      "step": "H057",
+      "horizon": 57,
+      "valid_time": "2026-09-04T03:00:00+00:00",
+      "tile_count": 20,
+      "full_grid_crc32": {
+        "wind_uv": "1140d30f"
+      }
+    },
+    {
+      "step": "H058",
+      "horizon": 58,
+      "valid_time": "2026-09-04T04:00:00+00:00",
+      "tile_count": 20,
+      "full_grid_crc32": {
+        "wind_uv": "447e6757"
+      }
+    },
+    {
+      "step": "H059",
+      "horizon": 59,
+      "valid_time": "2026-09-04T05:00:00+00:00",
+      "tile_count": 20,
+      "full_grid_crc32": {
+        "wind_uv": "9bdfa6cb"
+      }
+    },
+    {
+      "step": "H060",
+      "horizon": 60,
+      "valid_time": "2026-09-04T06:00:00+00:00",
+      "tile_count": 20,
+      "full_grid_crc32": {
+        "wind_uv": "b3d07635"
+      }
+    },
+    {
+      "step": "H061",
+      "horizon": 61,
+      "valid_time": "2026-09-04T07:00:00+00:00",
+      "tile_count": 20,
+      "full_grid_crc32": {
+        "wind_uv": "fb4e8df4"
+      }
+    },
+    {
+      "step": "H062",
+      "horizon": 62,
+      "valid_time": "2026-09-04T08:00:00+00:00",
+      "tile_count": 20,
+      "full_grid_crc32": {
+        "wind_uv": "ba308ed1"
+      }
+    },
+    {
+      "step": "H063",
+      "horizon": 63,
+      "valid_time": "2026-09-04T09:00:00+00:00",
+      "tile_count": 20,
+      "full_grid_crc32": {
+        "wind_uv": "e3958f6a"
+      }
+    },
+    {
+      "step": "H064",
+      "horizon": 64,
+      "valid_time": "2026-09-04T10:00:00+00:00",
+      "tile_count": 20,
+      "full_grid_crc32": {
+        "wind_uv": "95c59075"
+      }
+    },
+    {
+      "step": "H065",
+      "horizon": 65,
+      "valid_time": "2026-09-04T11:00:00+00:00",
+      "tile_count": 20,
+      "full_grid_crc32": {
+        "wind_uv": "cb6afcef"
+      }
+    },
+    {
+      "step": "H066",
+      "horizon": 66,
+      "valid_time": "2026-09-04T12:00:00+00:00",
+      "tile_count": 20,
+      "full_grid_crc32": {
+        "wind_uv": "6bbdae2d"
+      }
+    },
+    {
+      "step": "H067",
+      "horizon": 67,
+      "valid_time": "2026-09-04T13:00:00+00:00",
+      "tile_count": 20,
+      "full_grid_crc32": {
+        "wind_uv": "eac576fc"
+      }
+    },
+    {
+      "step": "H068",
+      "horizon": 68,
+      "valid_time": "2026-09-04T14:00:00+00:00",
+      "tile_count": 20,
+      "full_grid_crc32": {
+        "wind_uv": "bf1d7a28"
+      }
+    },
+    {
+      "step": "H069",
+      "horizon": 69,
+      "valid_time": "2026-09-04T15:00:00+00:00",
+      "tile_count": 20,
+      "full_grid_crc32": {
+        "wind_uv": "52e9c1bf"
+      }
+    },
+    {
+      "step": "H070",
+      "horizon": 70,
+      "valid_time": "2026-09-04T16:00:00+00:00",
+      "tile_count": 20,
+      "full_grid_crc32": {
+        "wind_uv": "8fe61d1e"
+      }
+    },
+    {
+      "step": "H071",
+      "horizon": 71,
+      "valid_time": "2026-09-04T17:00:00+00:00",
+      "tile_count": 20,
+      "full_grid_crc32": {
+        "wind_uv": "90456354"
+      }
+    },
+    {
+      "step": "H072",
+      "horizon": 72,
+      "valid_time": "2026-09-04T18:00:00+00:00",
+      "tile_count": 20,
+      "full_grid_crc32": {
+        "wind_uv": "5f14a2da"
+      }
+    },
+    {
+      "step": "H073",
+      "horizon": 73,
+      "valid_time": "2026-09-04T19:00:00+00:00",
+      "tile_count": 20,
+      "full_grid_crc32": {
+        "wind_uv": "30841695"
+      }
+    },
+    {
+      "step": "H074",
+      "horizon": 74,
+      "valid_time": "2026-09-04T20:00:00+00:00",
+      "tile_count": 20,
+      "full_grid_crc32": {
+        "wind_uv": "d96096c6"
+      }
+    },
+    {
+      "step": "H075",
+      "horizon": 75,
+      "valid_time": "2026-09-04T21:00:00+00:00",
+      "tile_count": 20,
+      "full_grid_crc32": {
+        "wind_uv": "4a8a5c04"
+      }
+    },
+    {
+      "step": "H076",
+      "horizon": 76,
+      "valid_time": "2026-09-04T22:00:00+00:00",
+      "tile_count": 20,
+      "full_grid_crc32": {
+        "wind_uv": "e2488abd"
+      }
+    },
+    {
+      "step": "H077",
+      "horizon": 77,
+      "valid_time": "2026-09-04T23:00:00+00:00",
+      "tile_count": 20,
+      "full_grid_crc32": {
+        "wind_uv": "4d9e89f9"
+      }
+    },
+    {
+      "step": "H078",
+      "horizon": 78,
+      "valid_time": "2026-09-05T00:00:00+00:00",
+      "tile_count": 20,
+      "full_grid_crc32": {
+        "wind_uv": "36c367cf"
+      }
+    },
+    {
+      "step": "H079",
+      "horizon": 79,
+      "valid_time": "2026-09-05T01:00:00+00:00",
+      "tile_count": 20,
+      "full_grid_crc32": {
+        "wind_uv": "5f20a950"
+      }
+    },
+    {
+      "step": "H080",
+      "horizon": 80,
+      "valid_time": "2026-09-05T02:00:00+00:00",
+      "tile_count": 20,
+      "full_grid_crc32": {
+        "wind_uv": "9fe1b406"
+      }
+    },
+    {
+      "step": "H081",
+      "horizon": 81,
+      "valid_time": "2026-09-05T03:00:00+00:00",
+      "tile_count": 20,
+      "full_grid_crc32": {
+        "wind_uv": "fd1ff980"
+      }
+    },
+    {
+      "step": "H082",
+      "horizon": 82,
+      "valid_time": "2026-09-05T04:00:00+00:00",
+      "tile_count": 20,
+      "full_grid_crc32": {
+        "wind_uv": "09948dff"
+      }
+    },
+    {
+      "step": "H083",
+      "horizon": 83,
+      "valid_time": "2026-09-05T05:00:00+00:00",
+      "tile_count": 20,
+      "full_grid_crc32": {
+        "wind_uv": "7dd5fab1"
+      }
+    },
+    {
+      "step": "H084",
+      "horizon": 84,
+      "valid_time": "2026-09-05T06:00:00+00:00",
+      "tile_count": 20,
+      "full_grid_crc32": {
+        "wind_uv": "a8a841e5"
+      }
+    },
+    {
+      "step": "H085",
+      "horizon": 85,
+      "valid_time": "2026-09-05T07:00:00+00:00",
+      "tile_count": 20,
+      "full_grid_crc32": {
+        "wind_uv": "e198a327"
+      }
+    },
+    {
+      "step": "H086",
+      "horizon": 86,
+      "valid_time": "2026-09-05T08:00:00+00:00",
+      "tile_count": 20,
+      "full_grid_crc32": {
+        "wind_uv": "7e277377"
+      }
+    },
+    {
+      "step": "H087",
+      "horizon": 87,
+      "valid_time": "2026-09-05T09:00:00+00:00",
+      "tile_count": 20,
+      "full_grid_crc32": {
+        "wind_uv": "38779192"
+      }
+    },
+    {
+      "step": "H088",
+      "horizon": 88,
+      "valid_time": "2026-09-05T10:00:00+00:00",
+      "tile_count": 20,
+      "full_grid_crc32": {
+        "wind_uv": "2a297822"
+      }
+    },
+    {
+      "step": "H089",
+      "horizon": 89,
+      "valid_time": "2026-09-05T11:00:00+00:00",
+      "tile_count": 20,
+      "full_grid_crc32": {
+        "wind_uv": "b61d4376"
+      }
+    },
+    {
+      "step": "H090",
+      "horizon": 90,
+      "valid_time": "2026-09-05T12:00:00+00:00",
+      "tile_count": 20,
+      "full_grid_crc32": {
+        "wind_uv": "929eb62c"
+      }
+    },
+    {
+      "step": "H091",
+      "horizon": 91,
+      "valid_time": "2026-09-05T13:00:00+00:00",
+      "tile_count": 20,
+      "full_grid_crc32": {
+        "wind_uv": "a8c05ea0"
+      }
+    },
+    {
+      "step": "H092",
+      "horizon": 92,
+      "valid_time": "2026-09-05T14:00:00+00:00",
+      "tile_count": 20,
+      "full_grid_crc32": {
+        "wind_uv": "844a9876"
+      }
+    },
+    {
+      "step": "H093",
+      "horizon": 93,
+      "valid_time": "2026-09-05T15:00:00+00:00",
+      "tile_count": 20,
+      "full_grid_crc32": {
+        "wind_uv": "b93e65ee"
+      }
+    },
+    {
+      "step": "H094",
+      "horizon": 94,
+      "valid_time": "2026-09-05T16:00:00+00:00",
+      "tile_count": 20,
+      "full_grid_crc32": {
+        "wind_uv": "aeb0c0c0"
+      }
+    },
+    {
+      "step": "H095",
+      "horizon": 95,
+      "valid_time": "2026-09-05T17:00:00+00:00",
+      "tile_count": 20,
+      "full_grid_crc32": {
+        "wind_uv": "f71d44d6"
+      }
+    },
+    {
+      "step": "H096",
+      "horizon": 96,
+      "valid_time": "2026-09-05T18:00:00+00:00",
+      "tile_count": 20,
+      "full_grid_crc32": {
+        "wind_uv": "1095e43f"
+      }
+    },
+    {
+      "step": "H097",
+      "horizon": 97,
+      "valid_time": "2026-09-05T19:00:00+00:00",
+      "tile_count": 20,
+      "full_grid_crc32": {
+        "wind_uv": "d520a7ad"
+      }
+    },
+    {
+      "step": "H098",
+      "horizon": 98,
+      "valid_time": "2026-09-05T20:00:00+00:00",
+      "tile_count": 20,
+      "full_grid_crc32": {
+        "wind_uv": "83dbec1d"
+      }
+    },
+    {
+      "step": "H099",
+      "horizon": 99,
+      "valid_time": "2026-09-05T21:00:00+00:00",
+      "tile_count": 20,
+      "full_grid_crc32": {
+        "wind_uv": "9d7f7e52"
+      }
+    },
+    {
+      "step": "H100",
+      "horizon": 100,
+      "valid_time": "2026-09-05T22:00:00+00:00",
+      "tile_count": 20,
+      "full_grid_crc32": {
+        "wind_uv": "ae9b3a46"
+      }
+    },
+    {
+      "step": "H101",
+      "horizon": 101,
+      "valid_time": "2026-09-05T23:00:00+00:00",
+      "tile_count": 20,
+      "full_grid_crc32": {
+        "wind_uv": "03e6c05d"
+      }
+    },
+    {
+      "step": "H102",
+      "horizon": 102,
+      "valid_time": "2026-09-06T00:00:00+00:00",
+      "tile_count": 20,
+      "full_grid_crc32": {
+        "wind_uv": "7b551d7f"
+      }
+    },
+    {
+      "step": "H103",
+      "horizon": 103,
+      "valid_time": "2026-09-06T01:00:00+00:00",
+      "tile_count": 20,
+      "full_grid_crc32": {
+        "wind_uv": "65fbd919"
+      }
+    },
+    {
+      "step": "H104",
+      "horizon": 104,
+      "valid_time": "2026-09-06T02:00:00+00:00",
+      "tile_count": 20,
+      "full_grid_crc32": {
+        "wind_uv": "1566a57d"
+      }
+    },
+    {
+      "step": "H105",
+      "horizon": 105,
+      "valid_time": "2026-09-06T03:00:00+00:00",
+      "tile_count": 20,
+      "full_grid_crc32": {
+        "wind_uv": "62420da4"
+      }
+    },
+    {
+      "step": "H106",
+      "horizon": 106,
+      "valid_time": "2026-09-06T04:00:00+00:00",
+      "tile_count": 20,
+      "full_grid_crc32": {
+        "wind_uv": "074a3cdc"
+      }
+    },
+    {
+      "step": "H107",
+      "horizon": 107,
+      "valid_time": "2026-09-06T05:00:00+00:00",
+      "tile_count": 20,
+      "full_grid_crc32": {
+        "wind_uv": "91ca8868"
+      }
+    },
+    {
+      "step": "H108",
+      "horizon": 108,
+      "valid_time": "2026-09-06T06:00:00+00:00",
+      "tile_count": 20,
+      "full_grid_crc32": {
+        "wind_uv": "deece0ca"
+      }
+    },
+    {
+      "step": "H109",
+      "horizon": 109,
+      "valid_time": "2026-09-06T07:00:00+00:00",
+      "tile_count": 20,
+      "full_grid_crc32": {
+        "wind_uv": "200c071c"
+      }
+    },
+    {
+      "step": "H110",
+      "horizon": 110,
+      "valid_time": "2026-09-06T08:00:00+00:00",
+      "tile_count": 20,
+      "full_grid_crc32": {
+        "wind_uv": "a1631668"
+      }
+    },
+    {
+      "step": "H111",
+      "horizon": 111,
+      "valid_time": "2026-09-06T09:00:00+00:00",
+      "tile_count": 20,
+      "full_grid_crc32": {
+        "wind_uv": "b9d50540"
+      }
+    },
+    {
+      "step": "H112",
+      "horizon": 112,
+      "valid_time": "2026-09-06T10:00:00+00:00",
+      "tile_count": 20,
+      "full_grid_crc32": {
+        "wind_uv": "b032941f"
+      }
+    },
+    {
+      "step": "H113",
+      "horizon": 113,
+      "valid_time": "2026-09-06T11:00:00+00:00",
+      "tile_count": 20,
+      "full_grid_crc32": {
+        "wind_uv": "e405e934"
+      }
+    },
+    {
+      "step": "H114",
+      "horizon": 114,
+      "valid_time": "2026-09-06T12:00:00+00:00",
+      "tile_count": 20,
+      "full_grid_crc32": {
+        "wind_uv": "69a6a971"
+      }
+    },
+    {
+      "step": "H115",
+      "horizon": 115,
+      "valid_time": "2026-09-06T13:00:00+00:00",
+      "tile_count": 20,
+      "full_grid_crc32": {
+        "wind_uv": "138240e6"
+      }
+    },
+    {
+      "step": "H116",
+      "horizon": 116,
+      "valid_time": "2026-09-06T14:00:00+00:00",
+      "tile_count": 20,
+      "full_grid_crc32": {
+        "wind_uv": "fea6542c"
+      }
+    },
+    {
+      "step": "H117",
+      "horizon": 117,
+      "valid_time": "2026-09-06T15:00:00+00:00",
+      "tile_count": 20,
+      "full_grid_crc32": {
+        "wind_uv": "b26b46a8"
+      }
+    },
+    {
+      "step": "H118",
+      "horizon": 118,
+      "valid_time": "2026-09-06T16:00:00+00:00",
+      "tile_count": 20,
+      "full_grid_crc32": {
+        "wind_uv": "4d8c886f"
+      }
+    },
+    {
+      "step": "H119",
+      "horizon": 119,
+      "valid_time": "2026-09-06T17:00:00+00:00",
+      "tile_count": 20,
+      "full_grid_crc32": {
+        "wind_uv": "c720b3ae"
+      }
+    },
+    {
+      "step": "H120",
+      "horizon": 120,
+      "valid_time": "2026-09-06T18:00:00+00:00",
+      "tile_count": 20,
+      "full_grid_crc32": {
+        "wind_uv": "dd72971a"
+      }
+    }
+  ],
+  "revision": "c92f2656a95c",
+  "revision_sha256": "c92f2656a95c3ed6213440f6646aef2b882687967c2c31089e7e683f815cbd4e"
+}

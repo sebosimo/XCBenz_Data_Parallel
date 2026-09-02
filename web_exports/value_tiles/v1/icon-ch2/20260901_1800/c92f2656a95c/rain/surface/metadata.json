@@ -1,0 +1,4737 @@
+{
+  "contract": "xcbenz-spatial-value-tiles",
+  "contract_version": "1.0.0",
+  "package": "immutable-chunks-cloud-dual-v1",
+  "model": "icon-ch2",
+  "run": "20260901_1800",
+  "product": "rain",
+  "variant": "surface",
+  "grid_id": "icon_ch_common_safe_002deg_v1",
+  "grid": {
+    "projection": "EPSG:4326",
+    "coordinate_scale": 100000,
+    "width": 781,
+    "height": 381,
+    "lon": {
+      "origin": 80000,
+      "step": 2000,
+      "direction": "east"
+    },
+    "lat": {
+      "origin": 4240000,
+      "step": 2000,
+      "direction": "north"
+    },
+    "storage_order": "row_major_y_then_x",
+    "cell_reference": "center"
+  },
+  "tile_matrix": {
+    "core_width": 160,
+    "core_height": 112,
+    "halo": 1,
+    "tiles_x": 5,
+    "tiles_y": 4,
+    "tile_order": "y_then_x",
+    "url_template": "{step}/t{tile_y}_{tile_x}.xvt"
+  },
+  "tile_tiers": [
+    {
+      "id": "detail",
+      "core_width": 128,
+      "core_height": 64,
+      "halo": 1,
+      "tiles_x": 7,
+      "tiles_y": 6,
+      "tile_order": "y_then_x",
+      "url_template": "tiers/detail/{step}/t{tile_y}_{tile_x}.xvt"
+    }
+  ],
+  "channels": [
+    "rain"
+  ],
+  "encodings": [
+    {
+      "channel_id": 3,
+      "channel": "rain",
+      "encoding_id": 3,
+      "format": "uint8-interleaved-components",
+      "dtype": "uint8",
+      "component_count": 1,
+      "missing": 255,
+      "scale": 0.2,
+      "offset": 0.0,
+      "units": [
+        "mm"
+      ]
+    }
+  ],
+  "source_whole_grid_metadata": [
+    "web_exports/rain_maps/icon-ch2/20260901_1800/surface/metadata.json"
+  ],
+  "steps": [
+    {
+      "step": "H000",
+      "horizon": 0,
+      "valid_time": "2026-09-01T18:00:00+00:00",
+      "tile_count": 20,
+      "full_grid_crc32": {
+        "rain": "b1c06eb1"
+      },
+      "neutral_tile_indexes": [
+        6,
+        7,
+        8,
+        11,
+        12,
+        13
+      ],
+      "tier_neutral_tile_indexes": {
+        "detail": [
+          8,
+          9,
+          10,
+          11,
+          12,
+          15,
+          16,
+          17,
+          18,
+          19,
+          22,
+          23,
+          24,
+          25,
+          26,
+          29,
+          30,
+          31,
+          32,
+          33
+        ]
+      }
+    },
+    {
+      "step": "H001",
+      "horizon": 1,
+      "valid_time": "2026-09-01T19:00:00+00:00",
+      "tile_count": 20,
+      "full_grid_crc32": {
+        "rain": "9f5d8d07"
+      },
+      "neutral_tile_indexes": [
+        6,
+        11,
+        12
+      ],
+      "tier_neutral_tile_indexes": {
+        "detail": [
+          8,
+          9,
+          12,
+          15,
+          16,
+          18,
+          19,
+          22,
+          23,
+          26,
+          29,
+          30,
+          31,
+          32,
+          33
+        ]
+      }
+    },
+    {
+      "step": "H002",
+      "horizon": 2,
+      "valid_time": "2026-09-01T20:00:00+00:00",
+      "tile_count": 20,
+      "full_grid_crc32": {
+        "rain": "f04095c9"
+      },
+      "neutral_tile_indexes": [
+        6,
+        11,
+        12
+      ],
+      "tier_neutral_tile_indexes": {
+        "detail": [
+          8,
+          9,
+          12,
+          15,
+          16,
+          18,
+          19,
+          22,
+          23,
+          26,
+          29,
+          30,
+          31,
+          32,
+          33
+        ]
+      }
+    },
+    {
+      "step": "H003",
+      "horizon": 3,
+      "valid_time": "2026-09-01T21:00:00+00:00",
+      "tile_count": 20,
+      "full_grid_crc32": {
+        "rain": "a0ece41f"
+      },
+      "neutral_tile_indexes": [
+        6,
+        7,
+        11,
+        12
+      ],
+      "tier_neutral_tile_indexes": {
+        "detail": [
+          8,
+          9,
+          10,
+          11,
+          12,
+          15,
+          16,
+          17,
+          18,
+          19,
+          22,
+          23,
+          24,
+          29,
+          30,
+          31,
+          32,
+          33
+        ]
+      }
+    },
+    {
+      "step": "H004",
+      "horizon": 4,
+      "valid_time": "2026-09-01T22:00:00+00:00",
+      "tile_count": 20,
+      "full_grid_crc32": {
+        "rain": "074a7e4a"
+      },
+      "neutral_tile_indexes": [
+        6,
+        7,
+        11,
+        12
+      ],
+      "tier_neutral_tile_indexes": {
+        "detail": [
+          8,
+          9,
+          10,
+          11,
+          12,
+          15,
+          16,
+          17,
+          18,
+          22,
+          23,
+          24,
+          29,
+          30,
+          31,
+          32,
+          33
+        ]
+      }
+    },
+    {
+      "step": "H005",
+      "horizon": 5,
+      "valid_time": "2026-09-01T23:00:00+00:00",
+      "tile_count": 20,
+      "full_grid_crc32": {
+        "rain": "f7a1d69e"
+      },
+      "neutral_tile_indexes": [
+        6,
+        7,
+        11,
+        12
+      ],
+      "tier_neutral_tile_indexes": {
+        "detail": [
+          8,
+          9,
+          10,
+          11,
+          12,
+          15,
+          16,
+          17,
+          18,
+          22,
+          23,
+          24,
+          29,
+          30,
+          31,
+          32,
+          33
+        ]
+      }
+    },
+    {
+      "step": "H006",
+      "horizon": 6,
+      "valid_time": "2026-09-02T00:00:00+00:00",
+      "tile_count": 20,
+      "full_grid_crc32": {
+        "rain": "8572e3f7"
+      },
+      "neutral_tile_indexes": [
+        6,
+        7,
+        11,
+        12
+      ],
+      "tier_neutral_tile_indexes": {
+        "detail": [
+          9,
+          10,
+          11,
+          12,
+          15,
+          16,
+          17,
+          22,
+          23,
+          24,
+          29,
+          30,
+          31,
+          32,
+          33
+        ]
+      }
+    },
+    {
+      "step": "H007",
+      "horizon": 7,
+      "valid_time": "2026-09-02T01:00:00+00:00",
+      "tile_count": 20,
+      "full_grid_crc32": {
+        "rain": "2652d4f5"
+      },
+      "neutral_tile_indexes": [
+        6,
+        7,
+        11,
+        12,
+        13
+      ],
+      "tier_neutral_tile_indexes": {
+        "detail": [
+          9,
+          10,
+          11,
+          12,
+          15,
+          16,
+          17,
+          22,
+          23,
+          24,
+          29,
+          30,
+          31,
+          32,
+          33
+        ]
+      }
+    },
+    {
+      "step": "H008",
+      "horizon": 8,
+      "valid_time": "2026-09-02T02:00:00+00:00",
+      "tile_count": 20,
+      "full_grid_crc32": {
+        "rain": "26824a49"
+      },
+      "neutral_tile_indexes": [
+        6,
+        7,
+        11,
+        12,
+        13
+      ],
+      "tier_neutral_tile_indexes": {
+        "detail": [
+          9,
+          10,
+          11,
+          12,
+          15,
+          16,
+          17,
+          18,
+          22,
+          23,
+          24,
+          29,
+          30,
+          31,
+          32
+        ]
+      }
+    },
+    {
+      "step": "H009",
+      "horizon": 9,
+      "valid_time": "2026-09-02T03:00:00+00:00",
+      "tile_count": 20,
+      "full_grid_crc32": {
+        "rain": "3bd6e871"
+      },
+      "neutral_tile_indexes": [
+        6,
+        7,
+        8,
+        11,
+        12,
+        13
+      ],
+      "tier_neutral_tile_indexes": {
+        "detail": [
+          8,
+          9,
+          10,
+          11,
+          12,
+          15,
+          16,
+          17,
+          18,
+          22,
+          23,
+          24,
+          25,
+          29,
+          30,
+          31,
+          32
+        ]
+      }
+    },
+    {
+      "step": "H010",
+      "horizon": 10,
+      "valid_time": "2026-09-02T04:00:00+00:00",
+      "tile_count": 20,
+      "full_grid_crc32": {
+        "rain": "dee16a68"
+      },
+      "neutral_tile_indexes": [
+        6,
+        7,
+        8,
+        11,
+        12,
+        13
+      ],
+      "tier_neutral_tile_indexes": {
+        "detail": [
+          8,
+          9,
+          10,
+          11,
+          12,
+          15,
+          16,
+          17,
+          18,
+          19,
+          22,
+          23,
+          24,
+          25,
+          29,
+          30,
+          31,
+          32
+        ]
+      }
+    },
+    {
+      "step": "H011",
+      "horizon": 11,
+      "valid_time": "2026-09-02T05:00:00+00:00",
+      "tile_count": 20,
+      "full_grid_crc32": {
+        "rain": "e04b6841"
+      },
+      "neutral_tile_indexes": [
+        6,
+        7,
+        8,
+        11,
+        12,
+        13
+      ],
+      "tier_neutral_tile_indexes": {
+        "detail": [
+          8,
+          9,
+          10,
+          11,
+          12,
+          15,
+          16,
+          17,
+          18,
+          19,
+          22,
+          23,
+          24,
+          25,
+          29,
+          30,
+          31,
+          32,
+          33
+        ]
+      }
+    },
+    {
+      "step": "H012",
+      "horizon": 12,
+      "valid_time": "2026-09-02T06:00:00+00:00",
+      "tile_count": 20,
+      "full_grid_crc32": {
+        "rain": "98d33ed5"
+      },
+      "neutral_tile_indexes": [
+        6,
+        7,
+        8,
+        11,
+        12,
+        13
+      ],
+      "tier_neutral_tile_indexes": {
+        "detail": [
+          8,
+          9,
+          10,
+          11,
+          12,
+          15,
+          16,
+          17,
+          18,
+          19,
+          22,
+          23,
+          24,
+          25,
+          29,
+          30,
+          31,
+          32,
+          33
+        ]
+      }
+    },
+    {
+      "step": "H013",
+      "horizon": 13,
+      "valid_time": "2026-09-02T07:00:00+00:00",
+      "tile_count": 20,
+      "full_grid_crc32": {
+        "rain": "c5299eff"
+      },
+      "neutral_tile_indexes": [
+        6,
+        7,
+        8,
+        11,
+        12,
+        13
+      ],
+      "tier_neutral_tile_indexes": {
+        "detail": [
+          8,
+          9,
+          10,
+          11,
+          12,
+          15,
+          16,
+          17,
+          18,
+          19,
+          22,
+          23,
+          24,
+          25,
+          29,
+          30,
+          31,
+          32,
+          33
+        ]
+      }
+    },
+    {
+      "step": "H014",
+      "horizon": 14,
+      "valid_time": "2026-09-02T08:00:00+00:00",
+      "tile_count": 20,
+      "full_grid_crc32": {
+        "rain": "5e2cfe72"
+      },
+      "neutral_tile_indexes": [
+        6,
+        7,
+        8,
+        11,
+        12,
+        13
+      ],
+      "tier_neutral_tile_indexes": {
+        "detail": [
+          8,
+          9,
+          10,
+          11,
+          12,
+          15,
+          16,
+          17,
+          18,
+          19,
+          22,
+          23,
+          24,
+          25,
+          29,
+          30,
+          31,
+          32,
+          33
+        ]
+      }
+    },
+    {
+      "step": "H015",
+      "horizon": 15,
+      "valid_time": "2026-09-02T09:00:00+00:00",
+      "tile_count": 20,
+      "full_grid_crc32": {
+        "rain": "b1c06eb1"
+      },
+      "neutral_tile_indexes": [
+        6,
+        7,
+        8,
+        11,
+        12,
+        13
+      ],
+      "tier_neutral_tile_indexes": {
+        "detail": [
+          8,
+          9,
+          10,
+          11,
+          12,
+          15,
+          16,
+          17,
+          18,
+          19,
+          22,
+          23,
+          24,
+          25,
+          26,
+          29,
+          30,
+          31,
+          32,
+          33
+        ]
+      }
+    },
+    {
+      "step": "H016",
+      "horizon": 16,
+      "valid_time": "2026-09-02T10:00:00+00:00",
+      "tile_count": 20,
+      "full_grid_crc32": {
+        "rain": "b1c06eb1"
+      },
+      "neutral_tile_indexes": [
+        6,
+        7,
+        8,
+        11,
+        12,
+        13
+      ],
+      "tier_neutral_tile_indexes": {
+        "detail": [
+          8,
+          9,
+          10,
+          11,
+          12,
+          15,
+          16,
+          17,
+          18,
+          19,
+          22,
+          23,
+          24,
+          25,
+          26,
+          29,
+          30,
+          31,
+          32,
+          33
+        ]
+      }
+    },
+    {
+      "step": "H017",
+      "horizon": 17,
+      "valid_time": "2026-09-02T11:00:00+00:00",
+      "tile_count": 20,
+      "full_grid_crc32": {
+        "rain": "b1c06eb1"
+      },
+      "neutral_tile_indexes": [
+        6,
+        7,
+        8,
+        11,
+        12,
+        13
+      ],
+      "tier_neutral_tile_indexes": {
+        "detail": [
+          8,
+          9,
+          10,
+          11,
+          12,
+          15,
+          16,
+          17,
+          18,
+          19,
+          22,
+          23,
+          24,
+          25,
+          26,
+          29,
+          30,
+          31,
+          32,
+          33
+        ]
+      }
+    },
+    {
+      "step": "H018",
+      "horizon": 18,
+      "valid_time": "2026-09-02T12:00:00+00:00",
+      "tile_count": 20,
+      "full_grid_crc32": {
+        "rain": "7062f604"
+      },
+      "neutral_tile_indexes": [
+        6,
+        7,
+        8,
+        11,
+        12,
+        13
+      ],
+      "tier_neutral_tile_indexes": {
+        "detail": [
+          8,
+          9,
+          10,
+          11,
+          12,
+          15,
+          16,
+          17,
+          18,
+          19,
+          22,
+          23,
+          24,
+          25,
+          29,
+          30,
+          31,
+          32
+        ]
+      }
+    },
+    {
+      "step": "H019",
+      "horizon": 19,
+      "valid_time": "2026-09-02T13:00:00+00:00",
+      "tile_count": 20,
+      "full_grid_crc32": {
+        "rain": "98a6235a"
+      },
+      "neutral_tile_indexes": [
+        6,
+        8,
+        11,
+        12
+      ],
+      "tier_neutral_tile_indexes": {
+        "detail": [
+          8,
+          9,
+          10,
+          11,
+          12,
+          15,
+          16,
+          18,
+          22,
+          23,
+          24,
+          29,
+          30,
+          31,
+          32
+        ]
+      }
+    },
+    {
+      "step": "H020",
+      "horizon": 20,
+      "valid_time": "2026-09-02T14:00:00+00:00",
+      "tile_count": 20,
+      "full_grid_crc32": {
+        "rain": "6d43fc4a"
+      },
+      "neutral_tile_indexes": [
+        6,
+        11,
+        12
+      ],
+      "tier_neutral_tile_indexes": {
+        "detail": [
+          8,
+          9,
+          10,
+          11,
+          15,
+          16,
+          22,
+          23,
+          29,
+          30,
+          31,
+          32
+        ]
+      }
+    },
+    {
+      "step": "H021",
+      "horizon": 21,
+      "valid_time": "2026-09-02T15:00:00+00:00",
+      "tile_count": 20,
+      "full_grid_crc32": {
+        "rain": "b4e4ae28"
+      },
+      "neutral_tile_indexes": [
+        6,
+        11,
+        12
+      ],
+      "tier_neutral_tile_indexes": {
+        "detail": [
+          8,
+          9,
+          11,
+          15,
+          16,
+          19,
+          22,
+          23,
+          29,
+          30,
+          31,
+          32
+        ]
+      }
+    },
+    {
+      "step": "H022",
+      "horizon": 22,
+      "valid_time": "2026-09-02T16:00:00+00:00",
+      "tile_count": 20,
+      "full_grid_crc32": {
+        "rain": "81214128"
+      },
+      "neutral_tile_indexes": [
+        6,
+        11,
+        12
+      ],
+      "tier_neutral_tile_indexes": {
+        "detail": [
+          8,
+          9,
+          15,
+          16,
+          19,
+          22,
+          23,
+          29,
+          30,
+          31,
+          32,
+          33
+        ]
+      }
+    },
+    {
+      "step": "H023",
+      "horizon": 23,
+      "valid_time": "2026-09-02T17:00:00+00:00",
+      "tile_count": 20,
+      "full_grid_crc32": {
+        "rain": "8ecdf9ab"
+      },
+      "neutral_tile_indexes": [
+        6,
+        11,
+        12
+      ],
+      "tier_neutral_tile_indexes": {
+        "detail": [
+          8,
+          9,
+          12,
+          15,
+          16,
+          19,
+          22,
+          23,
+          29,
+          30,
+          31,
+          32,
+          33
+        ]
+      }
+    },
+    {
+      "step": "H024",
+      "horizon": 24,
+      "valid_time": "2026-09-02T18:00:00+00:00",
+      "tile_count": 20,
+      "full_grid_crc32": {
+        "rain": "5660da91"
+      },
+      "neutral_tile_indexes": [
+        6,
+        7,
+        11,
+        12
+      ],
+      "tier_neutral_tile_indexes": {
+        "detail": [
+          8,
+          9,
+          12,
+          15,
+          16,
+          19,
+          22,
+          23,
+          29,
+          30,
+          31,
+          32,
+          33
+        ]
+      }
+    },
+    {
+      "step": "H025",
+      "horizon": 25,
+      "valid_time": "2026-09-02T19:00:00+00:00",
+      "tile_count": 20,
+      "full_grid_crc32": {
+        "rain": "aa8c6d53"
+      },
+      "neutral_tile_indexes": [
+        6,
+        7,
+        11,
+        12,
+        13
+      ],
+      "tier_neutral_tile_indexes": {
+        "detail": [
+          8,
+          9,
+          12,
+          15,
+          16,
+          19,
+          22,
+          23,
+          24,
+          29,
+          30,
+          31,
+          32,
+          33
+        ]
+      }
+    },
+    {
+      "step": "H026",
+      "horizon": 26,
+      "valid_time": "2026-09-02T20:00:00+00:00",
+      "tile_count": 20,
+      "full_grid_crc32": {
+        "rain": "d9cc402a"
+      },
+      "neutral_tile_indexes": [
+        6,
+        7,
+        11,
+        12,
+        13
+      ],
+      "tier_neutral_tile_indexes": {
+        "detail": [
+          8,
+          9,
+          11,
+          12,
+          15,
+          16,
+          17,
+          18,
+          22,
+          23,
+          24,
+          29,
+          30,
+          31,
+          32,
+          33
+        ]
+      }
+    },
+    {
+      "step": "H027",
+      "horizon": 27,
+      "valid_time": "2026-09-02T21:00:00+00:00",
+      "tile_count": 20,
+      "full_grid_crc32": {
+        "rain": "d5be8f28"
+      },
+      "neutral_tile_indexes": [
+        6,
+        7,
+        11,
+        12,
+        13
+      ],
+      "tier_neutral_tile_indexes": {
+        "detail": [
+          8,
+          9,
+          10,
+          12,
+          15,
+          16,
+          17,
+          22,
+          23,
+          24,
+          29,
+          30,
+          31,
+          32,
+          33
+        ]
+      }
+    },
+    {
+      "step": "H028",
+      "horizon": 28,
+      "valid_time": "2026-09-02T22:00:00+00:00",
+      "tile_count": 20,
+      "full_grid_crc32": {
+        "rain": "f11d8bff"
+      },
+      "neutral_tile_indexes": [
+        6,
+        7,
+        11,
+        12,
+        13
+      ],
+      "tier_neutral_tile_indexes": {
+        "detail": [
+          8,
+          9,
+          10,
+          11,
+          12,
+          15,
+          16,
+          17,
+          22,
+          23,
+          24,
+          29,
+          30,
+          31,
+          32,
+          33
+        ]
+      }
+    },
+    {
+      "step": "H029",
+      "horizon": 29,
+      "valid_time": "2026-09-02T23:00:00+00:00",
+      "tile_count": 20,
+      "full_grid_crc32": {
+        "rain": "4bdba081"
+      },
+      "neutral_tile_indexes": [
+        6,
+        7,
+        11,
+        12,
+        13
+      ],
+      "tier_neutral_tile_indexes": {
+        "detail": [
+          8,
+          9,
+          10,
+          12,
+          15,
+          16,
+          17,
+          22,
+          23,
+          24,
+          29,
+          30,
+          31,
+          32,
+          33
+        ]
+      }
+    },
+    {
+      "step": "H030",
+      "horizon": 30,
+      "valid_time": "2026-09-03T00:00:00+00:00",
+      "tile_count": 20,
+      "full_grid_crc32": {
+        "rain": "cce8cb2c"
+      },
+      "neutral_tile_indexes": [
+        6,
+        7,
+        8,
+        11,
+        12
+      ],
+      "tier_neutral_tile_indexes": {
+        "detail": [
+          8,
+          9,
+          10,
+          12,
+          15,
+          16,
+          17,
+          18,
+          22,
+          23,
+          24,
+          25,
+          26,
+          29,
+          30,
+          31
+        ]
+      }
+    },
+    {
+      "step": "H031",
+      "horizon": 31,
+      "valid_time": "2026-09-03T01:00:00+00:00",
+      "tile_count": 20,
+      "full_grid_crc32": {
+        "rain": "0272384c"
+      },
+      "neutral_tile_indexes": [
+        6,
+        7,
+        8,
+        11,
+        12,
+        13
+      ],
+      "tier_neutral_tile_indexes": {
+        "detail": [
+          8,
+          9,
+          10,
+          12,
+          15,
+          16,
+          17,
+          18,
+          22,
+          23,
+          24,
+          25,
+          26,
+          29,
+          30,
+          31,
+          32
+        ]
+      }
+    },
+    {
+      "step": "H032",
+      "horizon": 32,
+      "valid_time": "2026-09-03T02:00:00+00:00",
+      "tile_count": 20,
+      "full_grid_crc32": {
+        "rain": "15956869"
+      },
+      "neutral_tile_indexes": [
+        6,
+        7,
+        8,
+        11,
+        12,
+        13
+      ],
+      "tier_neutral_tile_indexes": {
+        "detail": [
+          8,
+          9,
+          10,
+          11,
+          12,
+          15,
+          16,
+          17,
+          18,
+          19,
+          22,
+          23,
+          24,
+          25,
+          26,
+          29,
+          30,
+          31,
+          32
+        ]
+      }
+    },
+    {
+      "step": "H033",
+      "horizon": 33,
+      "valid_time": "2026-09-03T03:00:00+00:00",
+      "tile_count": 20,
+      "full_grid_crc32": {
+        "rain": "90aff76f"
+      },
+      "neutral_tile_indexes": [
+        6,
+        7,
+        8,
+        11,
+        12,
+        13
+      ],
+      "tier_neutral_tile_indexes": {
+        "detail": [
+          8,
+          9,
+          10,
+          11,
+          12,
+          15,
+          16,
+          17,
+          18,
+          19,
+          22,
+          23,
+          24,
+          25,
+          26,
+          29,
+          30,
+          31,
+          32
+        ]
+      }
+    },
+    {
+      "step": "H034",
+      "horizon": 34,
+      "valid_time": "2026-09-03T04:00:00+00:00",
+      "tile_count": 20,
+      "full_grid_crc32": {
+        "rain": "8f99dcb0"
+      },
+      "neutral_tile_indexes": [
+        6,
+        7,
+        8,
+        11,
+        12,
+        13
+      ],
+      "tier_neutral_tile_indexes": {
+        "detail": [
+          8,
+          9,
+          10,
+          11,
+          12,
+          15,
+          16,
+          17,
+          18,
+          19,
+          22,
+          23,
+          24,
+          25,
+          26,
+          29,
+          30,
+          31,
+          32
+        ]
+      }
+    },
+    {
+      "step": "H035",
+      "horizon": 35,
+      "valid_time": "2026-09-03T05:00:00+00:00",
+      "tile_count": 20,
+      "full_grid_crc32": {
+        "rain": "57d9f326"
+      },
+      "neutral_tile_indexes": [
+        6,
+        7,
+        8,
+        11,
+        12,
+        13
+      ],
+      "tier_neutral_tile_indexes": {
+        "detail": [
+          8,
+          9,
+          10,
+          11,
+          12,
+          15,
+          16,
+          17,
+          18,
+          19,
+          22,
+          23,
+          24,
+          25,
+          29,
+          30,
+          31,
+          32,
+          33
+        ]
+      }
+    },
+    {
+      "step": "H036",
+      "horizon": 36,
+      "valid_time": "2026-09-03T06:00:00+00:00",
+      "tile_count": 20,
+      "full_grid_crc32": {
+        "rain": "0e7c7705"
+      },
+      "neutral_tile_indexes": [
+        6,
+        7,
+        8,
+        11,
+        12,
+        13
+      ],
+      "tier_neutral_tile_indexes": {
+        "detail": [
+          8,
+          9,
+          10,
+          11,
+          12,
+          15,
+          16,
+          17,
+          18,
+          19,
+          22,
+          23,
+          24,
+          25,
+          26,
+          29,
+          30,
+          31,
+          32,
+          33
+        ]
+      }
+    },
+    {
+      "step": "H037",
+      "horizon": 37,
+      "valid_time": "2026-09-03T07:00:00+00:00",
+      "tile_count": 20,
+      "full_grid_crc32": {
+        "rain": "0e7c7705"
+      },
+      "neutral_tile_indexes": [
+        6,
+        7,
+        8,
+        11,
+        12,
+        13
+      ],
+      "tier_neutral_tile_indexes": {
+        "detail": [
+          8,
+          9,
+          10,
+          11,
+          12,
+          15,
+          16,
+          17,
+          18,
+          19,
+          22,
+          23,
+          24,
+          25,
+          26,
+          29,
+          30,
+          31,
+          32,
+          33
+        ]
+      }
+    },
+    {
+      "step": "H038",
+      "horizon": 38,
+      "valid_time": "2026-09-03T08:00:00+00:00",
+      "tile_count": 20,
+      "full_grid_crc32": {
+        "rain": "0e7c7705"
+      },
+      "neutral_tile_indexes": [
+        6,
+        7,
+        8,
+        11,
+        12,
+        13
+      ],
+      "tier_neutral_tile_indexes": {
+        "detail": [
+          8,
+          9,
+          10,
+          11,
+          12,
+          15,
+          16,
+          17,
+          18,
+          19,
+          22,
+          23,
+          24,
+          25,
+          26,
+          29,
+          30,
+          31,
+          32,
+          33
+        ]
+      }
+    },
+    {
+      "step": "H039",
+      "horizon": 39,
+      "valid_time": "2026-09-03T09:00:00+00:00",
+      "tile_count": 20,
+      "full_grid_crc32": {
+        "rain": "0e7c7705"
+      },
+      "neutral_tile_indexes": [
+        6,
+        7,
+        8,
+        11,
+        12,
+        13
+      ],
+      "tier_neutral_tile_indexes": {
+        "detail": [
+          8,
+          9,
+          10,
+          11,
+          12,
+          15,
+          16,
+          17,
+          18,
+          19,
+          22,
+          23,
+          24,
+          25,
+          26,
+          29,
+          30,
+          31,
+          32,
+          33
+        ]
+      }
+    },
+    {
+      "step": "H040",
+      "horizon": 40,
+      "valid_time": "2026-09-03T10:00:00+00:00",
+      "tile_count": 20,
+      "full_grid_crc32": {
+        "rain": "d0e43a49"
+      },
+      "neutral_tile_indexes": [
+        6,
+        7,
+        8,
+        11,
+        12,
+        13
+      ],
+      "tier_neutral_tile_indexes": {
+        "detail": [
+          8,
+          9,
+          10,
+          11,
+          12,
+          15,
+          16,
+          17,
+          18,
+          19,
+          22,
+          23,
+          24,
+          25,
+          26,
+          29,
+          30,
+          31,
+          32,
+          33
+        ]
+      }
+    },
+    {
+      "step": "H041",
+      "horizon": 41,
+      "valid_time": "2026-09-03T11:00:00+00:00",
+      "tile_count": 20,
+      "full_grid_crc32": {
+        "rain": "75da82fc"
+      },
+      "neutral_tile_indexes": [
+        6,
+        7,
+        8,
+        11,
+        12,
+        13
+      ],
+      "tier_neutral_tile_indexes": {
+        "detail": [
+          8,
+          9,
+          10,
+          11,
+          12,
+          15,
+          16,
+          17,
+          18,
+          19,
+          22,
+          23,
+          24,
+          25,
+          26,
+          29,
+          30,
+          31,
+          32,
+          33
+        ]
+      }
+    },
+    {
+      "step": "H042",
+      "horizon": 42,
+      "valid_time": "2026-09-03T12:00:00+00:00",
+      "tile_count": 20,
+      "full_grid_crc32": {
+        "rain": "fb66e50b"
+      },
+      "neutral_tile_indexes": [
+        6,
+        7,
+        8,
+        11,
+        12,
+        13
+      ],
+      "tier_neutral_tile_indexes": {
+        "detail": [
+          8,
+          9,
+          10,
+          11,
+          12,
+          15,
+          16,
+          17,
+          18,
+          22,
+          23,
+          24,
+          25,
+          26,
+          29,
+          30,
+          31,
+          32,
+          33
+        ]
+      }
+    },
+    {
+      "step": "H043",
+      "horizon": 43,
+      "valid_time": "2026-09-03T13:00:00+00:00",
+      "tile_count": 20,
+      "full_grid_crc32": {
+        "rain": "b988df8c"
+      },
+      "neutral_tile_indexes": [
+        6,
+        7,
+        8,
+        11,
+        12,
+        13
+      ],
+      "tier_neutral_tile_indexes": {
+        "detail": [
+          8,
+          9,
+          10,
+          11,
+          12,
+          15,
+          16,
+          17,
+          18,
+          22,
+          23,
+          24,
+          25,
+          26,
+          29,
+          30,
+          31,
+          32,
+          33
+        ]
+      }
+    },
+    {
+      "step": "H044",
+      "horizon": 44,
+      "valid_time": "2026-09-03T14:00:00+00:00",
+      "tile_count": 20,
+      "full_grid_crc32": {
+        "rain": "b1c06eb1"
+      },
+      "neutral_tile_indexes": [
+        6,
+        7,
+        8,
+        11,
+        12,
+        13
+      ],
+      "tier_neutral_tile_indexes": {
+        "detail": [
+          8,
+          9,
+          10,
+          11,
+          12,
+          15,
+          16,
+          17,
+          18,
+          19,
+          22,
+          23,
+          24,
+          25,
+          26,
+          29,
+          30,
+          31,
+          32,
+          33
+        ]
+      }
+    },
+    {
+      "step": "H045",
+      "horizon": 45,
+      "valid_time": "2026-09-03T15:00:00+00:00",
+      "tile_count": 20,
+      "full_grid_crc32": {
+        "rain": "b1c06eb1"
+      },
+      "neutral_tile_indexes": [
+        6,
+        7,
+        8,
+        11,
+        12,
+        13
+      ],
+      "tier_neutral_tile_indexes": {
+        "detail": [
+          8,
+          9,
+          10,
+          11,
+          12,
+          15,
+          16,
+          17,
+          18,
+          19,
+          22,
+          23,
+          24,
+          25,
+          26,
+          29,
+          30,
+          31,
+          32,
+          33
+        ]
+      }
+    },
+    {
+      "step": "H046",
+      "horizon": 46,
+      "valid_time": "2026-09-03T16:00:00+00:00",
+      "tile_count": 20,
+      "full_grid_crc32": {
+        "rain": "b1c06eb1"
+      },
+      "neutral_tile_indexes": [
+        6,
+        7,
+        8,
+        11,
+        12,
+        13
+      ],
+      "tier_neutral_tile_indexes": {
+        "detail": [
+          8,
+          9,
+          10,
+          11,
+          12,
+          15,
+          16,
+          17,
+          18,
+          19,
+          22,
+          23,
+          24,
+          25,
+          26,
+          29,
+          30,
+          31,
+          32,
+          33
+        ]
+      }
+    },
+    {
+      "step": "H047",
+      "horizon": 47,
+      "valid_time": "2026-09-03T17:00:00+00:00",
+      "tile_count": 20,
+      "full_grid_crc32": {
+        "rain": "b1c06eb1"
+      },
+      "neutral_tile_indexes": [
+        6,
+        7,
+        8,
+        11,
+        12,
+        13
+      ],
+      "tier_neutral_tile_indexes": {
+        "detail": [
+          8,
+          9,
+          10,
+          11,
+          12,
+          15,
+          16,
+          17,
+          18,
+          19,
+          22,
+          23,
+          24,
+          25,
+          26,
+          29,
+          30,
+          31,
+          32,
+          33
+        ]
+      }
+    },
+    {
+      "step": "H048",
+      "horizon": 48,
+      "valid_time": "2026-09-03T18:00:00+00:00",
+      "tile_count": 20,
+      "full_grid_crc32": {
+        "rain": "b1c06eb1"
+      },
+      "neutral_tile_indexes": [
+        6,
+        7,
+        8,
+        11,
+        12,
+        13
+      ],
+      "tier_neutral_tile_indexes": {
+        "detail": [
+          8,
+          9,
+          10,
+          11,
+          12,
+          15,
+          16,
+          17,
+          18,
+          19,
+          22,
+          23,
+          24,
+          25,
+          26,
+          29,
+          30,
+          31,
+          32,
+          33
+        ]
+      }
+    },
+    {
+      "step": "H049",
+      "horizon": 49,
+      "valid_time": "2026-09-03T19:00:00+00:00",
+      "tile_count": 20,
+      "full_grid_crc32": {
+        "rain": "b1c06eb1"
+      },
+      "neutral_tile_indexes": [
+        6,
+        7,
+        8,
+        11,
+        12,
+        13
+      ],
+      "tier_neutral_tile_indexes": {
+        "detail": [
+          8,
+          9,
+          10,
+          11,
+          12,
+          15,
+          16,
+          17,
+          18,
+          19,
+          22,
+          23,
+          24,
+          25,
+          26,
+          29,
+          30,
+          31,
+          32,
+          33
+        ]
+      }
+    },
+    {
+      "step": "H050",
+      "horizon": 50,
+      "valid_time": "2026-09-03T20:00:00+00:00",
+      "tile_count": 20,
+      "full_grid_crc32": {
+        "rain": "b1c06eb1"
+      },
+      "neutral_tile_indexes": [
+        6,
+        7,
+        8,
+        11,
+        12,
+        13
+      ],
+      "tier_neutral_tile_indexes": {
+        "detail": [
+          8,
+          9,
+          10,
+          11,
+          12,
+          15,
+          16,
+          17,
+          18,
+          19,
+          22,
+          23,
+          24,
+          25,
+          26,
+          29,
+          30,
+          31,
+          32,
+          33
+        ]
+      }
+    },
+    {
+      "step": "H051",
+      "horizon": 51,
+      "valid_time": "2026-09-03T21:00:00+00:00",
+      "tile_count": 20,
+      "full_grid_crc32": {
+        "rain": "b1c06eb1"
+      },
+      "neutral_tile_indexes": [
+        6,
+        7,
+        8,
+        11,
+        12,
+        13
+      ],
+      "tier_neutral_tile_indexes": {
+        "detail": [
+          8,
+          9,
+          10,
+          11,
+          12,
+          15,
+          16,
+          17,
+          18,
+          19,
+          22,
+          23,
+          24,
+          25,
+          26,
+          29,
+          30,
+          31,
+          32,
+          33
+        ]
+      }
+    },
+    {
+      "step": "H052",
+      "horizon": 52,
+      "valid_time": "2026-09-03T22:00:00+00:00",
+      "tile_count": 20,
+      "full_grid_crc32": {
+        "rain": "b1c06eb1"
+      },
+      "neutral_tile_indexes": [
+        6,
+        7,
+        8,
+        11,
+        12,
+        13
+      ],
+      "tier_neutral_tile_indexes": {
+        "detail": [
+          8,
+          9,
+          10,
+          11,
+          12,
+          15,
+          16,
+          17,
+          18,
+          19,
+          22,
+          23,
+          24,
+          25,
+          26,
+          29,
+          30,
+          31,
+          32,
+          33
+        ]
+      }
+    },
+    {
+      "step": "H053",
+      "horizon": 53,
+      "valid_time": "2026-09-03T23:00:00+00:00",
+      "tile_count": 20,
+      "full_grid_crc32": {
+        "rain": "b1c06eb1"
+      },
+      "neutral_tile_indexes": [
+        6,
+        7,
+        8,
+        11,
+        12,
+        13
+      ],
+      "tier_neutral_tile_indexes": {
+        "detail": [
+          8,
+          9,
+          10,
+          11,
+          12,
+          15,
+          16,
+          17,
+          18,
+          19,
+          22,
+          23,
+          24,
+          25,
+          26,
+          29,
+          30,
+          31,
+          32,
+          33
+        ]
+      }
+    },
+    {
+      "step": "H054",
+      "horizon": 54,
+      "valid_time": "2026-09-04T00:00:00+00:00",
+      "tile_count": 20,
+      "full_grid_crc32": {
+        "rain": "b1c06eb1"
+      },
+      "neutral_tile_indexes": [
+        6,
+        7,
+        8,
+        11,
+        12,
+        13
+      ],
+      "tier_neutral_tile_indexes": {
+        "detail": [
+          8,
+          9,
+          10,
+          11,
+          12,
+          15,
+          16,
+          17,
+          18,
+          19,
+          22,
+          23,
+          24,
+          25,
+          26,
+          29,
+          30,
+          31,
+          32,
+          33
+        ]
+      }
+    },
+    {
+      "step": "H055",
+      "horizon": 55,
+      "valid_time": "2026-09-04T01:00:00+00:00",
+      "tile_count": 20,
+      "full_grid_crc32": {
+        "rain": "b1c06eb1"
+      },
+      "neutral_tile_indexes": [
+        6,
+        7,
+        8,
+        11,
+        12,
+        13
+      ],
+      "tier_neutral_tile_indexes": {
+        "detail": [
+          8,
+          9,
+          10,
+          11,
+          12,
+          15,
+          16,
+          17,
+          18,
+          19,
+          22,
+          23,
+          24,
+          25,
+          26,
+          29,
+          30,
+          31,
+          32,
+          33
+        ]
+      }
+    },
+    {
+      "step": "H056",
+      "horizon": 56,
+      "valid_time": "2026-09-04T02:00:00+00:00",
+      "tile_count": 20,
+      "full_grid_crc32": {
+        "rain": "b1c06eb1"
+      },
+      "neutral_tile_indexes": [
+        6,
+        7,
+        8,
+        11,
+        12,
+        13
+      ],
+      "tier_neutral_tile_indexes": {
+        "detail": [
+          8,
+          9,
+          10,
+          11,
+          12,
+          15,
+          16,
+          17,
+          18,
+          19,
+          22,
+          23,
+          24,
+          25,
+          26,
+          29,
+          30,
+          31,
+          32,
+          33
+        ]
+      }
+    },
+    {
+      "step": "H057",
+      "horizon": 57,
+      "valid_time": "2026-09-04T03:00:00+00:00",
+      "tile_count": 20,
+      "full_grid_crc32": {
+        "rain": "b1c06eb1"
+      },
+      "neutral_tile_indexes": [
+        6,
+        7,
+        8,
+        11,
+        12,
+        13
+      ],
+      "tier_neutral_tile_indexes": {
+        "detail": [
+          8,
+          9,
+          10,
+          11,
+          12,
+          15,
+          16,
+          17,
+          18,
+          19,
+          22,
+          23,
+          24,
+          25,
+          26,
+          29,
+          30,
+          31,
+          32,
+          33
+        ]
+      }
+    },
+    {
+      "step": "H058",
+      "horizon": 58,
+      "valid_time": "2026-09-04T04:00:00+00:00",
+      "tile_count": 20,
+      "full_grid_crc32": {
+        "rain": "b1c06eb1"
+      },
+      "neutral_tile_indexes": [
+        6,
+        7,
+        8,
+        11,
+        12,
+        13
+      ],
+      "tier_neutral_tile_indexes": {
+        "detail": [
+          8,
+          9,
+          10,
+          11,
+          12,
+          15,
+          16,
+          17,
+          18,
+          19,
+          22,
+          23,
+          24,
+          25,
+          26,
+          29,
+          30,
+          31,
+          32,
+          33
+        ]
+      }
+    },
+    {
+      "step": "H059",
+      "horizon": 59,
+      "valid_time": "2026-09-04T05:00:00+00:00",
+      "tile_count": 20,
+      "full_grid_crc32": {
+        "rain": "b1c06eb1"
+      },
+      "neutral_tile_indexes": [
+        6,
+        7,
+        8,
+        11,
+        12,
+        13
+      ],
+      "tier_neutral_tile_indexes": {
+        "detail": [
+          8,
+          9,
+          10,
+          11,
+          12,
+          15,
+          16,
+          17,
+          18,
+          19,
+          22,
+          23,
+          24,
+          25,
+          26,
+          29,
+          30,
+          31,
+          32,
+          33
+        ]
+      }
+    },
+    {
+      "step": "H060",
+      "horizon": 60,
+      "valid_time": "2026-09-04T06:00:00+00:00",
+      "tile_count": 20,
+      "full_grid_crc32": {
+        "rain": "b1c06eb1"
+      },
+      "neutral_tile_indexes": [
+        6,
+        7,
+        8,
+        11,
+        12,
+        13
+      ],
+      "tier_neutral_tile_indexes": {
+        "detail": [
+          8,
+          9,
+          10,
+          11,
+          12,
+          15,
+          16,
+          17,
+          18,
+          19,
+          22,
+          23,
+          24,
+          25,
+          26,
+          29,
+          30,
+          31,
+          32,
+          33
+        ]
+      }
+    },
+    {
+      "step": "H061",
+      "horizon": 61,
+      "valid_time": "2026-09-04T07:00:00+00:00",
+      "tile_count": 20,
+      "full_grid_crc32": {
+        "rain": "b1c06eb1"
+      },
+      "neutral_tile_indexes": [
+        6,
+        7,
+        8,
+        11,
+        12,
+        13
+      ],
+      "tier_neutral_tile_indexes": {
+        "detail": [
+          8,
+          9,
+          10,
+          11,
+          12,
+          15,
+          16,
+          17,
+          18,
+          19,
+          22,
+          23,
+          24,
+          25,
+          26,
+          29,
+          30,
+          31,
+          32,
+          33
+        ]
+      }
+    },
+    {
+      "step": "H062",
+      "horizon": 62,
+      "valid_time": "2026-09-04T08:00:00+00:00",
+      "tile_count": 20,
+      "full_grid_crc32": {
+        "rain": "b1c06eb1"
+      },
+      "neutral_tile_indexes": [
+        6,
+        7,
+        8,
+        11,
+        12,
+        13
+      ],
+      "tier_neutral_tile_indexes": {
+        "detail": [
+          8,
+          9,
+          10,
+          11,
+          12,
+          15,
+          16,
+          17,
+          18,
+          19,
+          22,
+          23,
+          24,
+          25,
+          26,
+          29,
+          30,
+          31,
+          32,
+          33
+        ]
+      }
+    },
+    {
+      "step": "H063",
+      "horizon": 63,
+      "valid_time": "2026-09-04T09:00:00+00:00",
+      "tile_count": 20,
+      "full_grid_crc32": {
+        "rain": "b1c06eb1"
+      },
+      "neutral_tile_indexes": [
+        6,
+        7,
+        8,
+        11,
+        12,
+        13
+      ],
+      "tier_neutral_tile_indexes": {
+        "detail": [
+          8,
+          9,
+          10,
+          11,
+          12,
+          15,
+          16,
+          17,
+          18,
+          19,
+          22,
+          23,
+          24,
+          25,
+          26,
+          29,
+          30,
+          31,
+          32,
+          33
+        ]
+      }
+    },
+    {
+      "step": "H064",
+      "horizon": 64,
+      "valid_time": "2026-09-04T10:00:00+00:00",
+      "tile_count": 20,
+      "full_grid_crc32": {
+        "rain": "b1c06eb1"
+      },
+      "neutral_tile_indexes": [
+        6,
+        7,
+        8,
+        11,
+        12,
+        13
+      ],
+      "tier_neutral_tile_indexes": {
+        "detail": [
+          8,
+          9,
+          10,
+          11,
+          12,
+          15,
+          16,
+          17,
+          18,
+          19,
+          22,
+          23,
+          24,
+          25,
+          26,
+          29,
+          30,
+          31,
+          32,
+          33
+        ]
+      }
+    },
+    {
+      "step": "H065",
+      "horizon": 65,
+      "valid_time": "2026-09-04T11:00:00+00:00",
+      "tile_count": 20,
+      "full_grid_crc32": {
+        "rain": "b1c06eb1"
+      },
+      "neutral_tile_indexes": [
+        6,
+        7,
+        8,
+        11,
+        12,
+        13
+      ],
+      "tier_neutral_tile_indexes": {
+        "detail": [
+          8,
+          9,
+          10,
+          11,
+          12,
+          15,
+          16,
+          17,
+          18,
+          19,
+          22,
+          23,
+          24,
+          25,
+          26,
+          29,
+          30,
+          31,
+          32,
+          33
+        ]
+      }
+    },
+    {
+      "step": "H066",
+      "horizon": 66,
+      "valid_time": "2026-09-04T12:00:00+00:00",
+      "tile_count": 20,
+      "full_grid_crc32": {
+        "rain": "b1c06eb1"
+      },
+      "neutral_tile_indexes": [
+        6,
+        7,
+        8,
+        11,
+        12,
+        13
+      ],
+      "tier_neutral_tile_indexes": {
+        "detail": [
+          8,
+          9,
+          10,
+          11,
+          12,
+          15,
+          16,
+          17,
+          18,
+          19,
+          22,
+          23,
+          24,
+          25,
+          26,
+          29,
+          30,
+          31,
+          32,
+          33
+        ]
+      }
+    },
+    {
+      "step": "H067",
+      "horizon": 67,
+      "valid_time": "2026-09-04T13:00:00+00:00",
+      "tile_count": 20,
+      "full_grid_crc32": {
+        "rain": "b1c06eb1"
+      },
+      "neutral_tile_indexes": [
+        6,
+        7,
+        8,
+        11,
+        12,
+        13
+      ],
+      "tier_neutral_tile_indexes": {
+        "detail": [
+          8,
+          9,
+          10,
+          11,
+          12,
+          15,
+          16,
+          17,
+          18,
+          19,
+          22,
+          23,
+          24,
+          25,
+          26,
+          29,
+          30,
+          31,
+          32,
+          33
+        ]
+      }
+    },
+    {
+      "step": "H068",
+      "horizon": 68,
+      "valid_time": "2026-09-04T14:00:00+00:00",
+      "tile_count": 20,
+      "full_grid_crc32": {
+        "rain": "b1c06eb1"
+      },
+      "neutral_tile_indexes": [
+        6,
+        7,
+        8,
+        11,
+        12,
+        13
+      ],
+      "tier_neutral_tile_indexes": {
+        "detail": [
+          8,
+          9,
+          10,
+          11,
+          12,
+          15,
+          16,
+          17,
+          18,
+          19,
+          22,
+          23,
+          24,
+          25,
+          26,
+          29,
+          30,
+          31,
+          32,
+          33
+        ]
+      }
+    },
+    {
+      "step": "H069",
+      "horizon": 69,
+      "valid_time": "2026-09-04T15:00:00+00:00",
+      "tile_count": 20,
+      "full_grid_crc32": {
+        "rain": "b1c06eb1"
+      },
+      "neutral_tile_indexes": [
+        6,
+        7,
+        8,
+        11,
+        12,
+        13
+      ],
+      "tier_neutral_tile_indexes": {
+        "detail": [
+          8,
+          9,
+          10,
+          11,
+          12,
+          15,
+          16,
+          17,
+          18,
+          19,
+          22,
+          23,
+          24,
+          25,
+          26,
+          29,
+          30,
+          31,
+          32,
+          33
+        ]
+      }
+    },
+    {
+      "step": "H070",
+      "horizon": 70,
+      "valid_time": "2026-09-04T16:00:00+00:00",
+      "tile_count": 20,
+      "full_grid_crc32": {
+        "rain": "4ac7d1c1"
+      },
+      "neutral_tile_indexes": [
+        6,
+        7,
+        8,
+        11,
+        12,
+        13
+      ],
+      "tier_neutral_tile_indexes": {
+        "detail": [
+          8,
+          9,
+          10,
+          11,
+          12,
+          15,
+          16,
+          17,
+          18,
+          19,
+          22,
+          23,
+          24,
+          25,
+          26,
+          29,
+          30,
+          31,
+          32,
+          33
+        ]
+      }
+    },
+    {
+      "step": "H071",
+      "horizon": 71,
+      "valid_time": "2026-09-04T17:00:00+00:00",
+      "tile_count": 20,
+      "full_grid_crc32": {
+        "rain": "c327e159"
+      },
+      "neutral_tile_indexes": [
+        6,
+        7,
+        8,
+        11,
+        12,
+        13
+      ],
+      "tier_neutral_tile_indexes": {
+        "detail": [
+          8,
+          9,
+          10,
+          11,
+          12,
+          15,
+          16,
+          17,
+          18,
+          19,
+          22,
+          23,
+          24,
+          25,
+          26,
+          29,
+          30,
+          31,
+          32,
+          33
+        ]
+      }
+    },
+    {
+      "step": "H072",
+      "horizon": 72,
+      "valid_time": "2026-09-04T18:00:00+00:00",
+      "tile_count": 20,
+      "full_grid_crc32": {
+        "rain": "b1c06eb1"
+      },
+      "neutral_tile_indexes": [
+        6,
+        7,
+        8,
+        11,
+        12,
+        13
+      ],
+      "tier_neutral_tile_indexes": {
+        "detail": [
+          8,
+          9,
+          10,
+          11,
+          12,
+          15,
+          16,
+          17,
+          18,
+          19,
+          22,
+          23,
+          24,
+          25,
+          26,
+          29,
+          30,
+          31,
+          32,
+          33
+        ]
+      }
+    },
+    {
+      "step": "H073",
+      "horizon": 73,
+      "valid_time": "2026-09-04T19:00:00+00:00",
+      "tile_count": 20,
+      "full_grid_crc32": {
+        "rain": "b1c06eb1"
+      },
+      "neutral_tile_indexes": [
+        6,
+        7,
+        8,
+        11,
+        12,
+        13
+      ],
+      "tier_neutral_tile_indexes": {
+        "detail": [
+          8,
+          9,
+          10,
+          11,
+          12,
+          15,
+          16,
+          17,
+          18,
+          19,
+          22,
+          23,
+          24,
+          25,
+          26,
+          29,
+          30,
+          31,
+          32,
+          33
+        ]
+      }
+    },
+    {
+      "step": "H074",
+      "horizon": 74,
+      "valid_time": "2026-09-04T20:00:00+00:00",
+      "tile_count": 20,
+      "full_grid_crc32": {
+        "rain": "b1c06eb1"
+      },
+      "neutral_tile_indexes": [
+        6,
+        7,
+        8,
+        11,
+        12,
+        13
+      ],
+      "tier_neutral_tile_indexes": {
+        "detail": [
+          8,
+          9,
+          10,
+          11,
+          12,
+          15,
+          16,
+          17,
+          18,
+          19,
+          22,
+          23,
+          24,
+          25,
+          26,
+          29,
+          30,
+          31,
+          32,
+          33
+        ]
+      }
+    },
+    {
+      "step": "H075",
+      "horizon": 75,
+      "valid_time": "2026-09-04T21:00:00+00:00",
+      "tile_count": 20,
+      "full_grid_crc32": {
+        "rain": "b1c06eb1"
+      },
+      "neutral_tile_indexes": [
+        6,
+        7,
+        8,
+        11,
+        12,
+        13
+      ],
+      "tier_neutral_tile_indexes": {
+        "detail": [
+          8,
+          9,
+          10,
+          11,
+          12,
+          15,
+          16,
+          17,
+          18,
+          19,
+          22,
+          23,
+          24,
+          25,
+          26,
+          29,
+          30,
+          31,
+          32,
+          33
+        ]
+      }
+    },
+    {
+      "step": "H076",
+      "horizon": 76,
+      "valid_time": "2026-09-04T22:00:00+00:00",
+      "tile_count": 20,
+      "full_grid_crc32": {
+        "rain": "b1c06eb1"
+      },
+      "neutral_tile_indexes": [
+        6,
+        7,
+        8,
+        11,
+        12,
+        13
+      ],
+      "tier_neutral_tile_indexes": {
+        "detail": [
+          8,
+          9,
+          10,
+          11,
+          12,
+          15,
+          16,
+          17,
+          18,
+          19,
+          22,
+          23,
+          24,
+          25,
+          26,
+          29,
+          30,
+          31,
+          32,
+          33
+        ]
+      }
+    },
+    {
+      "step": "H077",
+      "horizon": 77,
+      "valid_time": "2026-09-04T23:00:00+00:00",
+      "tile_count": 20,
+      "full_grid_crc32": {
+        "rain": "b1c06eb1"
+      },
+      "neutral_tile_indexes": [
+        6,
+        7,
+        8,
+        11,
+        12,
+        13
+      ],
+      "tier_neutral_tile_indexes": {
+        "detail": [
+          8,
+          9,
+          10,
+          11,
+          12,
+          15,
+          16,
+          17,
+          18,
+          19,
+          22,
+          23,
+          24,
+          25,
+          26,
+          29,
+          30,
+          31,
+          32,
+          33
+        ]
+      }
+    },
+    {
+      "step": "H078",
+      "horizon": 78,
+      "valid_time": "2026-09-05T00:00:00+00:00",
+      "tile_count": 20,
+      "full_grid_crc32": {
+        "rain": "b1c06eb1"
+      },
+      "neutral_tile_indexes": [
+        6,
+        7,
+        8,
+        11,
+        12,
+        13
+      ],
+      "tier_neutral_tile_indexes": {
+        "detail": [
+          8,
+          9,
+          10,
+          11,
+          12,
+          15,
+          16,
+          17,
+          18,
+          19,
+          22,
+          23,
+          24,
+          25,
+          26,
+          29,
+          30,
+          31,
+          32,
+          33
+        ]
+      }
+    },
+    {
+      "step": "H079",
+      "horizon": 79,
+      "valid_time": "2026-09-05T01:00:00+00:00",
+      "tile_count": 20,
+      "full_grid_crc32": {
+        "rain": "0b6913ae"
+      },
+      "neutral_tile_indexes": [
+        6,
+        7,
+        8,
+        11,
+        12,
+        13
+      ],
+      "tier_neutral_tile_indexes": {
+        "detail": [
+          8,
+          9,
+          10,
+          11,
+          12,
+          15,
+          16,
+          17,
+          18,
+          19,
+          22,
+          23,
+          24,
+          25,
+          26,
+          29,
+          30,
+          31,
+          32,
+          33
+        ]
+      }
+    },
+    {
+      "step": "H080",
+      "horizon": 80,
+      "valid_time": "2026-09-05T02:00:00+00:00",
+      "tile_count": 20,
+      "full_grid_crc32": {
+        "rain": "f409953e"
+      },
+      "neutral_tile_indexes": [
+        6,
+        7,
+        8,
+        11,
+        12,
+        13
+      ],
+      "tier_neutral_tile_indexes": {
+        "detail": [
+          8,
+          9,
+          10,
+          11,
+          12,
+          15,
+          16,
+          17,
+          18,
+          19,
+          22,
+          23,
+          24,
+          25,
+          26,
+          29,
+          30,
+          31,
+          32,
+          33
+        ]
+      }
+    },
+    {
+      "step": "H081",
+      "horizon": 81,
+      "valid_time": "2026-09-05T03:00:00+00:00",
+      "tile_count": 20,
+      "full_grid_crc32": {
+        "rain": "bbcf5345"
+      },
+      "neutral_tile_indexes": [
+        6,
+        7,
+        8,
+        11,
+        12,
+        13
+      ],
+      "tier_neutral_tile_indexes": {
+        "detail": [
+          8,
+          9,
+          10,
+          11,
+          12,
+          15,
+          16,
+          17,
+          18,
+          19,
+          22,
+          23,
+          24,
+          25,
+          26,
+          29,
+          30,
+          31,
+          32,
+          33
+        ]
+      }
+    },
+    {
+      "step": "H082",
+      "horizon": 82,
+      "valid_time": "2026-09-05T04:00:00+00:00",
+      "tile_count": 20,
+      "full_grid_crc32": {
+        "rain": "7796af58"
+      },
+      "neutral_tile_indexes": [
+        6,
+        7,
+        8,
+        12,
+        13
+      ],
+      "tier_neutral_tile_indexes": {
+        "detail": [
+          8,
+          9,
+          10,
+          11,
+          12,
+          15,
+          16,
+          17,
+          18,
+          19,
+          22,
+          23,
+          24,
+          25,
+          26,
+          30,
+          31,
+          32,
+          33
+        ]
+      }
+    },
+    {
+      "step": "H083",
+      "horizon": 83,
+      "valid_time": "2026-09-05T05:00:00+00:00",
+      "tile_count": 20,
+      "full_grid_crc32": {
+        "rain": "479aa413"
+      },
+      "neutral_tile_indexes": [
+        6,
+        7,
+        8,
+        13
+      ],
+      "tier_neutral_tile_indexes": {
+        "detail": [
+          8,
+          9,
+          10,
+          11,
+          12,
+          15,
+          16,
+          17,
+          18,
+          19,
+          22,
+          23,
+          24,
+          25,
+          26,
+          31,
+          32,
+          33
+        ]
+      }
+    },
+    {
+      "step": "H084",
+      "horizon": 84,
+      "valid_time": "2026-09-05T06:00:00+00:00",
+      "tile_count": 20,
+      "full_grid_crc32": {
+        "rain": "a3c73ee9"
+      },
+      "neutral_tile_indexes": [
+        6,
+        7,
+        8
+      ],
+      "tier_neutral_tile_indexes": {
+        "detail": [
+          8,
+          9,
+          10,
+          11,
+          12,
+          15,
+          16,
+          17,
+          18,
+          19,
+          22,
+          23,
+          24,
+          25,
+          26,
+          31,
+          32,
+          33
+        ]
+      }
+    },
+    {
+      "step": "H085",
+      "horizon": 85,
+      "valid_time": "2026-09-05T07:00:00+00:00",
+      "tile_count": 20,
+      "full_grid_crc32": {
+        "rain": "97d5eff7"
+      },
+      "neutral_tile_indexes": [
+        6,
+        7,
+        8
+      ],
+      "tier_neutral_tile_indexes": {
+        "detail": [
+          8,
+          9,
+          10,
+          11,
+          12,
+          15,
+          16,
+          17,
+          18,
+          19,
+          22,
+          23,
+          24,
+          25,
+          26,
+          29,
+          33
+        ]
+      }
+    },
+    {
+      "step": "H086",
+      "horizon": 86,
+      "valid_time": "2026-09-05T08:00:00+00:00",
+      "tile_count": 20,
+      "full_grid_crc32": {
+        "rain": "806e0d1f"
+      },
+      "neutral_tile_indexes": [
+        6,
+        7,
+        8,
+        11
+      ],
+      "tier_neutral_tile_indexes": {
+        "detail": [
+          8,
+          9,
+          10,
+          11,
+          12,
+          15,
+          16,
+          17,
+          18,
+          19,
+          22,
+          23,
+          24,
+          25,
+          26,
+          29
+        ]
+      }
+    },
+    {
+      "step": "H087",
+      "horizon": 87,
+      "valid_time": "2026-09-05T09:00:00+00:00",
+      "tile_count": 20,
+      "full_grid_crc32": {
+        "rain": "77beeea5"
+      },
+      "neutral_tile_indexes": [
+        6,
+        7,
+        8
+      ],
+      "tier_neutral_tile_indexes": {
+        "detail": [
+          8,
+          9,
+          10,
+          11,
+          12,
+          15,
+          16,
+          17,
+          18,
+          19,
+          22,
+          23,
+          24,
+          25,
+          26
+        ]
+      }
+    },
+    {
+      "step": "H088",
+      "horizon": 88,
+      "valid_time": "2026-09-05T10:00:00+00:00",
+      "tile_count": 20,
+      "full_grid_crc32": {
+        "rain": "b6576805"
+      },
+      "neutral_tile_indexes": [
+        6,
+        7,
+        8,
+        11,
+        12
+      ],
+      "tier_neutral_tile_indexes": {
+        "detail": [
+          8,
+          9,
+          10,
+          11,
+          12,
+          15,
+          16,
+          17,
+          18,
+          19,
+          22,
+          23,
+          24,
+          25,
+          26,
+          29,
+          30,
+          31
+        ]
+      }
+    },
+    {
+      "step": "H089",
+      "horizon": 89,
+      "valid_time": "2026-09-05T11:00:00+00:00",
+      "tile_count": 20,
+      "full_grid_crc32": {
+        "rain": "fb20f1df"
+      },
+      "neutral_tile_indexes": [
+        6,
+        7,
+        8,
+        11
+      ],
+      "tier_neutral_tile_indexes": {
+        "detail": [
+          8,
+          9,
+          10,
+          11,
+          12,
+          15,
+          16,
+          17,
+          18,
+          19,
+          22,
+          23,
+          24,
+          25,
+          26,
+          29,
+          31
+        ]
+      }
+    },
+    {
+      "step": "H090",
+      "horizon": 90,
+      "valid_time": "2026-09-05T12:00:00+00:00",
+      "tile_count": 20,
+      "full_grid_crc32": {
+        "rain": "7bb2e882"
+      },
+      "neutral_tile_indexes": [
+        6,
+        7,
+        8
+      ],
+      "tier_neutral_tile_indexes": {
+        "detail": [
+          8,
+          9,
+          10,
+          11,
+          12,
+          15,
+          16,
+          17,
+          18,
+          19,
+          22,
+          23,
+          24,
+          25,
+          26,
+          29,
+          31
+        ]
+      }
+    },
+    {
+      "step": "H091",
+      "horizon": 91,
+      "valid_time": "2026-09-05T13:00:00+00:00",
+      "tile_count": 20,
+      "full_grid_crc32": {
+        "rain": "3da40273"
+      },
+      "neutral_tile_indexes": [
+        6,
+        7,
+        8,
+        12
+      ],
+      "tier_neutral_tile_indexes": {
+        "detail": [
+          8,
+          9,
+          10,
+          11,
+          12,
+          15,
+          16,
+          17,
+          18,
+          19,
+          22,
+          23,
+          24,
+          25,
+          29,
+          31
+        ]
+      }
+    },
+    {
+      "step": "H092",
+      "horizon": 92,
+      "valid_time": "2026-09-05T14:00:00+00:00",
+      "tile_count": 20,
+      "full_grid_crc32": {
+        "rain": "d16fe387"
+      },
+      "neutral_tile_indexes": [
+        6,
+        7,
+        8,
+        11,
+        12,
+        13
+      ],
+      "tier_neutral_tile_indexes": {
+        "detail": [
+          8,
+          9,
+          10,
+          11,
+          12,
+          15,
+          16,
+          17,
+          18,
+          19,
+          22,
+          23,
+          24,
+          25,
+          29,
+          30,
+          31,
+          32
+        ]
+      }
+    },
+    {
+      "step": "H093",
+      "horizon": 93,
+      "valid_time": "2026-09-05T15:00:00+00:00",
+      "tile_count": 20,
+      "full_grid_crc32": {
+        "rain": "1e275713"
+      },
+      "neutral_tile_indexes": [
+        6,
+        7,
+        8,
+        11,
+        12
+      ],
+      "tier_neutral_tile_indexes": {
+        "detail": [
+          8,
+          9,
+          10,
+          11,
+          12,
+          15,
+          16,
+          17,
+          18,
+          19,
+          22,
+          23,
+          24,
+          29,
+          30,
+          31,
+          32,
+          33
+        ]
+      }
+    },
+    {
+      "step": "H094",
+      "horizon": 94,
+      "valid_time": "2026-09-05T16:00:00+00:00",
+      "tile_count": 20,
+      "full_grid_crc32": {
+        "rain": "a7cca898"
+      },
+      "neutral_tile_indexes": [
+        6,
+        7,
+        8,
+        11,
+        12
+      ],
+      "tier_neutral_tile_indexes": {
+        "detail": [
+          8,
+          9,
+          10,
+          11,
+          12,
+          15,
+          16,
+          17,
+          18,
+          19,
+          22,
+          23,
+          24,
+          29,
+          30,
+          31,
+          32,
+          33
+        ]
+      }
+    },
+    {
+      "step": "H095",
+      "horizon": 95,
+      "valid_time": "2026-09-05T17:00:00+00:00",
+      "tile_count": 20,
+      "full_grid_crc32": {
+        "rain": "9dc435a6"
+      },
+      "neutral_tile_indexes": [
+        6,
+        7,
+        11,
+        12
+      ],
+      "tier_neutral_tile_indexes": {
+        "detail": [
+          8,
+          9,
+          10,
+          11,
+          12,
+          15,
+          16,
+          17,
+          18,
+          22,
+          23,
+          24,
+          29,
+          30,
+          31,
+          33
+        ]
+      }
+    },
+    {
+      "step": "H096",
+      "horizon": 96,
+      "valid_time": "2026-09-05T18:00:00+00:00",
+      "tile_count": 20,
+      "full_grid_crc32": {
+        "rain": "63cc0bf7"
+      },
+      "neutral_tile_indexes": [
+        6,
+        7,
+        11,
+        12
+      ],
+      "tier_neutral_tile_indexes": {
+        "detail": [
+          8,
+          9,
+          10,
+          11,
+          12,
+          15,
+          16,
+          17,
+          18,
+          22,
+          23,
+          24,
+          29,
+          30,
+          31,
+          33
+        ]
+      }
+    },
+    {
+      "step": "H097",
+      "horizon": 97,
+      "valid_time": "2026-09-05T19:00:00+00:00",
+      "tile_count": 20,
+      "full_grid_crc32": {
+        "rain": "42f2ab25"
+      },
+      "neutral_tile_indexes": [
+        6,
+        7,
+        8,
+        11,
+        12
+      ],
+      "tier_neutral_tile_indexes": {
+        "detail": [
+          8,
+          9,
+          10,
+          11,
+          12,
+          15,
+          16,
+          17,
+          18,
+          22,
+          23,
+          24,
+          25,
+          29,
+          30
+        ]
+      }
+    },
+    {
+      "step": "H098",
+      "horizon": 98,
+      "valid_time": "2026-09-05T20:00:00+00:00",
+      "tile_count": 20,
+      "full_grid_crc32": {
+        "rain": "ffa0655c"
+      },
+      "neutral_tile_indexes": [
+        6,
+        7,
+        11,
+        12
+      ],
+      "tier_neutral_tile_indexes": {
+        "detail": [
+          8,
+          9,
+          10,
+          11,
+          12,
+          15,
+          16,
+          17,
+          18,
+          22,
+          23,
+          24,
+          29,
+          30,
+          31
+        ]
+      }
+    },
+    {
+      "step": "H099",
+      "horizon": 99,
+      "valid_time": "2026-09-05T21:00:00+00:00",
+      "tile_count": 20,
+      "full_grid_crc32": {
+        "rain": "1bb08bc2"
+      },
+      "neutral_tile_indexes": [
+        6,
+        7,
+        11,
+        12
+      ],
+      "tier_neutral_tile_indexes": {
+        "detail": [
+          8,
+          9,
+          10,
+          11,
+          12,
+          15,
+          16,
+          17,
+          18,
+          22,
+          23,
+          24,
+          29,
+          30
+        ]
+      }
+    },
+    {
+      "step": "H100",
+      "horizon": 100,
+      "valid_time": "2026-09-05T22:00:00+00:00",
+      "tile_count": 20,
+      "full_grid_crc32": {
+        "rain": "3ad34f73"
+      },
+      "neutral_tile_indexes": [
+        6,
+        7,
+        8,
+        11,
+        12
+      ],
+      "tier_neutral_tile_indexes": {
+        "detail": [
+          8,
+          9,
+          10,
+          11,
+          12,
+          15,
+          16,
+          17,
+          18,
+          22,
+          23,
+          24,
+          29,
+          30,
+          31
+        ]
+      }
+    },
+    {
+      "step": "H101",
+      "horizon": 101,
+      "valid_time": "2026-09-05T23:00:00+00:00",
+      "tile_count": 20,
+      "full_grid_crc32": {
+        "rain": "8432dea4"
+      },
+      "neutral_tile_indexes": [
+        6,
+        7,
+        8,
+        11,
+        12
+      ],
+      "tier_neutral_tile_indexes": {
+        "detail": [
+          8,
+          9,
+          10,
+          11,
+          12,
+          15,
+          16,
+          17,
+          18,
+          22,
+          23,
+          24,
+          29,
+          30,
+          31
+        ]
+      }
+    },
+    {
+      "step": "H102",
+      "horizon": 102,
+      "valid_time": "2026-09-06T00:00:00+00:00",
+      "tile_count": 20,
+      "full_grid_crc32": {
+        "rain": "c352a92f"
+      },
+      "neutral_tile_indexes": [
+        6,
+        7,
+        8,
+        11,
+        12
+      ],
+      "tier_neutral_tile_indexes": {
+        "detail": [
+          8,
+          9,
+          10,
+          11,
+          12,
+          15,
+          16,
+          17,
+          18,
+          22,
+          23,
+          24,
+          29,
+          30,
+          31
+        ]
+      }
+    },
+    {
+      "step": "H103",
+      "horizon": 103,
+      "valid_time": "2026-09-06T01:00:00+00:00",
+      "tile_count": 20,
+      "full_grid_crc32": {
+        "rain": "988f2efe"
+      },
+      "neutral_tile_indexes": [
+        6,
+        7,
+        8,
+        11,
+        12
+      ],
+      "tier_neutral_tile_indexes": {
+        "detail": [
+          8,
+          9,
+          10,
+          11,
+          12,
+          15,
+          16,
+          17,
+          18,
+          22,
+          23,
+          24,
+          29,
+          30,
+          31
+        ]
+      }
+    },
+    {
+      "step": "H104",
+      "horizon": 104,
+      "valid_time": "2026-09-06T02:00:00+00:00",
+      "tile_count": 20,
+      "full_grid_crc32": {
+        "rain": "42a04bbe"
+      },
+      "neutral_tile_indexes": [
+        6,
+        7,
+        8,
+        11,
+        12,
+        13
+      ],
+      "tier_neutral_tile_indexes": {
+        "detail": [
+          8,
+          9,
+          10,
+          11,
+          12,
+          15,
+          16,
+          17,
+          18,
+          19,
+          22,
+          23,
+          24,
+          25,
+          29,
+          30,
+          31,
+          32,
+          33
+        ]
+      }
+    },
+    {
+      "step": "H105",
+      "horizon": 105,
+      "valid_time": "2026-09-06T03:00:00+00:00",
+      "tile_count": 20,
+      "full_grid_crc32": {
+        "rain": "f5521ef6"
+      },
+      "neutral_tile_indexes": [
+        6,
+        7,
+        8,
+        11,
+        12,
+        13
+      ],
+      "tier_neutral_tile_indexes": {
+        "detail": [
+          8,
+          9,
+          10,
+          11,
+          12,
+          15,
+          16,
+          17,
+          18,
+          19,
+          22,
+          23,
+          24,
+          25,
+          29,
+          30,
+          31,
+          32,
+          33
+        ]
+      }
+    },
+    {
+      "step": "H106",
+      "horizon": 106,
+      "valid_time": "2026-09-06T04:00:00+00:00",
+      "tile_count": 20,
+      "full_grid_crc32": {
+        "rain": "66873da7"
+      },
+      "neutral_tile_indexes": [
+        6,
+        7,
+        8,
+        11,
+        12,
+        13
+      ],
+      "tier_neutral_tile_indexes": {
+        "detail": [
+          8,
+          9,
+          10,
+          11,
+          12,
+          15,
+          16,
+          17,
+          18,
+          19,
+          22,
+          23,
+          24,
+          25,
+          29,
+          30,
+          31,
+          32,
+          33
+        ]
+      }
+    },
+    {
+      "step": "H107",
+      "horizon": 107,
+      "valid_time": "2026-09-06T05:00:00+00:00",
+      "tile_count": 20,
+      "full_grid_crc32": {
+        "rain": "c9033c34"
+      },
+      "neutral_tile_indexes": [
+        6,
+        7,
+        8,
+        11,
+        12,
+        13
+      ],
+      "tier_neutral_tile_indexes": {
+        "detail": [
+          8,
+          9,
+          10,
+          11,
+          12,
+          15,
+          16,
+          17,
+          18,
+          19,
+          22,
+          23,
+          24,
+          25,
+          29,
+          30,
+          31,
+          32,
+          33
+        ]
+      }
+    },
+    {
+      "step": "H108",
+      "horizon": 108,
+      "valid_time": "2026-09-06T06:00:00+00:00",
+      "tile_count": 20,
+      "full_grid_crc32": {
+        "rain": "039502a7"
+      },
+      "neutral_tile_indexes": [
+        6,
+        7,
+        8,
+        11,
+        12,
+        13
+      ],
+      "tier_neutral_tile_indexes": {
+        "detail": [
+          8,
+          9,
+          10,
+          11,
+          12,
+          15,
+          16,
+          17,
+          18,
+          19,
+          22,
+          23,
+          24,
+          25,
+          29,
+          30,
+          31,
+          32,
+          33
+        ]
+      }
+    },
+    {
+      "step": "H109",
+      "horizon": 109,
+      "valid_time": "2026-09-06T07:00:00+00:00",
+      "tile_count": 20,
+      "full_grid_crc32": {
+        "rain": "9a2f4b18"
+      },
+      "neutral_tile_indexes": [
+        6,
+        7,
+        8,
+        11,
+        12,
+        13
+      ],
+      "tier_neutral_tile_indexes": {
+        "detail": [
+          8,
+          9,
+          10,
+          11,
+          12,
+          15,
+          16,
+          17,
+          18,
+          19,
+          22,
+          23,
+          24,
+          25,
+          26,
+          29,
+          30,
+          31,
+          32,
+          33
+        ]
+      }
+    },
+    {
+      "step": "H110",
+      "horizon": 110,
+      "valid_time": "2026-09-06T08:00:00+00:00",
+      "tile_count": 20,
+      "full_grid_crc32": {
+        "rain": "b1c06eb1"
+      },
+      "neutral_tile_indexes": [
+        6,
+        7,
+        8,
+        11,
+        12,
+        13
+      ],
+      "tier_neutral_tile_indexes": {
+        "detail": [
+          8,
+          9,
+          10,
+          11,
+          12,
+          15,
+          16,
+          17,
+          18,
+          19,
+          22,
+          23,
+          24,
+          25,
+          26,
+          29,
+          30,
+          31,
+          32,
+          33
+        ]
+      }
+    },
+    {
+      "step": "H111",
+      "horizon": 111,
+      "valid_time": "2026-09-06T09:00:00+00:00",
+      "tile_count": 20,
+      "full_grid_crc32": {
+        "rain": "b1c06eb1"
+      },
+      "neutral_tile_indexes": [
+        6,
+        7,
+        8,
+        11,
+        12,
+        13
+      ],
+      "tier_neutral_tile_indexes": {
+        "detail": [
+          8,
+          9,
+          10,
+          11,
+          12,
+          15,
+          16,
+          17,
+          18,
+          19,
+          22,
+          23,
+          24,
+          25,
+          26,
+          29,
+          30,
+          31,
+          32,
+          33
+        ]
+      }
+    },
+    {
+      "step": "H112",
+      "horizon": 112,
+      "valid_time": "2026-09-06T10:00:00+00:00",
+      "tile_count": 20,
+      "full_grid_crc32": {
+        "rain": "b1c06eb1"
+      },
+      "neutral_tile_indexes": [
+        6,
+        7,
+        8,
+        11,
+        12,
+        13
+      ],
+      "tier_neutral_tile_indexes": {
+        "detail": [
+          8,
+          9,
+          10,
+          11,
+          12,
+          15,
+          16,
+          17,
+          18,
+          19,
+          22,
+          23,
+          24,
+          25,
+          26,
+          29,
+          30,
+          31,
+          32,
+          33
+        ]
+      }
+    },
+    {
+      "step": "H113",
+      "horizon": 113,
+      "valid_time": "2026-09-06T11:00:00+00:00",
+      "tile_count": 20,
+      "full_grid_crc32": {
+        "rain": "a092349b"
+      },
+      "neutral_tile_indexes": [
+        6,
+        7,
+        8,
+        11,
+        12,
+        13
+      ],
+      "tier_neutral_tile_indexes": {
+        "detail": [
+          8,
+          9,
+          10,
+          11,
+          12,
+          15,
+          16,
+          17,
+          18,
+          19,
+          22,
+          23,
+          24,
+          25,
+          26,
+          29,
+          30,
+          31,
+          32,
+          33
+        ]
+      }
+    },
+    {
+      "step": "H114",
+      "horizon": 114,
+      "valid_time": "2026-09-06T12:00:00+00:00",
+      "tile_count": 20,
+      "full_grid_crc32": {
+        "rain": "adc39192"
+      },
+      "neutral_tile_indexes": [
+        6,
+        7,
+        8,
+        11,
+        12,
+        13
+      ],
+      "tier_neutral_tile_indexes": {
+        "detail": [
+          8,
+          9,
+          10,
+          11,
+          12,
+          15,
+          16,
+          17,
+          18,
+          19,
+          22,
+          23,
+          24,
+          25,
+          26,
+          29,
+          30,
+          31,
+          32,
+          33
+        ]
+      }
+    },
+    {
+      "step": "H115",
+      "horizon": 115,
+      "valid_time": "2026-09-06T13:00:00+00:00",
+      "tile_count": 20,
+      "full_grid_crc32": {
+        "rain": "f543b937"
+      },
+      "neutral_tile_indexes": [
+        6,
+        7,
+        8,
+        11,
+        12,
+        13
+      ],
+      "tier_neutral_tile_indexes": {
+        "detail": [
+          8,
+          9,
+          10,
+          11,
+          12,
+          15,
+          16,
+          17,
+          18,
+          19,
+          22,
+          23,
+          24,
+          25,
+          26,
+          29,
+          30,
+          31,
+          32,
+          33
+        ]
+      }
+    },
+    {
+      "step": "H116",
+      "horizon": 116,
+      "valid_time": "2026-09-06T14:00:00+00:00",
+      "tile_count": 20,
+      "full_grid_crc32": {
+        "rain": "f7160e48"
+      },
+      "neutral_tile_indexes": [
+        7,
+        8,
+        11,
+        12,
+        13
+      ],
+      "tier_neutral_tile_indexes": {
+        "detail": [
+          8,
+          9,
+          10,
+          11,
+          12,
+          16,
+          17,
+          18,
+          19,
+          22,
+          23,
+          24,
+          25,
+          26,
+          29,
+          30,
+          31,
+          32,
+          33
+        ]
+      }
+    },
+    {
+      "step": "H117",
+      "horizon": 117,
+      "valid_time": "2026-09-06T15:00:00+00:00",
+      "tile_count": 20,
+      "full_grid_crc32": {
+        "rain": "d6654145"
+      },
+      "neutral_tile_indexes": [
+        7,
+        8,
+        11,
+        12,
+        13
+      ],
+      "tier_neutral_tile_indexes": {
+        "detail": [
+          8,
+          9,
+          10,
+          11,
+          12,
+          16,
+          17,
+          18,
+          19,
+          22,
+          23,
+          24,
+          25,
+          26,
+          29,
+          30,
+          31,
+          32,
+          33
+        ]
+      }
+    },
+    {
+      "step": "H118",
+      "horizon": 118,
+      "valid_time": "2026-09-06T16:00:00+00:00",
+      "tile_count": 20,
+      "full_grid_crc32": {
+        "rain": "717024c3"
+      },
+      "neutral_tile_indexes": [
+        7,
+        8,
+        12,
+        13
+      ],
+      "tier_neutral_tile_indexes": {
+        "detail": [
+          9,
+          10,
+          11,
+          12,
+          16,
+          17,
+          18,
+          19,
+          22,
+          23,
+          24,
+          25,
+          26,
+          30,
+          31,
+          32,
+          33
+        ]
+      }
+    },
+    {
+      "step": "H119",
+      "horizon": 119,
+      "valid_time": "2026-09-06T17:00:00+00:00",
+      "tile_count": 20,
+      "full_grid_crc32": {
+        "rain": "6e385faa"
+      },
+      "neutral_tile_indexes": [
+        7,
+        8,
+        12,
+        13
+      ],
+      "tier_neutral_tile_indexes": {
+        "detail": [
+          8,
+          9,
+          10,
+          11,
+          12,
+          16,
+          17,
+          18,
+          19,
+          23,
+          24,
+          25,
+          26,
+          30,
+          31,
+          32,
+          33
+        ]
+      }
+    },
+    {
+      "step": "H120",
+      "horizon": 120,
+      "valid_time": "2026-09-06T18:00:00+00:00",
+      "tile_count": 20,
+      "full_grid_crc32": {
+        "rain": "7e9e2971"
+      },
+      "neutral_tile_indexes": [
+        7,
+        8,
+        12,
+        13
+      ],
+      "tier_neutral_tile_indexes": {
+        "detail": [
+          8,
+          9,
+          10,
+          11,
+          12,
+          16,
+          17,
+          18,
+          19,
+          23,
+          24,
+          25,
+          26,
+          30,
+          31,
+          32,
+          33
+        ]
+      }
+    }
+  ],
+  "neutral_values": {
+    "rain": 0
+  },
+  "revision": "c92f2656a95c",
+  "revision_sha256": "c92f2656a95c3ed6213440f6646aef2b882687967c2c31089e7e683f815cbd4e"
+}

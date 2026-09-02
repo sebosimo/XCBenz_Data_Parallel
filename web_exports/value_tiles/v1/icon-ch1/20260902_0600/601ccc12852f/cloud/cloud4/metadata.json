@@ -1,0 +1,571 @@
+{
+  "contract": "xcbenz-spatial-value-tiles",
+  "contract_version": "1.0.0",
+  "package": "immutable-chunks-cloud-dual-v1",
+  "model": "icon-ch1",
+  "run": "20260902_0600",
+  "product": "cloud",
+  "variant": "cloud4",
+  "grid_id": "icon_ch_common_safe_002deg_v1",
+  "grid": {
+    "projection": "EPSG:4326",
+    "coordinate_scale": 100000,
+    "width": 781,
+    "height": 381,
+    "lon": {
+      "origin": 80000,
+      "step": 2000,
+      "direction": "east"
+    },
+    "lat": {
+      "origin": 4240000,
+      "step": 2000,
+      "direction": "north"
+    },
+    "storage_order": "row_major_y_then_x",
+    "cell_reference": "center"
+  },
+  "tile_matrix": {
+    "core_width": 160,
+    "core_height": 112,
+    "halo": 1,
+    "tiles_x": 5,
+    "tiles_y": 4,
+    "tile_order": "y_then_x",
+    "url_template": "{step}/t{tile_y}_{tile_x}.xvt"
+  },
+  "tile_tiers": [
+    {
+      "id": "detail",
+      "core_width": 128,
+      "core_height": 64,
+      "halo": 1,
+      "tiles_x": 7,
+      "tiles_y": 6,
+      "tile_order": "y_then_x",
+      "url_template": "tiers/detail/{step}/t{tile_y}_{tile_x}.xvt"
+    }
+  ],
+  "channels": [
+    "cloud_total",
+    "cloud_low",
+    "cloud_mid",
+    "cloud_high"
+  ],
+  "encodings": [
+    {
+      "channel_id": 4,
+      "channel": "cloud_total",
+      "encoding_id": 4,
+      "format": "packed-uint4-cloud-cover",
+      "dtype": "uint4",
+      "component_count": 1,
+      "missing": 15,
+      "bits_per_value": 4,
+      "nibble_order": "even_cell_low_nibble_odd_cell_high_nibble",
+      "valid_codes": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10
+      ]
+    },
+    {
+      "channel_id": 5,
+      "channel": "cloud_low",
+      "encoding_id": 4,
+      "format": "packed-uint4-cloud-cover",
+      "dtype": "uint4",
+      "component_count": 1,
+      "missing": 15,
+      "bits_per_value": 4,
+      "nibble_order": "even_cell_low_nibble_odd_cell_high_nibble",
+      "valid_codes": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10
+      ]
+    },
+    {
+      "channel_id": 6,
+      "channel": "cloud_mid",
+      "encoding_id": 4,
+      "format": "packed-uint4-cloud-cover",
+      "dtype": "uint4",
+      "component_count": 1,
+      "missing": 15,
+      "bits_per_value": 4,
+      "nibble_order": "even_cell_low_nibble_odd_cell_high_nibble",
+      "valid_codes": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10
+      ]
+    },
+    {
+      "channel_id": 7,
+      "channel": "cloud_high",
+      "encoding_id": 4,
+      "format": "packed-uint4-cloud-cover",
+      "dtype": "uint4",
+      "component_count": 1,
+      "missing": 15,
+      "bits_per_value": 4,
+      "nibble_order": "even_cell_low_nibble_odd_cell_high_nibble",
+      "valid_codes": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10
+      ]
+    }
+  ],
+  "source_whole_grid_metadata": [
+    "web_exports/cloud_maps/icon-ch1/20260902_0600/total/metadata.json",
+    "web_exports/cloud_maps/icon-ch1/20260902_0600/low/metadata.json",
+    "web_exports/cloud_maps/icon-ch1/20260902_0600/mid/metadata.json",
+    "web_exports/cloud_maps/icon-ch1/20260902_0600/high/metadata.json"
+  ],
+  "steps": [
+    {
+      "step": "H00",
+      "horizon": 0,
+      "valid_time": "2026-09-02T06:00:00+00:00",
+      "tile_count": 20,
+      "full_grid_crc32": {
+        "cloud_total": "4b403bee",
+        "cloud_low": "caf7fa4f",
+        "cloud_mid": "933654bd",
+        "cloud_high": "593c4ba5"
+      }
+    },
+    {
+      "step": "H01",
+      "horizon": 1,
+      "valid_time": "2026-09-02T07:00:00+00:00",
+      "tile_count": 20,
+      "full_grid_crc32": {
+        "cloud_total": "131ec796",
+        "cloud_low": "3db1a8d8",
+        "cloud_mid": "dd12623b",
+        "cloud_high": "8486132e"
+      }
+    },
+    {
+      "step": "H02",
+      "horizon": 2,
+      "valid_time": "2026-09-02T08:00:00+00:00",
+      "tile_count": 20,
+      "full_grid_crc32": {
+        "cloud_total": "b33336df",
+        "cloud_low": "d34b3a82",
+        "cloud_mid": "0f8add56",
+        "cloud_high": "8c84fe33"
+      }
+    },
+    {
+      "step": "H03",
+      "horizon": 3,
+      "valid_time": "2026-09-02T09:00:00+00:00",
+      "tile_count": 20,
+      "full_grid_crc32": {
+        "cloud_total": "cad1212d",
+        "cloud_low": "47d3bd72",
+        "cloud_mid": "d32bd020",
+        "cloud_high": "8dcbe38d"
+      }
+    },
+    {
+      "step": "H04",
+      "horizon": 4,
+      "valid_time": "2026-09-02T10:00:00+00:00",
+      "tile_count": 20,
+      "full_grid_crc32": {
+        "cloud_total": "395d1fdc",
+        "cloud_low": "019dcd8d",
+        "cloud_mid": "8b44750b",
+        "cloud_high": "157a95b3"
+      }
+    },
+    {
+      "step": "H05",
+      "horizon": 5,
+      "valid_time": "2026-09-02T11:00:00+00:00",
+      "tile_count": 20,
+      "full_grid_crc32": {
+        "cloud_total": "5a09f0d6",
+        "cloud_low": "e75f48de",
+        "cloud_mid": "6c939e8d",
+        "cloud_high": "f5ab5707"
+      }
+    },
+    {
+      "step": "H06",
+      "horizon": 6,
+      "valid_time": "2026-09-02T12:00:00+00:00",
+      "tile_count": 20,
+      "full_grid_crc32": {
+        "cloud_total": "aedec6fe",
+        "cloud_low": "86b8b43d",
+        "cloud_mid": "b4e3f13d",
+        "cloud_high": "57f03352"
+      }
+    },
+    {
+      "step": "H07",
+      "horizon": 7,
+      "valid_time": "2026-09-02T13:00:00+00:00",
+      "tile_count": 20,
+      "full_grid_crc32": {
+        "cloud_total": "c6a7af62",
+        "cloud_low": "0445fe0b",
+        "cloud_mid": "018a113f",
+        "cloud_high": "db40f2be"
+      }
+    },
+    {
+      "step": "H08",
+      "horizon": 8,
+      "valid_time": "2026-09-02T14:00:00+00:00",
+      "tile_count": 20,
+      "full_grid_crc32": {
+        "cloud_total": "5487fe4a",
+        "cloud_low": "bc34e73a",
+        "cloud_mid": "9737620a",
+        "cloud_high": "f5dbded7"
+      }
+    },
+    {
+      "step": "H09",
+      "horizon": 9,
+      "valid_time": "2026-09-02T15:00:00+00:00",
+      "tile_count": 20,
+      "full_grid_crc32": {
+        "cloud_total": "8cc787d3",
+        "cloud_low": "dd252d24",
+        "cloud_mid": "853a0ed7",
+        "cloud_high": "1df83cb5"
+      }
+    },
+    {
+      "step": "H10",
+      "horizon": 10,
+      "valid_time": "2026-09-02T16:00:00+00:00",
+      "tile_count": 20,
+      "full_grid_crc32": {
+        "cloud_total": "947f57af",
+        "cloud_low": "f5f93a7a",
+        "cloud_mid": "f68fffdb",
+        "cloud_high": "49deab06"
+      }
+    },
+    {
+      "step": "H11",
+      "horizon": 11,
+      "valid_time": "2026-09-02T17:00:00+00:00",
+      "tile_count": 20,
+      "full_grid_crc32": {
+        "cloud_total": "59b9627e",
+        "cloud_low": "20a95855",
+        "cloud_mid": "ee656f81",
+        "cloud_high": "589cc9d5"
+      }
+    },
+    {
+      "step": "H12",
+      "horizon": 12,
+      "valid_time": "2026-09-02T18:00:00+00:00",
+      "tile_count": 20,
+      "full_grid_crc32": {
+        "cloud_total": "80a28643",
+        "cloud_low": "cc7e450f",
+        "cloud_mid": "cdafa252",
+        "cloud_high": "57091d0d"
+      }
+    },
+    {
+      "step": "H13",
+      "horizon": 13,
+      "valid_time": "2026-09-02T19:00:00+00:00",
+      "tile_count": 20,
+      "full_grid_crc32": {
+        "cloud_total": "8dd74435",
+        "cloud_low": "8ce746f6",
+        "cloud_mid": "56518a87",
+        "cloud_high": "eeb42ec7"
+      }
+    },
+    {
+      "step": "H14",
+      "horizon": 14,
+      "valid_time": "2026-09-02T20:00:00+00:00",
+      "tile_count": 20,
+      "full_grid_crc32": {
+        "cloud_total": "7a52776a",
+        "cloud_low": "92f3d042",
+        "cloud_mid": "c9c8e9e8",
+        "cloud_high": "7ccf319a"
+      }
+    },
+    {
+      "step": "H15",
+      "horizon": 15,
+      "valid_time": "2026-09-02T21:00:00+00:00",
+      "tile_count": 20,
+      "full_grid_crc32": {
+        "cloud_total": "0e0aa75e",
+        "cloud_low": "75b1c579",
+        "cloud_mid": "959b6fa7",
+        "cloud_high": "24a388b9"
+      }
+    },
+    {
+      "step": "H16",
+      "horizon": 16,
+      "valid_time": "2026-09-02T22:00:00+00:00",
+      "tile_count": 20,
+      "full_grid_crc32": {
+        "cloud_total": "8e33c2f9",
+        "cloud_low": "70fb2aca",
+        "cloud_mid": "8f062105",
+        "cloud_high": "0e06ff25"
+      }
+    },
+    {
+      "step": "H17",
+      "horizon": 17,
+      "valid_time": "2026-09-02T23:00:00+00:00",
+      "tile_count": 20,
+      "full_grid_crc32": {
+        "cloud_total": "72b66559",
+        "cloud_low": "465bcc6f",
+        "cloud_mid": "8480ccf0",
+        "cloud_high": "edd54905"
+      }
+    },
+    {
+      "step": "H18",
+      "horizon": 18,
+      "valid_time": "2026-09-03T00:00:00+00:00",
+      "tile_count": 20,
+      "full_grid_crc32": {
+        "cloud_total": "e32b88e4",
+        "cloud_low": "1114d2d0",
+        "cloud_mid": "42ec6ccd",
+        "cloud_high": "082c7a83"
+      }
+    },
+    {
+      "step": "H19",
+      "horizon": 19,
+      "valid_time": "2026-09-03T01:00:00+00:00",
+      "tile_count": 20,
+      "full_grid_crc32": {
+        "cloud_total": "cc6fb5b3",
+        "cloud_low": "45989838",
+        "cloud_mid": "dbd1149b",
+        "cloud_high": "d56c0ff5"
+      }
+    },
+    {
+      "step": "H20",
+      "horizon": 20,
+      "valid_time": "2026-09-03T02:00:00+00:00",
+      "tile_count": 20,
+      "full_grid_crc32": {
+        "cloud_total": "6c1f3fd4",
+        "cloud_low": "f6e778a7",
+        "cloud_mid": "1e6e3c2b",
+        "cloud_high": "56481cc3"
+      }
+    },
+    {
+      "step": "H21",
+      "horizon": 21,
+      "valid_time": "2026-09-03T03:00:00+00:00",
+      "tile_count": 20,
+      "full_grid_crc32": {
+        "cloud_total": "560ad006",
+        "cloud_low": "461e4adc",
+        "cloud_mid": "9f2db75c",
+        "cloud_high": "4ddfc602"
+      }
+    },
+    {
+      "step": "H22",
+      "horizon": 22,
+      "valid_time": "2026-09-03T04:00:00+00:00",
+      "tile_count": 20,
+      "full_grid_crc32": {
+        "cloud_total": "414b84d0",
+        "cloud_low": "950a5382",
+        "cloud_mid": "a3d3ddf7",
+        "cloud_high": "34bb58a1"
+      }
+    },
+    {
+      "step": "H23",
+      "horizon": 23,
+      "valid_time": "2026-09-03T05:00:00+00:00",
+      "tile_count": 20,
+      "full_grid_crc32": {
+        "cloud_total": "1eaa5617",
+        "cloud_low": "3f848bde",
+        "cloud_mid": "120e8ea7",
+        "cloud_high": "6f96f7e4"
+      }
+    },
+    {
+      "step": "H24",
+      "horizon": 24,
+      "valid_time": "2026-09-03T06:00:00+00:00",
+      "tile_count": 20,
+      "full_grid_crc32": {
+        "cloud_total": "69f166d5",
+        "cloud_low": "11bcddc4",
+        "cloud_mid": "d8e7100c",
+        "cloud_high": "6bc701d9"
+      }
+    },
+    {
+      "step": "H25",
+      "horizon": 25,
+      "valid_time": "2026-09-03T07:00:00+00:00",
+      "tile_count": 20,
+      "full_grid_crc32": {
+        "cloud_total": "9b13ed05",
+        "cloud_low": "c9355b94",
+        "cloud_mid": "517671b3",
+        "cloud_high": "bc567c18"
+      }
+    },
+    {
+      "step": "H26",
+      "horizon": 26,
+      "valid_time": "2026-09-03T08:00:00+00:00",
+      "tile_count": 20,
+      "full_grid_crc32": {
+        "cloud_total": "1294eb8e",
+        "cloud_low": "59e0fa5e",
+        "cloud_mid": "5c40948b",
+        "cloud_high": "a5a9231f"
+      }
+    },
+    {
+      "step": "H27",
+      "horizon": 27,
+      "valid_time": "2026-09-03T09:00:00+00:00",
+      "tile_count": 20,
+      "full_grid_crc32": {
+        "cloud_total": "b3a04577",
+        "cloud_low": "cee58f39",
+        "cloud_mid": "190b56be",
+        "cloud_high": "a84523d0"
+      }
+    },
+    {
+      "step": "H28",
+      "horizon": 28,
+      "valid_time": "2026-09-03T10:00:00+00:00",
+      "tile_count": 20,
+      "full_grid_crc32": {
+        "cloud_total": "8548143f",
+        "cloud_low": "ace67d7c",
+        "cloud_mid": "38bfbcd8",
+        "cloud_high": "6684cec2"
+      }
+    },
+    {
+      "step": "H29",
+      "horizon": 29,
+      "valid_time": "2026-09-03T11:00:00+00:00",
+      "tile_count": 20,
+      "full_grid_crc32": {
+        "cloud_total": "532bcf2b",
+        "cloud_low": "4f88c061",
+        "cloud_mid": "723ffc0e",
+        "cloud_high": "b9b4c3ae"
+      }
+    },
+    {
+      "step": "H30",
+      "horizon": 30,
+      "valid_time": "2026-09-03T12:00:00+00:00",
+      "tile_count": 20,
+      "full_grid_crc32": {
+        "cloud_total": "2dd9faf0",
+        "cloud_low": "71e3c40e",
+        "cloud_mid": "a8fd224a",
+        "cloud_high": "e9ae6da7"
+      }
+    },
+    {
+      "step": "H31",
+      "horizon": 31,
+      "valid_time": "2026-09-03T13:00:00+00:00",
+      "tile_count": 20,
+      "full_grid_crc32": {
+        "cloud_total": "d77d9544",
+        "cloud_low": "d36ccfe3",
+        "cloud_mid": "8149e050",
+        "cloud_high": "bca9037e"
+      }
+    },
+    {
+      "step": "H32",
+      "horizon": 32,
+      "valid_time": "2026-09-03T14:00:00+00:00",
+      "tile_count": 20,
+      "full_grid_crc32": {
+        "cloud_total": "25646f0a",
+        "cloud_low": "eed4fade",
+        "cloud_mid": "25d57314",
+        "cloud_high": "0433f7db"
+      }
+    },
+    {
+      "step": "H33",
+      "horizon": 33,
+      "valid_time": "2026-09-03T15:00:00+00:00",
+      "tile_count": 20,
+      "full_grid_crc32": {
+        "cloud_total": "01a7c25e",
+        "cloud_low": "bd3aa507",
+        "cloud_mid": "d929c38e",
+        "cloud_high": "c835ae16"
+      }
+    }
+  ],
+  "revision": "601ccc12852f",
+  "revision_sha256": "601ccc12852f9e9f0672a16ab0222e64f00ed274e58c92db82efb91d9c0fa4c3"
+}
