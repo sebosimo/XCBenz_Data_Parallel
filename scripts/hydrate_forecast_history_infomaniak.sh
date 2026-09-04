@@ -55,6 +55,8 @@ command -v "$PYTHON_BIN" >/dev/null 2>&1 || fail "Python executable not found: $
 
 KEY_FILE=""
 cleanup_key=false
+KNOWN_HOSTS_FILE=""
+cleanup_known_hosts=false
 if [[ -n "${INFOMANIAK_SSH_KEY_PATH:-}" ]]; then
   KEY_FILE="$INFOMANIAK_SSH_KEY_PATH"
 elif [[ -n "${INFOMANIAK_SSH_KEY:-}" ]]; then
@@ -67,21 +69,27 @@ else
 fi
 [[ -f "$KEY_FILE" ]] || fail "SSH key file not found: $KEY_FILE"
 
-mkdir -p "$HOME/.ssh"
-chmod 700 "$HOME/.ssh"
-if command -v ssh-keyscan >/dev/null 2>&1; then
-  ssh-keyscan -p "$INFOMANIAK_PORT" "$INFOMANIAK_HOST" >> "$HOME/.ssh/known_hosts" 2>/dev/null || true
-  chmod 600 "$HOME/.ssh/known_hosts" || true
+if [[ -n "${INFOMANIAK_KNOWN_HOSTS_PATH:-}" ]]; then
+  KNOWN_HOSTS_FILE="$INFOMANIAK_KNOWN_HOSTS_PATH"
+elif [[ -n "${INFOMANIAK_KNOWN_HOSTS:-}" ]]; then
+  KNOWN_HOSTS_FILE="${RUNNER_TEMP:-/tmp}/infomaniak_history_known_hosts_$RELEASE_ID"
+  printf '%s\n' "$INFOMANIAK_KNOWN_HOSTS" > "$KNOWN_HOSTS_FILE"
+  chmod 600 "$KNOWN_HOSTS_FILE"
+  cleanup_known_hosts=true
+else
+  fail "set INFOMANIAK_KNOWN_HOSTS or INFOMANIAK_KNOWN_HOSTS_PATH"
 fi
+[[ -s "$KNOWN_HOSTS_FILE" ]] || fail "pinned SSH known-hosts file not found or empty: $KNOWN_HOSTS_FILE"
 
 SSH_TARGET="${INFOMANIAK_USER}@${INFOMANIAK_HOST}"
 SSH_OPTS=(
   -i "$KEY_FILE"
   -p "$INFOMANIAK_PORT"
   -o BatchMode=yes
-  -o StrictHostKeyChecking=accept-new
+  -o StrictHostKeyChecking=yes
+  -o "UserKnownHostsFile=$KNOWN_HOSTS_FILE"
 )
-RSYNC_SSH="ssh -i $KEY_FILE -p $INFOMANIAK_PORT -o BatchMode=yes -o StrictHostKeyChecking=accept-new"
+RSYNC_SSH="ssh -i $KEY_FILE -p $INFOMANIAK_PORT -o BatchMode=yes -o StrictHostKeyChecking=yes -o UserKnownHostsFile=$KNOWN_HOSTS_FILE"
 
 REMOTE_ROOT="${INFOMANIAK_DATA_ROOT%/}"
 REMOTE_CURRENT="$REMOTE_ROOT/web_exports"
@@ -167,6 +175,9 @@ cleanup() {
   rm -rf "$LOCAL_TMP"
   if [[ "$cleanup_key" == "true" ]]; then
     rm -f "$KEY_FILE"
+  fi
+  if [[ "$cleanup_known_hosts" == "true" ]]; then
+    rm -f "$KNOWN_HOSTS_FILE"
   fi
 }
 trap cleanup EXIT

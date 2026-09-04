@@ -66,6 +66,8 @@ fi
 
 KEY_FILE=""
 cleanup_key=false
+KNOWN_HOSTS_FILE=""
+cleanup_known_hosts=false
 lock_acquired=false
 lease_heartbeat_pid=""
 if [[ -n "${INFOMANIAK_SSH_KEY_PATH:-}" ]]; then
@@ -83,24 +85,30 @@ if [[ ! -f "$KEY_FILE" ]]; then
   fail "SSH key file not found: $KEY_FILE"
 fi
 
-mkdir -p "$HOME/.ssh"
-chmod 700 "$HOME/.ssh"
-if command -v ssh-keyscan >/dev/null 2>&1; then
-  ssh-keyscan -p "$INFOMANIAK_PORT" "$INFOMANIAK_HOST" >> "$HOME/.ssh/known_hosts" 2>/dev/null || true
-  chmod 600 "$HOME/.ssh/known_hosts" || true
+if [[ -n "${INFOMANIAK_KNOWN_HOSTS_PATH:-}" ]]; then
+  KNOWN_HOSTS_FILE="$INFOMANIAK_KNOWN_HOSTS_PATH"
+elif [[ -n "${INFOMANIAK_KNOWN_HOSTS:-}" ]]; then
+  KNOWN_HOSTS_FILE="${RUNNER_TEMP:-/tmp}/infomaniak_data_known_hosts_$RELEASE_ID"
+  printf '%s\n' "$INFOMANIAK_KNOWN_HOSTS" > "$KNOWN_HOSTS_FILE"
+  chmod 600 "$KNOWN_HOSTS_FILE"
+  cleanup_known_hosts=true
+else
+  fail "set INFOMANIAK_KNOWN_HOSTS or INFOMANIAK_KNOWN_HOSTS_PATH"
 fi
+[[ -s "$KNOWN_HOSTS_FILE" ]] || fail "pinned SSH known-hosts file not found or empty: $KNOWN_HOSTS_FILE"
 
 SSH_TARGET="${INFOMANIAK_USER}@${INFOMANIAK_HOST}"
 SSH_OPTS=(
   -i "$KEY_FILE"
   -p "$INFOMANIAK_PORT"
   -o BatchMode=yes
-  -o StrictHostKeyChecking=accept-new
+  -o StrictHostKeyChecking=yes
+  -o "UserKnownHostsFile=$KNOWN_HOSTS_FILE"
   -o ConnectTimeout=10
   -o ServerAliveInterval=15
   -o ServerAliveCountMax=3
 )
-RSYNC_SSH="ssh -i $KEY_FILE -p $INFOMANIAK_PORT -o BatchMode=yes -o StrictHostKeyChecking=accept-new -o ConnectTimeout=10 -o ServerAliveInterval=15 -o ServerAliveCountMax=3"
+RSYNC_SSH="ssh -i $KEY_FILE -p $INFOMANIAK_PORT -o BatchMode=yes -o StrictHostKeyChecking=yes -o UserKnownHostsFile=$KNOWN_HOSTS_FILE -o ConnectTimeout=10 -o ServerAliveInterval=15 -o ServerAliveCountMax=3"
 
 REMOTE_ROOT="${INFOMANIAK_DATA_ROOT%/}"
 REMOTE_TMP="$REMOTE_ROOT/_upload_tmp_$RELEASE_ID"
@@ -122,6 +130,10 @@ DEPLOY_LOCK_RECOVERY_ENABLED="${DEPLOY_LOCK_RECOVERY_ENABLED:-true}"
 # exceeds the expected duration of an active fallback workflow.
 DEPLOY_CANDIDATE_QUARANTINE_AFTER_SECONDS="${DEPLOY_CANDIDATE_QUARANTINE_AFTER_SECONDS:-21600}"
 DEPLOY_CANDIDATE_DELETE_AFTER_SECONDS="${DEPLOY_CANDIDATE_DELETE_AFTER_SECONDS:-324000}"
+DEPLOY_CAPACITY_PROBE_MAX_BYTES="${DEPLOY_CAPACITY_PROBE_MAX_BYTES:-16777216}"
+DEPLOY_ACCOUNT_QUOTA_BYTES="${DEPLOY_ACCOUNT_QUOTA_BYTES:-0}"
+DEPLOY_ACCOUNT_QUOTA_RESERVE_BYTES="${DEPLOY_ACCOUNT_QUOTA_RESERVE_BYTES:-5368709120}"
+DEPLOY_ACCOUNT_QUOTA_USAGE_ROOT="${DEPLOY_ACCOUNT_QUOTA_USAGE_ROOT:-.}"
 DEPLOY_LOCK_PROTOCOL_VERSION=1
 REMOTE_QUARANTINE_ROOT="$REMOTE_ROOT/.xcbenz_web_exports_publish.quarantine"
 REMOTE_CANDIDATE_QUARANTINE_ROOT="$REMOTE_ROOT/.xcbenz_upload_candidate.quarantine"
@@ -134,10 +146,14 @@ for numeric_setting in \
   "$DEPLOY_LOCK_RECOVERY_GRACE_SECONDS" \
   "$DEPLOY_LOCK_RELEASE_TIMEOUT_SECONDS" \
   "$DEPLOY_CANDIDATE_QUARANTINE_AFTER_SECONDS" \
-  "$DEPLOY_CANDIDATE_DELETE_AFTER_SECONDS"; do
+  "$DEPLOY_CANDIDATE_DELETE_AFTER_SECONDS" \
+  "$DEPLOY_CAPACITY_PROBE_MAX_BYTES" \
+  "$DEPLOY_ACCOUNT_QUOTA_RESERVE_BYTES"; do
   [[ "$numeric_setting" =~ ^[0-9]+$ ]] || fail "publish lock timings must be integers"
   (( numeric_setting > 0 )) || fail "publish lock timings must be positive"
 done
+[[ "$DEPLOY_ACCOUNT_QUOTA_BYTES" =~ ^[0-9]+$ ]] \
+  || fail "DEPLOY_ACCOUNT_QUOTA_BYTES must be a non-negative integer"
 if (( DEPLOY_LOCK_HEARTBEAT_SECONDS * 2 >= DEPLOY_LOCK_LEASE_SECONDS )); then
   fail "publish lock lease must exceed two heartbeat intervals"
 fi
@@ -335,6 +351,51 @@ maintain_remote_candidates() {
     "
 }
 
+preflight_remote_capacity() {
+  local local_kib
+  local local_bytes
+  local local_inodes
+  local_kib="$(du -sk "$WEB_EXPORT_DIR" | awk '{print $1}')"
+  local_bytes="$((local_kib * 1024))"
+  local_inodes="$(find "$WEB_EXPORT_DIR" -type f | wc -l | tr -d ' ')"
+  log "Preflighting remote capacity for ${local_bytes} bytes and ${local_inodes} files"
+  if (( DEPLOY_ACCOUNT_QUOTA_BYTES == 0 )); then
+    log "Account quota ceiling is not configured; relying on the allocation probe"
+  fi
+  retry "preflight remote account capacity" \
+    ssh "${SSH_OPTS[@]}" "$SSH_TARGET" "
+      set -eu
+      mkdir -p '$REMOTE_ROOT'
+      probe='$REMOTE_ROOT/.xcbenz_capacity_probe_$RELEASE_ID'
+      cleanup_probe() { rm -f \"\$probe\"; }
+      trap cleanup_probe 0 HUP INT TERM
+      probe_bytes='$DEPLOY_CAPACITY_PROBE_MAX_BYTES'
+      probe_mebibytes=\$(((probe_bytes + 1048575) / 1048576))
+      dd if=/dev/zero of=\"\$probe\" bs=1048576 count=\"\$probe_mebibytes\" conv=fsync 2>/dev/null
+      rm -f \"\$probe\"
+      trap - 0 HUP INT TERM
+      if [ '$DEPLOY_ACCOUNT_QUOTA_BYTES' -gt 0 ]; then
+        usage_kib=\$(du -sk '$DEPLOY_ACCOUNT_QUOTA_USAGE_ROOT' | awk '{print \$1}')
+        usage_bytes=\$((usage_kib * 1024))
+        live_kib=0
+        for subtree in live_stations webcams radar_maps airspace fai_records satellite_cloud_maps; do
+          if [ -d '$REMOTE_CURRENT'/\"\$subtree\" ]; then
+            subtree_kib=\$(du -sk '$REMOTE_CURRENT'/\"\$subtree\" | awk '{print \$1}')
+            live_kib=\$((live_kib + subtree_kib))
+          fi
+        done
+        preserved_live_bytes=\$((live_kib * 1024))
+        projected=\$((usage_bytes + $local_bytes + preserved_live_bytes + $DEPLOY_ACCOUNT_QUOTA_RESERVE_BYTES))
+        if [ \"\$projected\" -gt '$DEPLOY_ACCOUNT_QUOTA_BYTES' ]; then
+          echo \"Account quota preflight failed: usage=\$usage_bytes upload=$local_bytes preserved_live=\$preserved_live_bytes reserve=$DEPLOY_ACCOUNT_QUOTA_RESERVE_BYTES quota=$DEPLOY_ACCOUNT_QUOTA_BYTES\" >&2
+          exit 56
+        fi
+      fi
+      df -Pk '$REMOTE_ROOT' >&2
+      df -Pik '$REMOTE_ROOT' >&2
+    "
+}
+
 check_publish_freshness() {
   if ssh "${SSH_OPTS[@]}" "$SSH_TARGET" "test -f '$REMOTE_CURRENT/manifest.json'"; then
     rm -rf "$CURRENT_MANIFEST_DIR"
@@ -414,9 +475,14 @@ cleanup() {
   if [[ "$cleanup_key" == "true" ]]; then
     rm -f "$KEY_FILE"
   fi
+  if [[ "$cleanup_known_hosts" == "true" ]]; then
+    rm -f "$KNOWN_HOSTS_FILE"
+  fi
   return "$exit_code"
 }
 trap cleanup EXIT
+
+preflight_remote_capacity
 
 log "Preparing remote upload directory $REMOTE_TMP"
 retry "prepare remote upload directory" \

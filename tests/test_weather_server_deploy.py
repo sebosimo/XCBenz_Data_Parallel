@@ -90,6 +90,23 @@ class WeatherServerDeployTests(unittest.TestCase):
         self.assertNotIn("DEPLOY_LOCK_STALE_SECONDS", deploy_script)
         self.assertNotIn("Removing stale publish lock", deploy_script)
 
+    def test_deploy_requires_pinned_host_key_and_checks_account_capacity(self):
+        deploy_script = (
+            ROOT / "scripts" / "deploy_data_infomaniak.sh"
+        ).read_text(encoding="utf-8")
+
+        self.assertIn("StrictHostKeyChecking=yes", deploy_script)
+        self.assertIn("UserKnownHostsFile", deploy_script)
+        self.assertIn("INFOMANIAK_KNOWN_HOSTS_PATH", deploy_script)
+        self.assertNotIn("ssh-keyscan", deploy_script)
+        self.assertNotIn("StrictHostKeyChecking=accept-new", deploy_script)
+        self.assertIn("preflight_remote_capacity", deploy_script)
+        self.assertIn("DEPLOY_ACCOUNT_QUOTA_BYTES", deploy_script)
+        self.assertIn("DEPLOY_ACCOUNT_QUOTA_RESERVE_BYTES", deploy_script)
+        self.assertIn("DEPLOY_CAPACITY_PROBE_MAX_BYTES", deploy_script)
+        self.assertIn("preserved_live_bytes", deploy_script)
+        self.assertIn("conv=fsync", deploy_script)
+
     def test_failed_deploy_removes_only_its_exact_upload_candidate(self):
         deploy_script = (
             ROOT / "scripts" / "deploy_data_infomaniak.sh"
