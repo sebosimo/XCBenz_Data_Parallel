@@ -33,3 +33,10 @@ Rules of thumb:
 - Do not manually force-push `main` or `data-web`.
 - Preserve the shared remote publish lock, downgrade guard, atomic swap, and
   remote validation on every production publication path.
+
+## Tests
+
+Run `TEST_TMPDIR=/tmp python -m unittest discover -s tests -v` in the project
+environment. Write tests as `unittest.TestCase` methods; this runner does not
+discover standalone pytest-style functions. Publication tests execute the
+real shell script with local fake transports and temporary export trees.

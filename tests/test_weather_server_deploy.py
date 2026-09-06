@@ -52,7 +52,7 @@ class WeatherServerDeployTests(unittest.TestCase):
         self.assertIn('command -v "$PYTHON_BIN"', deploy_script)
         self.assertIn("Python executable not found", deploy_script)
 
-    def test_deploy_script_uses_compatible_fenced_publish_lease(self):
+    def test_deploy_declares_shared_lease_protocol_and_retention_settings(self):
         deploy_path = ROOT / "scripts" / "deploy_data_infomaniak.sh"
         deploy_script = deploy_path.read_text(encoding="utf-8")
 
@@ -107,26 +107,6 @@ class WeatherServerDeployTests(unittest.TestCase):
         self.assertIn("preserved_live_bytes", deploy_script)
         self.assertIn("conv=fsync", deploy_script)
 
-    def test_failed_deploy_removes_only_its_exact_upload_candidate(self):
-        deploy_script = (
-            ROOT / "scripts" / "deploy_data_infomaniak.sh"
-        ).read_text(encoding="utf-8")
-
-        cleanup_start = deploy_script.index("cleanup_remote_upload_candidate()")
-        cleanup_end = deploy_script.index("\ncleanup()", cleanup_start)
-        candidate_cleanup = deploy_script[cleanup_start:cleanup_end]
-        self.assertIn("'$REMOTE_ROOT'/_upload_tmp_*", candidate_cleanup)
-        self.assertIn("rm -rf -- '$REMOTE_TMP'", candidate_cleanup)
-        self.assertIn(
-            "Refusing to remove unexpected remote upload path", candidate_cleanup
-        )
-
-        trap_cleanup_start = deploy_script.index("cleanup()", cleanup_end)
-        trap_cleanup_end = deploy_script.index("\ntrap cleanup EXIT", trap_cleanup_start)
-        trap_cleanup = deploy_script[trap_cleanup_start:trap_cleanup_end]
-        self.assertIn("if (( exit_code != 0 )); then", trap_cleanup)
-        self.assertIn("cleanup_remote_upload_candidate", trap_cleanup)
-
     def test_release_is_retried_owner_checked_and_time_bounded(self):
         deploy_script = (
             ROOT / "scripts" / "deploy_data_infomaniak.sh"
@@ -140,21 +120,6 @@ class WeatherServerDeployTests(unittest.TestCase):
         self.assertIn("actual_owner", release)
         self.assertIn("'$LOCK_ID'", release)
 
-    def test_commit_lease_check_preserves_relative_remote_root(self):
-        deploy_script = (
-            ROOT / "scripts" / "deploy_data_infomaniak.sh"
-        ).read_text(encoding="utf-8")
-
-        switch_start = deploy_script.index('retry "switch remote web_exports directory"')
-        switch_end = deploy_script.index("\nassert_remote_lease", switch_start)
-        remote_switch = deploy_script[switch_start:switch_end]
-
-        lease_check_start = remote_switch.index("    (\n      cd '$REMOTE_LOCK'")
-        lease_check_end = remote_switch.index("\n    )\n    flock -u 9")
-        remote_mutation = remote_switch.index("mkdir -p '$REMOTE_ROOT'")
-        self.assertLess(lease_check_start, lease_check_end)
-        self.assertLess(lease_check_end, remote_mutation)
-
     def test_manifest_download_does_not_require_chown_capability(self):
         deploy_script = (
             ROOT / "scripts" / "deploy_data_infomaniak.sh"
@@ -164,16 +129,6 @@ class WeatherServerDeployTests(unittest.TestCase):
         freshness_end = deploy_script.index("\nrelease_remote_lock()", freshness_start)
         freshness_check = deploy_script[freshness_start:freshness_end]
         self.assertIn("--no-owner --no-group", freshness_check)
-
-    def test_retry_preserves_the_failed_command_status(self):
-        deploy_script = (
-            ROOT / "scripts" / "deploy_data_infomaniak.sh"
-        ).read_text(encoding="utf-8")
-
-        retry_start = deploy_script.index("retry()")
-        retry_end = deploy_script.index("\nrequire_env()", retry_start)
-        retry_function = deploy_script[retry_start:retry_end]
-        self.assertIn("else\n      rc=$?", retry_function)
 
     def test_container_context_excludes_runtime_data_and_secrets(self):
         ignore = (ROOT / ".dockerignore").read_text(encoding="utf-8")
