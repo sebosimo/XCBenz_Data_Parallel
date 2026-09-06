@@ -38,7 +38,7 @@ AddType application/octet-stream .bin .xvt
     Header set Cache-Control "public, max-age=31536000, immutable" env=xcbenz_value_tile_immutable
   </FilesMatch>
 
-  <FilesMatch "manifest\.json$">
+  <FilesMatch "manifest(?:\.compact)?\.json$">
     Header set Cache-Control "no-cache, must-revalidate"
   </FilesMatch>
 
