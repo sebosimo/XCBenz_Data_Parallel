@@ -1,0 +1,27 @@
+# Standalone project. No production env file, secrets, outputs or scheduler.
+# Set W_FORECAST_IMAGE to an already-built weather forecast image.
+services:
+  w-prototype:
+    image: ${W_FORECAST_IMAGE:?Set W_FORECAST_IMAGE to the existing forecast image}
+    pull_policy: never
+    working_dir: /app
+    entrypoint: ["sh", "/app/deploy/w-prototype/run_weather.sh"]
+    command:
+      - --run
+      - latest
+      - --work-dir
+      - /w-work
+      - --output
+      - /w-feed
+    mem_limit: 3g
+    cpus: 2.0
+    volumes:
+      - ../../w_forecast:/app/w_forecast:ro
+      - .:/app/deploy/w-prototype:ro
+      - ${W_WORK_DIR:?Set a dedicated W cache directory}:/w-work
+      - ${W_FEED_DIR:?Set a dedicated W feed directory}:/w-feed
+      - heavy-lock:/run/lock
+volumes:
+  heavy-lock:
+    external: true
+    name: ${W_HEAVY_LOCK_VOLUME:?Set the existing weather heavy-lock volume}
