@@ -24,14 +24,14 @@ export async function loadForecast(baseUrl, { fetcher = fetch, signal } = {}) {
   const root = new URL(baseUrl);
   requireValue(root.pathname.endsWith('/'), 'base URL needs a trailing slash');
   const pointer = await (await get(new URL('latest.json', root), fetcher, signal, 'no-store')).json();
-  requireValue(pointer.schema === SCHEMA, 'unsupported discovery schema');
+  requireValue([SCHEMA, 'xcbenz.w.v2'].includes(pointer.schema), 'unsupported discovery schema');
   requireValue(/^runs\/\d{8}_\d{4}\/[a-f0-9]{64}\.json$/.test(pointer.manifest), 'unsafe manifest path');
   requireValue(pointer.manifest.endsWith(`/${pointer.sha256}.json`), 'manifest identity mismatch');
   const raw = await (await get(new URL(pointer.manifest, root), fetcher, signal)).arrayBuffer();
   requireValue(raw.byteLength === pointer.bytes, 'manifest byte count');
   const checksumVerified = await verifyHash(raw, pointer.sha256);
   const manifest = JSON.parse(new TextDecoder().decode(raw));
-  requireValue(manifest.schema === SCHEMA, 'unsupported manifest schema');
+  requireValue(manifest.schema === pointer.schema, 'unsupported manifest schema');
   requireValue(manifest.reference_time === pointer.reference_time, 'mixed forecast runs');
   requireValue(manifest.quantity === 'geometric_vertical_velocity' && manifest.units === 'm/s'
     && manifest.positive_direction === 'up', 'unexpected quantity or units');
@@ -51,15 +51,24 @@ export async function loadForecast(baseUrl, { fetcher = fetch, signal } = {}) {
     keys.add(key);
     requireValue(Date.parse(frame.valid_time) === Date.parse(manifest.reference_time) + frame.horizon_hours * 3600000, 'frame valid time');
     const artifact = frame.artifact;
+    const packed = manifest.schema === 'xcbenz.w.v2';
     requireValue(/^[a-f0-9]{64}$/.test(artifact.sha256)
-      && artifact.path === `objects/${artifact.sha256}.bin.gz`, 'unsafe frame path');
-    requireValue(artifact.compression === 'gzip' && artifact.decoded_bytes === grid.width * grid.height * 2, 'frame encoding');
+      && artifact.path === `objects/${artifact.sha256}${packed ? '.wvp' : '.bin.gz'}`, 'unsafe frame path');
+    requireValue(artifact.compression === (packed ? 'independent-gzip-blocks' : 'gzip')
+      && artifact.decoded_bytes === grid.width * grid.height * 2, 'frame encoding');
+    if (packed) requireValue(Number.isSafeInteger(artifact.directory.bytes) && artifact.directory.bytes > 0
+      && artifact.directory.bytes <= 1024 * 1024 && artifact.directory.header_bytes === 16
+      && Number.isSafeInteger(artifact.directory.initial_bytes)
+      && artifact.directory.initial_bytes > 16 + artifact.directory.bytes
+      && artifact.directory.initial_bytes <= artifact.bytes
+      && /^[a-f0-9]{64}$/.test(artifact.directory.sha256), 'package directory');
   }
   requireValue(keys.size === manifest.coverage.horizons_hours.length * manifest.altitudes_m.length, 'incomplete frames');
   return { root, pointer, manifest, checksumVerified };
 }
 
 export async function loadFrame(forecast, horizon, altitude, { fetcher = fetch, signal } = {}) {
+  requireValue(forecast.manifest.schema === SCHEMA, 'use w-packed.mjs for the packed-v2 feed');
   const frame = forecast.manifest.frames.find(f => f.horizon_hours === horizon && f.altitude_m === altitude);
   requireValue(frame, 'requested time/altitude is unavailable');
   const artifact = frame.artifact;

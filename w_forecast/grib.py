@@ -49,7 +49,7 @@ def sha256_file(path):
     return digest.hexdigest()
 
 
-def download(url, path, *, session=None, reuse=False):
+def download(url, path, *, session=None, reuse=False, cancelled=None):
     """Refresh static files by ETag, or download a forecast with a fixed size cap."""
     path = Path(path)
     path.parent.mkdir(parents=True, exist_ok=True)
@@ -60,6 +60,8 @@ def download(url, path, *, session=None, reuse=False):
     started = time.monotonic()
     check_space(path.parent, MAX_FILE_BYTES)
     try:
+        if cancelled is not None and cancelled.is_set():
+            raise RuntimeError("W lookahead download cancelled")
         with client.get(url, stream=True, timeout=(15, 60), headers={"Accept-Encoding": "identity"}) as response:
             # Never include a pre-signed URL in an exception or saved report.
             if response.status_code != 200:
@@ -76,6 +78,8 @@ def download(url, path, *, session=None, reuse=False):
             count = 0
             with part.open("wb") as f:
                 for block in response.iter_content(1024 * 1024):
+                    if cancelled is not None and cancelled.is_set():
+                        raise RuntimeError("W lookahead download cancelled")
                     count += len(block)
                     if count > MAX_FILE_BYTES or time.monotonic() - started > 600:
                         raise RuntimeError("source download exceeded its size or time budget")

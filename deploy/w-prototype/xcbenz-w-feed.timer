@@ -1,0 +1,12 @@
+[Unit]
+Description=Refresh the isolated XCBenz W feeds every fifteen minutes
+
+[Timer]
+OnBootSec=3min
+OnCalendar=*:0/15
+RandomizedDelaySec=45s
+Persistent=true
+Unit=xcbenz-w-feed.service
+
+[Install]
+WantedBy=timers.target

@@ -1,165 +1,197 @@
-# CH1 W feed prototype
+# CH1 and CH2 W backend
 
-This branch adds an independent static forecast feed for geometric vertical air
-velocity. It does not change forecast scheduling, production publication, CH2,
-the weather archive, or the website. There is no automatic polling service.
+The optimized backend is on `codex/w-feed-efficient-backend`, based on the
+original `codex/ch1-w-feed-prototype`. The original CH1 snapshot contract remains
+readable. The default worker now produces the model-independent v2 contract.
+Existing forecast publication and the website are unchanged.
 
-Run from the repository root using the existing forecast Python environment:
+## Current download policy
+
+The existing weather forecast runtime uses four combined processing jobs,
+eight concurrent field downloads per job, next-hour disk prefetch, early release
+of profile-only fields, and CH2 chunks of 15 hours. It admits new jobs only with
+at least 4096 MiB available RAM, CPU at or below 88 percent and one-minute load
+at or below 110 percent of the host CPU count.
+
+W contains one field per hour. Its worker therefore uses one decoder and one
+background download of the next missing hour. Downloading overlaps decoding and
+packaging. There are at most two raw W files on disk, about 372 MB for CH1 or
+92 MB for CH2, plus transient download buffers. The 512 MiB per-file cap gives a
+one-GiB worst-case raw-file allowance. File size and ten-minute download deadlines
+are enforced. Raw files and partial downloads are removed on completion, error
+or cancellation. Completed hours resume from verified objects or a private
+checkpoint, including after an interrupted run.
+
+Static grids and prepared interpolation plans are reused after hash validation.
+Decode one native GRIB level at a time, and only levels needed by the selected
+altitudes. W uses the 81 HHL half levels directly. Interpolate vertically at
+native cells before horizontal barycentric interpolation. Validate the control
+member, reference time, horizon, units and both grid UUIDs for each message.
+Below-terrain cells and out-of-domain cells remain missing.
+
+Weather workers share the existing heavy-job lock. An admission guard applies
+the same 4 GiB RAM, CPU and load limits, and each container is capped at 3 GiB
+and two CPUs. CH1 and CH2 run sequentially. Disk checks preserve at least 10 GiB
+free before and throughout writes. Busy or overloaded hosts return exit 75.
+There is no separate weather-server performance benchmark.
+
+## Models and command
+
+CH1 uses 0.01 degree output spacing, a 1561 by 761 grid and three-hour source
+cycles. Its horizon is normally 33 hours, with the existing 45-hour policy for
+03Z. CH2 uses 0.02 degree spacing, a 781 by 381 grid, six-hour cycles and 120-hour
+horizons. Both cover 0.8 to 16.4 degrees east and 42.4 to 50 degrees north.
+Each model has separate discovery, static files, caches and publication pointers.
+
+Ten AMSL altitudes are 1000, 1500, 2000, 2500, 3000, 4000, 5000, 6000, 7000
+and 8000 metres. Override `--bbox`, `--spacing` or `--altitudes` for smaller trials.
 
 ```sh
-python -m w_forecast.runner \
-  --run latest --start 0 --end 33 \
+python -m w_forecast.runner --model ch1 --run latest \
   --work-dir /data/xcbenz-w-prototype/work \
-  --output /data/xcbenz-w-prototype/feed
+  --output /data/xcbenz-w-prototype/feed/ch1
+python -m w_forecast.runner --model ch2 --run latest \
+  --work-dir /data/xcbenz-w-prototype/work \
+  --output /data/xcbenz-w-prototype/feed/ch2
 ```
 
-Omit `--end` to use the complete model horizon. The existing CH1 policy allows
-33 hours normally and 45 hours for 03Z. `--run YYYYMMDD_HHMM` pins a UTC cycle.
-MeteoSwiss retains sources for about 24 hours after publication. An expired run
-can still resume if all its requested frames already exist and static grids match.
-Incomplete or failed runs never replace `latest.json`.
+Omit `--end` to process a complete run. `--run YYYYMMDD_HHMM` pins UTC initialization.
+`--start` and `--end` select a bounded horizon range. `--no-prefetch` is available
+for diagnosis. The old `--packaging whole-v1` remains available for CH1 only.
+MeteoSwiss source availability is about 24 hours after publication. W does not
+require permanent raw-data archiving.
 
-Defaults cover the existing common ICON-CH application domain, 0.8 to 16.4°E and
-42.4 to 50°N, at 0.01° spacing. There are 1561 columns and 761 rows, without the
-extra downsampling used by the existing wind web feed. Ten AMSL altitudes are
-1000, 1500, 2000, 2500, 3000, 4000, 5000, 6000, 7000 and 8000 metres. Override
-`--bbox WEST SOUTH EAST NORTH`, `--spacing` or `--altitudes` for smaller trials.
+## Lossless frontend package
 
-## Processing and storage
+The canonical data remains little-endian signed int16 at 0.01 m/s, with offset
+zero and missing value -32768. Positive means rising air. Quantization has at
+most 0.005 m/s rounding error; the new compression introduces no further loss,
+spatial reduction or clipping of the detail grid. Zero remains distinct from
+missing. These are model-resolved air velocities, not thermal or glider climb.
 
-The worker downloads one control-member W file per forecast hour, about 186 MB.
-It releases the GRIB file after exporting that hour. It reads one GRIB message
-at a time and decodes values only for vertical levels required by the requested
-altitudes. It never creates an 81-level W or HHL array.
+Each time and altitude has one immutable `.wvp` file. It contains a small JSON
+directory, a quick overview and independently compressed 256 by 256 detail tiles.
+Each detail tile includes a one-cell halo for continuous rendering across tile
+edges. The overview samples every fourth grid point for immediate display;
+full-resolution detail remains available for every source output cell.
 
-Horizontal Delaunay weights and vertical HHL brackets are cached across jobs.
-W uses the 81 half levels directly. It must not use the averaged 80 full-level
-heights used for U/V. Interpolate vertically at native cells before horizontally
-regridding. Below-terrain cells, out-of-domain cells and unavailable brackets are
-missing. Horizontal interpolation does not extrapolate or bridge long triangles.
-Each GRIB message must match the static grid UUIDs, control member, pinned
-reference time, requested horizon, parameter and units.
+The reversible transform differences in both dimensions, zigzags signed residuals,
+separates the two byte planes, then applies gzip level 6. Compression preserves
+every quantized int16 value, including missing values and extremes. Gzip can be
+decoded with the browser's native `DecompressionStream`, without extra packages
+or a WASM decoder.
 
-Static files are refreshed by ETag and verified by SHA-256. A changed static-file
-hash invalidates the prepared plan and frame reuse. Each step is deterministic,
-gzip-compressed and content-addressed. Completed hours resume after checking
-their object hashes, without downloading W again. The source-file hashes are in
-the manifest. A private per-hour checkpoint also resumes an interrupted run,
-without exposing partial coverage through discovery. Output is quantized to
-0.01 m/s; that is encoding precision, not
-physical model accuracy. Out-of-range values cause failure instead of clipping.
+A browser can get the directory and overview in one small byte-range request,
+then fetch only tiles intersecting its viewport. This avoids both whole-domain
+initial downloads and thousands of separately hosted tile files. Serve `.wvp`
+unchanged as `application/octet-stream`, without an HTTP Content-Encoding.
+Enable byte ranges and expose Content-Range, Content-Length and Accept-Ranges
+through CORS. Gzip/Brotli HTTP compression is appropriate for JSON manifests.
+The included private server implements ranges, compressed JSON and those headers.
 
-The worker checks the 10 GiB disk reserve before allocation and throughout
-downloads. Files have a 512 MiB cap and downloads have a ten-minute deadline.
-It holds exclusive work/output writer locks. Keep at least two source runs,
-plus a six-hour grace period for browsers still reading old manifests. Cleanup
-only removes this feed's unreachable, expired objects and manifests. Raw forecast
-files are not archived. Keep the work directory private and outside the feed.
+## Contract and JavaScript reader
 
-## Frontend contract
+Each model root contains mutable `latest.json`, immutable
+`runs/RUN_TAG/HASH.json`, and `objects/HASH.wvp`. All paths in the model manifest
+are relative to that model root. Both discovery and manifest use `xcbenz.w.v2`.
+Fetch discovery with revalidation or no-store; hash-addressed files are immutable.
+The manifest records the model, source initialization, UTC valid times, available
+hours and altitudes, grid, int16 encoding, statistics, source hashes and package
+metadata. CH1 and CH2 pointers advance independently.
 
-The root contains `latest.json`, `runs/RUN_TAG/HASH.json`, and
-`objects/HASH.bin.gz`. Fetch `latest.json` without caching, then its immutable
-manifest. All manifest and object paths are relative to the **feed root**.
-Content hashes and byte counts apply to the compressed object bytes. The server
-must serve `.bin.gz` as a gzip file without `Content-Encoding: gzip`, since the
-client decompresses it explicitly. Mutable discovery must not receive immutable
-cache headers. CORS must allow the frontend origin.
+The grid uses EPSG:4326, row-major storage, south-to-north rows and west-to-east
+columns. `index = y * width + x`; grid points have explicit origins and degree
+increments. Reject unsupported orientation or encoding, and check valid times.
+Render a diverging palette with a visible m/s legend and separate missing cells.
 
-Both discovery and manifest use schema `xcbenz.w.ch1.v1`. The manifest describes:
-
-| Field | Meaning |
-| --- | --- |
-| `reference_time` | Model initialization in UTC |
-| `operational_mode` | `prototype_snapshot`; this feed is not automatically refreshed |
-| `coverage.horizons_hours` | Exactly the available forecast hours |
-| `coverage.full_model_run` | Whether every hour from zero through the model maximum is included |
-| `grid` | EPSG:4326 grid points, origin, degree increments, width and height |
-| `encoding` | Little-endian signed int16, scale 0.01, offset 0, fill -32768 |
-| `frames[]` | Horizon, UTC valid time, altitude AMSL, valid-cell count, extrema and artifact |
-
-Arrays are row-major, **south to north**, then west to east within each row.
-`index = y * width + x`. Each cell is `raw * 0.01` m/s, except raw -32768 means
-missing. Zero is a valid value. Positive means rising air and negative means
-sinking air. Check timestamps and coverage before offering a time or altitude.
-The frontend should use a diverging palette with a visible m/s legend and treat
-missing cells separately from zero. These values represent model-resolved air
-motion, not predicted thermal climb or glider net climb.
-
-The dependency-free ESM reader in `clients/w-feed.mjs` works in browsers and
-recent Node. It validates metadata, dimensions, time/altitude coverage, byte
-counts and gzip expansion. It verifies SHA-256 when WebCrypto is available,
-including HTTPS browsers. Plain HTTP previews may lack WebCrypto; the returned
-`checksumVerified` flag reports this accurately.
+A `.wvp` starts with 16 bytes: eight-byte magic `XCBWVP2` plus NUL, uint32 version
+2 and uint32 directory length, both little-endian. The directory follows. Block
+offsets are relative to the body after the directory. The manifest contains the
+directory SHA-256, length and initial request length, including the overview.
+Each block records its own compressed SHA-256, offset, length, dimensions and
+uncompressed length. The package filename is the SHA-256 of its complete bytes.
 
 ```js
-import { loadForecast, loadFrame } from './w-feed.mjs';
-const forecast = await loadForecast('http://100.83.24.48:8765/');
-const field = await loadFrame(forecast, 1, 3000);
-const verticalSpeed = field.valueAt(400, 250); // m/s, or null for missing
+import { loadForecast, openFrame } from './w-packed.mjs';
+const forecast = await loadForecast('http://100.83.24.48:8766/ch1/');
+const field = await openFrame(forecast, 1, 3000);
+// Draw field.overview immediately, using its stride of four.
+const tiles = await field.loadViewport([5.8, 45.7, 10.6, 47.9]);
+// Tiles include core origin, dimensions, halo and decoded int16 values.
 ```
 
-For a private development endpoint:
+The reader validates package structure, range responses, dimensions, checksums
+and decompression limits. It makes at most four parallel viewport requests and
+caches at most 32 decoded blocks per open frame. A server without ranges falls
+back to downloading the package once and reusing it. WebCrypto checksums run on
+HTTPS or supported Node versions. Plain HTTP browsers may lack WebCrypto;
+`checksumVerified` reports this. The reference code is not a completed map UI.
+
+## Weather deployment
+
+The deployment directory is `/root/xcbenz-w-prototype`. Runtime data is separate
+under `/data/xcbenz-w-prototype/work` and `/data/xcbenz-w-prototype/feed`.
+Compose reuses the existing `xcbenz-forecast:local` image, mounting this package,
+the wrapper, the W directories and the existing heavy-lock volume. It mounts no
+publication credentials and does not touch production forecast output volumes.
+`REVISION` identifies the archived source commit.
+
+The independent `xcbenz-w-feed.timer` polls every fifteen minutes. Its one-shot
+service runs CH1 then CH2 under the shared lock and resource guard. Successful
+hours are reused. Exit 75 defers work to a later poll. Other failures retain the
+last verified pointer, and the other model can still update. A fifteen-minute
+service timeout stops only the named W containers. Each successful run writes
+`run-stats.json`. Keep two source runs plus a six-hour grace period, then delete
+only expired unreachable W objects. Incomplete runs never replace discovery.
 
 ```sh
-python -m w_forecast.serve --root /data/xcbenz-w-prototype/feed \
-  --bind YOUR_TAILSCALE_IP --port 8765
+systemctl status xcbenz-w-feed.timer xcbenz-w-feed.service
+journalctl -u xcbenz-w-feed.service -n 50
+systemctl start xcbenz-w-feed.service
+# Stop only automatic W work for rollback:
+systemctl disable --now xcbenz-w-feed.timer
+systemctl stop xcbenz-w-feed.service
 ```
 
-The server is read-only, has no directory listing, and exposes only feed JSON
-and gzip objects. Use an HTTP development frontend with this private HTTP feed.
-An HTTPS website needs an HTTPS feed or a same-origin development proxy.
-`benchmark.json` records stage timing, process peak RSS, source bytes, output
-bytes and cache/resume use. Nothing is uploaded to Infomaniak by this prototype.
+The weather host has no Tailscale client. For private development, run the static
+server on weather-host loopback and SSH-forward that port onto the Coding Server's
+exact Tailscale address. The intended URLs are
+`http://100.83.24.48:8766/ch1/latest.json` and
+`http://100.83.24.48:8766/ch2/latest.json`. They need the private server and SSH
+forward to be running. The Coding Server also retains verified local snapshots
+under `http://100.83.24.48:8765/v2/ch1/` and `/v2/ch2/`.
 
-## Weather server
+An HTTPS production website still needs HTTPS publication through the shared
+publication lease, remote quota checks and namespace-preservation rules. The
+independent weather backend and private development feed do not change the
+production website or existing forecast publisher.
 
-The standalone Compose file reuses the existing forecast image and dependencies.
-It mounts only this package, the wrapper, separate W work/output directories and
-the existing heavy-job lock volume. There are no publication credentials.
+## Measurements and checks
 
-```sh
-export W_FORECAST_IMAGE=xcbenz-forecast:local
-export W_WORK_DIR=/data/xcbenz-w-prototype/work
-export W_FEED_DIR=/data/xcbenz-w-prototype/feed
-export W_HEAVY_LOCK_VOLUME=hetzner-deploy_xcbenz-heavy-lock
-docker compose -p xcbenz-w-prototype -f deploy/w-prototype/compose.yaml \
-  run --rm w-prototype
-```
+All comparative measurements were made on the Coding Server. Repacking the
+2026-10-24 06Z CH1 run, 34 hours and ten altitudes, reduced 355,851,857 bytes to
+247,833,515 bytes, a 30.4 percent reduction including overviews and tile halos.
+All 340 detail grids were reconstructed and compared exactly with the originals.
+For H+6 at 3000 m, discovery of a frame plus its overview transferred 75,833 bytes;
+a Switzerland viewport including preview transferred 324,645 bytes across six
+detail tiles, compared with the old whole-grid file's 1,120,506 bytes.
+These payload measurements do not measure phone rendering latency.
 
-The prototype takes the same `xcbenz-heavy.lock` as production. Exit 75 means
-production holds it; retry later. It does not queue itself ahead of production
-or change the coordinator. The container is limited to 3 GiB RAM and two CPUs.
-The weather host currently has no Tailscale client. To serve a weather-generated
-feed privately, bind the feed server to weather-host loopback and forward that
-port to the Coding Server's exact Tailscale address through SSH. Do not bind it
-to the weather server's public interface.
+CH2's complete 121-hour, ten-altitude run produced about 204 MB. Next-hour
+prefetch reduced its average foreground network wait to about seven milliseconds,
+while its actual download averaged 581 milliseconds per hour. Its process peak
+RSS was about 308 MB. Initial CH1 geometry preparation remains under one GB RSS;
+prepared plans and bounded processing keep warm runs much smaller. Container
+memory also includes reclaimable file cache, which is why the 3 GiB cap is kept.
 
-Promotion would require scheduler integration, an isolated publication namespace,
-the shared publication lease and validation, remote quota preflight, retention
-integration, and paired frontend fixtures. This branch deliberately leaves those
-production changes for a later release.
-
-## Validation
-
-A real-data trial on the Coding Server used the 2026-10-24 06Z run, all 34
-hours from H+0 through H+33, ten altitudes and the default 1561 by 761 grid.
-Its 340 frames totalled 355.85 MB compressed, compared with 807.79 MB decoded.
-New hours averaged 6.32 seconds including download, decoding and compression.
-The full export peaked at 290 MB RSS with cached geometry. Initial geometry
-preparation took 20.06 seconds and the cold process peaked at 914 MB RSS.
-These are Coding Server measurements; the weather-server benchmark must wait
-for its production heavy-job lock. Weather Compose validation and the lock's
-busy exit 75 were checked without changing production.
-
-The Python suite includes analytic interpolation and terrain tests, zero-hour
-time units, truncated downloads, checksum failures, publication rollback,
-retention, and interruption/resume through private checkpoints. The JavaScript
-tests cover gzip round trips, sign/zero/missing values, unsafe paths, timestamp
-mismatches, corrupt objects and oversized decompression. Real first/last-hour
-frames also passed the ESM reader over the private HTTP endpoint.
+Tests cover analytic interpolation, terrain and missing values, zero-hour GRIB
+time units, model independence, checksum failures, interruption/resume, bounded
+prefetch and cancellation, all int16 values, tile-edge halos, cross-language
+Python/JavaScript decoding, range failures and full-file fallback. Real CH1 and
+CH2 first/last-hour fields pass the range reader over private HTTP.
 
 ```sh
 TEST_TMPDIR=/tmp python -m unittest discover -s tests -v
 node clients/w-feed.test.mjs
+node clients/w-packed.test.mjs
 ```

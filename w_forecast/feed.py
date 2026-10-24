@@ -12,12 +12,13 @@ import time
 import numpy as np
 
 from .grib import atomic_json, check_space, sha256_file
+from .packing import package
 
 
 SCHEMA = "xcbenz.w.ch1.v1"
 SCALE = 0.01
 FILL = -32768
-OBJECT_RE = re.compile(r"^[0-9a-f]{64}\.bin\.gz$")
+OBJECT_RE = re.compile(r"^[0-9a-f]{64}(?:\.bin\.gz|\.wvp)$")
 RUN_RE = re.compile(r"^\d{8}_\d{4}$")
 
 
@@ -36,8 +37,15 @@ def pack(values):
 
 
 class Feed:
-    def __init__(self, root, config):
+    def __init__(self, root, config, *, model="ch1", packaging="whole-v1"):
         self.root, self.config = Path(root), config
+        if model not in ("ch1", "ch2") or packaging not in ("whole-v1", "packed-v2"):
+            raise ValueError("unsupported W model or packaging")
+        if model == "ch2" and packaging == "whole-v1":
+            raise ValueError("CH2 requires the model-independent packed-v2 contract")
+        self.model, self.packaging = model, packaging
+        self.schema = SCHEMA if packaging == "whole-v1" else "xcbenz.w.v2"
+        self.suffix = ".bin.gz" if packaging == "whole-v1" else ".wvp"
         self.root.mkdir(parents=True, exist_ok=True)
         (self.root / "objects").mkdir(exist_ok=True)
         (self.root / "runs").mkdir(exist_ok=True)
@@ -47,7 +55,7 @@ class Feed:
         for frame in frames:
             asset = frame["artifact"]
             if (not re.fullmatch(r"[a-f0-9]{64}", asset["sha256"])
-                    or asset["path"] != "objects/" + asset["sha256"] + ".bin.gz"):
+                    or asset["path"] != "objects/" + asset["sha256"] + self.suffix):
                 raise ValueError("unsafe cached frame path")
             if (asset["decoded_bytes"] != self.config.width * self.config.height * 2
                     or frame["altitude_m"] not in self.config.altitudes
@@ -65,7 +73,8 @@ class Feed:
         results = {}
         for path in sorted((self.root / "runs" / tag).glob("*.json")):
             manifest = json.loads(path.read_text())
-            if (manifest.get("schema") != SCHEMA or manifest.get("config_id") != self.config.key
+            if (manifest.get("schema") != self.schema or manifest.get("config_id") != self.config.key
+                    or manifest.get("model") != "ICON-" + self.model.upper() + "-EPS"
                     or manifest.get("reference_time") != utc(reference_time)):
                 continue
             if static_hashes is not None and manifest["source"].get("static_sha256") != static_hashes:
@@ -79,9 +88,13 @@ class Feed:
         if altitude not in self.config.altitudes:
             raise ValueError("W frame altitude is absent from the output contract")
         encoded = pack(values)
-        payload = gzip.compress(encoded.tobytes(), compresslevel=3, mtime=0)
+        directory = None
+        if self.packaging == "packed-v2":
+            payload, directory = package(encoded)
+        else:
+            payload = gzip.compress(encoded.tobytes(), compresslevel=3, mtime=0)
         digest = hashlib.sha256(payload).hexdigest()
-        path = self.root / "objects" / (digest + ".bin.gz")
+        path = self.root / "objects" / (digest + self.suffix)
         check_space(self.root, len(payload))
         if path.exists():
             if sha256_file(path) != digest:
@@ -106,10 +119,14 @@ class Feed:
             "valid_cells": int(valid.sum()), "min_m_s": round(float(valid_values.min()), 2),
             "max_m_s": round(float(valid_values.max()), 2),
             "artifact": {"path": "objects/" + path.name, "sha256": digest,
-                         "bytes": len(payload), "decoded_bytes": encoded.nbytes, "compression": "gzip"},
+                         "bytes": len(payload), "decoded_bytes": encoded.nbytes,
+                         "compression": "gzip" if directory is None else "independent-gzip-blocks",
+                         **({"directory": directory} if directory is not None else {})},
         }
 
-    def publish(self, frames, reference_time, horizons, maximum_horizon, source, provenance):
+    def publish(self, frames, reference_time, horizons, maximum_horizon, source, provenance, *, mode="prototype_snapshot"):
+        if mode not in ("prototype_snapshot", "scheduled_forecast"):
+            raise ValueError("unsupported W operating mode")
         expected = {(h, a) for h in horizons for a in self.config.altitudes}
         actual = [(f["horizon_hours"], f["altitude_m"]) for f in frames]
         if set(actual) != expected or len(actual) != len(expected):
@@ -117,7 +134,7 @@ class Feed:
         # Validate all bytes before advancing discovery, including resumed objects.
         for frame in frames:
             asset = frame["artifact"]
-            if (asset["path"] != "objects/" + asset["sha256"] + ".bin.gz"
+            if (asset["path"] != "objects/" + asset["sha256"] + self.suffix
                     or asset["decoded_bytes"] != self.config.width * self.config.height * 2
                     or frame["valid_time"] != utc(reference_time + dt.timedelta(hours=frame["horizon_hours"]))):
                 raise ValueError("W frame metadata validation failed before publication")
@@ -135,10 +152,10 @@ class Feed:
                 if not previous_hours.issubset(horizons):
                     raise ValueError("refusing to reduce coverage of the current W run")
         manifest = {
-            "schema": SCHEMA, "model": "ICON-CH1-EPS", "member": "control",
+            "schema": self.schema, "model": "ICON-" + self.model.upper() + "-EPS", "member": "control",
             "parameter": "W", "quantity": "geometric_vertical_velocity", "units": "m/s",
             "positive_direction": "up", "altitude_reference": "AMSL",
-            "operational_mode": "prototype_snapshot", "config_id": self.config.key,
+            "operational_mode": mode, "config_id": self.config.key,
             "reference_time": utc(reference_time), "grid": self.config.grid(),
             "encoding": {"dtype": "int16", "byte_order": "little", "scale_factor": SCALE,
                          "add_offset": 0, "fill_value": FILL},
@@ -149,6 +166,7 @@ class Feed:
             "interpretation": "Model-resolved vertical air motion. Not thermal climb rate or glider net climb.",
             "interpolation": "Linear on native HHL half levels, then barycentric horizontally; no extrapolation.",
             "frames": sorted(frames, key=lambda f: (f["horizon_hours"], f["altitude_m"])),
+            "packaging": self.packaging,
         }
         payload = (json.dumps(manifest, sort_keys=True, separators=(",", ":"), allow_nan=False) + "\n").encode()
         digest = hashlib.sha256(payload).hexdigest()
@@ -158,9 +176,9 @@ class Feed:
         destination = directory / (digest + ".json")
         if not destination.exists():
             atomic_json(destination, manifest)
-        pointer = {"schema": SCHEMA, "reference_time": utc(reference_time),
+        pointer = {"schema": self.schema, "reference_time": utc(reference_time),
                    "published_at": utc(dt.datetime.now(dt.timezone.utc)),
-                   "operational_mode": "prototype_snapshot",
+                   "operational_mode": mode,
                    "manifest": f"runs/{tag}/{digest}.json", "sha256": digest, "bytes": len(payload)}
         atomic_json(pointer_path, pointer)
         return pointer

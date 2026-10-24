@@ -17,7 +17,7 @@ from w_forecast.config import Config
 from w_forecast.feed import Feed, FILL, pack
 from w_forecast.geometry import Plan, decode_w, horizontal_plan, vertical_brackets
 from w_forecast.grib import download
-from w_forecast.runner import run
+from w_forecast.runner import run, revision
 
 
 REFERENCE = dt.datetime(2026, 10, 24, 0, tzinfo=dt.timezone.utc)
@@ -204,6 +204,12 @@ class DownloadTests(unittest.TestCase):
 
 
 class RunnerTests(unittest.TestCase):
+    def test_archive_can_identify_its_code_without_git_installed(self):
+        with patch("w_forecast.runner.subprocess.run", side_effect=FileNotFoundError), patch.dict(os.environ, {"W_SOURCE_REVISION": "archived-source"}):
+            result = revision()
+        self.assertEqual(result["git_commit"], "archived-source")
+        self.assertEqual(len(result["implementation_sha256"]), 64)
+
     def test_interrupted_run_resumes_private_checkpoint_without_partial_publication(self):
         with tempfile.TemporaryDirectory() as root:
             root = Path(root)

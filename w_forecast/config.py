@@ -7,6 +7,25 @@ import math
 
 
 @dataclass(frozen=True)
+class Model:
+    id: str
+    cycle_hours: int
+    spacing: float
+
+    @property
+    def collection(self):
+        return "ch.meteoschweiz.ogd-forecasting-icon-" + self.id
+
+    def maximum_horizon(self, reference):
+        if self.id == "ch2":
+            return 120
+        return 45 if reference.hour == 3 else 33
+
+
+MODELS = {"ch1": Model("ch1", 3, 0.01), "ch2": Model("ch2", 6, 0.02)}
+
+
+@dataclass(frozen=True)
 class Config:
     # Match the existing application's common ICON-CH domain, at CH1 spacing.
     bbox: tuple[float, float, float, float] = (0.8, 42.4, 16.4, 50.0)

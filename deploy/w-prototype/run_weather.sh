@@ -4,4 +4,4 @@
 set -eu
 lock_path="${XCBENZ_HEAVY_LOCK_PATH:-/run/lock/xcbenz-heavy.lock}"
 mkdir -p "$(dirname "$lock_path")"
-exec flock -n -E 75 -x "$lock_path" python -u -m w_forecast.runner "$@"
+exec flock -n -E 75 -x "$lock_path" python -m w_forecast.guard "$@"
