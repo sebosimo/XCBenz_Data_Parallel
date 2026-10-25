@@ -649,7 +649,7 @@ class ValueTileGenerationTests(unittest.TestCase):
         )
         self.assertNotIn("infomaniak-value-tiles-staging.htaccess", production_deploy)
         self.assertIn(
-            "for subtree in live_stations webcams radar_maps airspace fai_records satellite_cloud_maps; do",
+            "for subtree in live_stations webcams radar_maps airspace fai_records satellite_cloud_maps w_forecast; do",
             production_deploy,
         )
         self.assertIn('EXPECTED_REMOTE_ROOT="sites/data.xcbenz.com/value-tiles-staging"', staging_deploy)
