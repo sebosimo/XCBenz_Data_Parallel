@@ -17,6 +17,7 @@ from rain_maps import RainMapAccumulator, cleanup_old_rain_runs
 from sunshine_maps import SunshineMapAccumulator, cleanup_old_sunshine_runs
 from sunrain_maps import SunRainMapAccumulator, cleanup_old_sunrain_runs
 from wind_maps import HorizontalMapGeometry, WindMapAccumulator, cleanup_old_wind_runs
+from wind_directions import WindDirectionAccumulator
 
 from .config import FetchStartupConfig
 from .planning import ModelFetchPolicy, ProductSelection
@@ -259,6 +260,7 @@ def execute_fetch(runtime: FetchRuntime, startup: FetchStartupConfig) -> None:
             if enabled["wind"] and wind_config is not None
             else None
         )
+        direction_accumulator = WindDirectionAccumulator(wind_accumulator) if wind_accumulator is not None else None
         sunshine_accumulator = (
             SunshineMapAccumulator(
                 model,
@@ -585,6 +587,7 @@ def execute_fetch(runtime: FetchRuntime, startup: FetchStartupConfig) -> None:
                     )
                 if wind_accumulator is not None:
                     wind_accumulator.append(fields, horizon, reference_time)
+                    direction_accumulator.append(fields, horizon, reference_time)
                 horizon_prefix = "CH2 " if model == "ch2" else ""
                 log(f"{horizon_prefix}H+{horizon:0{policy.step_digits}d} done")
                 any_success = True
@@ -619,6 +622,7 @@ def execute_fetch(runtime: FetchRuntime, startup: FetchStartupConfig) -> None:
             log(f"{completion_prefix} {tag} processing complete.", "NOTICE")
             for accumulator in (
                 wind_accumulator,
+                direction_accumulator,
                 sunshine_accumulator,
                 rain_accumulator,
                 sunrain_accumulator,

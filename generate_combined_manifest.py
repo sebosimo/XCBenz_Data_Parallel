@@ -70,7 +70,7 @@ def scan_profile_chunks(model_key, root=PROFILE_CHUNK_DIR):
             }
     return runs
 
-def scan_direct_wind_maps(cache_dir=CACHE_DIR_WIND_MAPS):
+def scan_direct_wind_maps(cache_dir=CACHE_DIR_WIND_MAPS, *, directions=False):
     """
     Scan browser-ready wind-map files.
 
@@ -91,6 +91,10 @@ def scan_direct_wind_maps(cache_dir=CACHE_DIR_WIND_MAPS):
             run_path = os.path.join(model_dir, run)
             if not os.path.isdir(run_path):
                 continue
+            if directions:
+                run_path = os.path.join(run_path, "directions")
+                if not os.path.isdir(run_path):
+                    continue
             levels = {}
             for level_dir_name in sorted(os.listdir(run_path)):
                 metadata_path = os.path.join(run_path, level_dir_name, "metadata.json")
@@ -170,6 +174,7 @@ def main():
         "runs": runs_ch1,
         "runs_ch2": runs_ch2,
         "wind_maps": wind_maps,
+        "wind_directions": scan_direct_wind_maps(directions=True),
         "sunshine_maps": sunshine_maps,
         "rain_maps": rain_maps,
         "sunrain_maps": sunrain_maps,

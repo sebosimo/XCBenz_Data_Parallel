@@ -220,7 +220,7 @@ def validate_emagram_bundles() -> int:
     return count
 
 
-def rebuild_wind_manifest() -> dict[str, Any] | None:
+def rebuild_wind_manifest(*, directions: bool = False) -> dict[str, Any] | None:
     root = WEB_DIR / "wind_maps"
     if not root.exists():
         return None
@@ -228,7 +228,7 @@ def rebuild_wind_manifest() -> dict[str, Any] | None:
     manifest: dict[str, Any] = {
         "schema_version": 1,
         "product": "wind_maps",
-        "default_level": "800m_AGL",
+        "default_level": "3000m_AMSL" if directions else "800m_AGL",
         "grid_stride": None,
         "level_filter": [],
         "models": {},
@@ -240,7 +240,10 @@ def rebuild_wind_manifest() -> dict[str, Any] | None:
         model_manifest = {"runs": {}}
         for run_dir in sorted((path for path in model_dir.iterdir() if path.is_dir()), reverse=True):
             run_manifest = {"layout": "split_binary_by_step", "levels": {}}
-            for level_dir in sorted(path for path in run_dir.iterdir() if path.is_dir()):
+            levels_dir = run_dir / "directions" if directions else run_dir
+            if not levels_dir.is_dir():
+                continue
+            for level_dir in sorted(path for path in levels_dir.iterdir() if path.is_dir()):
                 metadata_path = level_dir / "metadata.json"
                 if not metadata_path.exists():
                     continue
@@ -261,7 +264,7 @@ def rebuild_wind_manifest() -> dict[str, Any] | None:
                         "height": grid.get("height"),
                         "source_stride": grid.get("source_stride"),
                     },
-                    "steps": steps,
+                    "steps": [] if directions else steps,
                     "step_count": len(steps),
                     "bytes": byte_count,
                 }
@@ -278,8 +281,11 @@ def rebuild_wind_manifest() -> dict[str, Any] | None:
         return None
     manifest["grid_stride"] = manifest["grid_stride"] or 2
     manifest["level_filter"] = sorted(levels_seen)
-    write_json(root / "manifest.json", manifest)
-    write_compact_product_manifest(root / COMPACT_PRODUCT_MANIFEST_FILENAME, manifest)
+    if directions:
+        manifest["purpose"] = "vertical_air_arrows"
+    write_json(root / ("directions.json" if directions else "manifest.json"), manifest)
+    if not directions:
+        write_compact_product_manifest(root / COMPACT_PRODUCT_MANIFEST_FILENAME, manifest)
     return manifest
 
 
@@ -476,6 +482,7 @@ def main() -> None:
     else:
         log("Spatial value tiles are disabled; removed retained tile publication")
     bundle_count = validate_emagram_bundles()
+    rebuild_wind_manifest(directions=True)
     wind_manifest = rebuild_wind_manifest()
     sunshine_manifest = rebuild_sunshine_manifest()
     rain_manifest = rebuild_rain_manifest()

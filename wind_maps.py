@@ -602,15 +602,18 @@ class WindMapAccumulator:
             "max_speed_ms": _clean_number(np.nanmax(speed), 2),
         }
 
+    def _level_output_dir(self, level):
+        return os.path.join(self.out_root, self.model, self.run_tag, level.name)
+
     def _write_direct_step(self, level, horizon, valid_time, u_values, v_values):
         step_label = self._step_label(horizon)
-        output_dir = os.path.join(self.out_root, self.model, self.run_tag, level.name)
+        output_dir = self._level_output_dir(level)
         steps_dir = os.path.join(output_dir, "steps")
         os.makedirs(steps_dir, exist_ok=True)
 
         u_raw = self._encode_web_component(u_values)
         v_raw = self._encode_web_component(v_values)
-        interleaved = np.empty(u_raw.size * 2, dtype="i1")
+        interleaved = np.empty(u_raw.size * 2, dtype=u_raw.dtype)
         interleaved[0::2] = u_raw.ravel()
         interleaved[1::2] = v_raw.ravel()
 
@@ -700,7 +703,7 @@ class WindMapAccumulator:
             steps = self.direct_steps[level.name]
             if not steps:
                 continue
-            output_dir = os.path.join(self.out_root, self.model, self.run_tag, level.name)
+            output_dir = self._level_output_dir(level)
             metadata_path = os.path.join(output_dir, "metadata.json")
             _write_json(metadata_path, self._direct_metadata_payload(level, steps))
             file_count += len(steps) + 1

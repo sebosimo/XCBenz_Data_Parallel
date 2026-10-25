@@ -412,6 +412,7 @@ class FetchExecutionTests(unittest.TestCase):
 
                     patches = {
                         "WindMapAccumulator": accumulator_factory("wind"),
+                        "WindDirectionAccumulator": accumulator_factory("directions"),
                         "SunshineMapAccumulator": accumulator_factory("sunshine"),
                         "RainMapAccumulator": accumulator_factory("rain"),
                         "SunRainMapAccumulator": accumulator_factory("sunrain"),
@@ -480,7 +481,9 @@ class FetchExecutionTests(unittest.TestCase):
                 ("accumulate", "sunrain"),
                 ("accumulate", "cloud"),
                 ("accumulate", "wind"),
+                ("accumulate", "directions"),
                 ("finalize", "wind"),
+                ("finalize", "directions"),
                 ("finalize", "sunshine"),
                 ("finalize", "rain"),
                 ("finalize", "sunrain"),

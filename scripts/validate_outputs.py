@@ -28,6 +28,7 @@ from pipeline_orchestration.forecast_completeness import (
     step_labels,
 )
 from forecast_retention import manifest_run_tags
+from wind_directions import validate_publication as validate_wind_directions
 from web_export_support import load_json as load_web_json, resolve_publication_url
 
 
@@ -343,6 +344,8 @@ def main() -> int:
             model_key: str((models.get(model_key) or {}).get("latest_run") or "")
             for model_key in ("icon-ch1", "icon-ch2")
         }
+        validate_wind_directions(Path("web_exports"), latest_runs,
+                                 required=os.getenv("REQUIRE_WIND_DIRECTIONS", "false").lower() == "true")
         bundle_count, bundle_bytes = validate_bundles(latest_runs)
         (
             wind_metadata_count,

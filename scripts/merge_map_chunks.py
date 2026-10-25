@@ -42,6 +42,17 @@ def merge_direct_wind_chunks() -> None:
         merge_split_binary_group("wind", WIND_WEB_ROOT, model, run_tag, level, paths)
 
 
+def merge_wind_direction_chunks() -> None:
+    groups = {}
+    for path in CHUNK_ROOT.glob("**/cache_wind_maps/*/*/directions/*/metadata.json"):
+        parts = path.parts
+        idx = parts.index("cache_wind_maps")
+        model, run_tag, level = parts[idx + 1], parts[idx + 2], parts[idx + 4]
+        groups.setdefault((model, run_tag, level), []).append(path)
+    for (model, run_tag, level), paths in sorted(groups.items()):
+        merge_split_binary_group("wind directions", WIND_WEB_ROOT, model, run_tag, f"directions/{level}", paths)
+
+
 def sunshine_sources() -> dict[tuple[str, str, str], list[Path]]:
     groups: dict[tuple[str, str, str], list[Path]] = {}
     for path in CHUNK_ROOT.glob("**/cache_sunshine_maps/*/*/*/metadata.json"):
@@ -136,6 +147,7 @@ def main() -> int:
         log("no map chunk root found; nothing to merge")
         return 0
     merge_direct_wind_chunks()
+    merge_wind_direction_chunks()
     merge_sunshine_chunks()
     merge_rain_chunks()
     merge_sunrain_chunks()

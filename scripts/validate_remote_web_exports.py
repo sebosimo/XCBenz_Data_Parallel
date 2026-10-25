@@ -238,6 +238,35 @@ def validate_map_product(manifest: dict[str, Any], product: str) -> None:
     log(f"{product} OK: {model_key}/{run_key}/{level_key}/{step.get('step')} bytes={actual}")
 
 
+def validate_wind_directions(root_manifest: dict[str, Any]) -> None:
+    from wind_directions import ALTITUDES_M, MISSING, SCALE
+    from pipeline_orchestration.job_plan import expected_horizon_count
+
+    manifest, _, _ = fetch_json("web_exports/wind_maps/directions.json")
+    if manifest.get("purpose") != "vertical_air_arrows":
+        raise ValidationError("unexpected wind direction purpose")
+    for model, model_entry in root_manifest["models"].items():
+        run = model_entry["latest_run"]
+        levels = manifest.get("models", {}).get(model, {}).get("runs", {}).get(run, {}).get("levels", {})
+        if set(levels) != {f"{h}m_AMSL" for h in ALTITUDES_M}:
+            raise ValidationError(f"incomplete wind direction levels for {model}/{run}")
+        for name, entry in levels.items():
+            metadata, metadata_url, _ = fetch_json(entry["metadata"])
+            encoding = metadata["encoding"]
+            if (metadata["model"] != model or metadata["run"] != run
+                    or encoding["dtype"] != "int16" or encoding["scale_factor"] != SCALE
+                    or encoding["missing_value"] != MISSING):
+                raise ValidationError(f"invalid wind direction metadata: {metadata_url}")
+            steps = metadata["steps"]
+            if {s["horizon"] for s in steps} != set(range(expected_horizon_count(model, run))):
+                raise ValidationError(f"incomplete wind direction hours: {metadata_url}")
+            for step in (steps[0], steps[-1]):
+                payload = fetch(resolve_url(step["url"], context_url=metadata_url))
+                if len(payload.data) != step["byte_length"]:
+                    raise ValidationError(f"invalid wind direction bytes: {payload.url}")
+        log(f"wind directions OK: {model}/{run}, ten altitudes, first and last hours")
+
+
 def _require_cache_header(headers: Any, token: str, url: str) -> None:
     cache_control = str(headers.get("Cache-Control") or "").lower()
     if token not in cache_control:
@@ -346,6 +375,8 @@ def main() -> int:
         for model_key, run_key, location_id in selected_bundles:
             validate_bundle(manifest, model_key, run_key, location_id)
         validate_map_product(manifest, "wind")
+        if os.environ.get("REQUIRE_WIND_DIRECTIONS", "false").lower() == "true":
+            validate_wind_directions(manifest)
         validate_map_product(manifest, "sunshine")
         validate_map_product(manifest, "rain")
         validate_map_product(manifest, "sunrain")

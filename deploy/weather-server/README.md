@@ -35,3 +35,20 @@ Run a pinned skip-deploy canary while taking the global heavy lock:
 The coordinator sets `XCBENZ_HEAVY_LOCK_HELD=1` because it already holds the
 same lock for the full managed-container lifetime. Manual invocations omit that
 variable and the wrapper acquires `/run/lock/xcbenz-heavy.lock` itself.
+
+The forecast worker also produces a 0.08-degree wind-arrow sidecar at the ten
+Vertical air AMSL altitudes, from 1,000 through 8,000 metres. It reuses decoded
+U/V and HHL fields and a subset of the existing interpolation geometry. Signed
+little-endian int16 U/V at 0.25 m/s avoids the ordinary int8 wind map's clipping
+of strong upper-level components. Missing values remain -32768.
+
+The sidecar is indexed at `web_exports/wind_maps/directions.json`, with metadata
+and slices below each retained `wind_maps/MODEL/RUN/directions/ALTITUDE/` tree.
+The version-1 wind manifest and metadata contracts are reused, with purpose
+`vertical_air_arrows`; manifest indexes omit repeated steps, which remain in
+per-altitude metadata. HTTP gzip reduces transfer size. Cache chunk merging,
+web export, existing forecast leases, atomic promotion and run retention include
+the sidecar. It adds no raw downloads and no independent publisher. Set
+`REQUIRE_WIND_DIRECTIONS=true` in the weather runtime to reject incomplete current
+model runs before upload and verify all ten levels' first/last slices over HTTPS
+after promotion. GitHub's fallback enables the same guard.

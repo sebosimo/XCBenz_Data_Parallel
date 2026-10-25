@@ -371,12 +371,16 @@ def export_direct_wind_level(
     run_tag: str,
     level_name: str,
     source_metadata_path: Path,
+    *, directions: bool = False,
 ) -> dict[str, Any]:
     source_metadata = load_json(source_metadata_path)
     if not source_metadata:
         raise FileNotFoundError(f"wind metadata missing: {source_metadata_path}")
 
-    output_dir = WEB_DIR / "wind_maps" / model_key / run_tag / level_name
+    output_dir = WEB_DIR / "wind_maps" / model_key / run_tag
+    if directions:
+        output_dir /= "directions"
+    output_dir /= level_name
     steps_dir = output_dir / "steps"
     step_exports: list[dict[str, Any]] = []
 
@@ -429,16 +433,16 @@ def export_direct_wind_level(
     }
 
 
-def export_wind_maps(source_manifest: dict[str, Any]) -> dict[str, Any] | None:
-    source_wind = source_manifest.get("wind_maps") or {}
+def export_wind_maps(source_manifest: dict[str, Any], *, directions: bool = False) -> dict[str, Any] | None:
+    source_wind = source_manifest.get("wind_directions" if directions else "wind_maps") or {}
     if not source_wind:
         return None
 
-    selected_levels = selected_wind_web_levels()
+    selected_levels = None if directions else selected_wind_web_levels()
     wind_manifest: dict[str, Any] = {
         "schema_version": SCHEMA_VERSION,
         "product": "wind_maps",
-        "default_level": WIND_WEB_DEFAULT_LEVEL,
+        "default_level": "3000m_AMSL" if directions else WIND_WEB_DEFAULT_LEVEL,
         "level_filter": "all" if selected_levels is None else sorted(selected_levels),
         "models": {},
         "counts": {
@@ -464,7 +468,7 @@ def export_wind_maps(source_manifest: dict[str, Any]) -> dict[str, Any] | None:
                     log(f"WARN direct wind metadata missing for {model_key} {run_tag} {level_name}: {source_path}")
                     continue
                 try:
-                    exported_level = export_direct_wind_level(model_key, run_tag, level_name, source_path)
+                    exported_level = export_direct_wind_level(model_key, run_tag, level_name, source_path, directions=directions)
                 except Exception as exc:
                     log(f"WARN direct wind export failed for {source_path}: {exc}")
                     continue
@@ -473,6 +477,8 @@ def export_wind_maps(source_manifest: dict[str, Any]) -> dict[str, Any] | None:
                 wind_manifest["counts"]["levels"] += 1
                 wind_manifest["counts"]["steps"] += exported_level["step_count"]
                 wind_manifest["counts"]["bytes"] += exported_level["bytes"]
+                if directions:
+                    exported_level["steps"] = []
 
             if run_manifest["levels"]:
                 model_manifest["runs"][run_tag] = run_manifest
@@ -484,9 +490,12 @@ def export_wind_maps(source_manifest: dict[str, Any]) -> dict[str, Any] | None:
     if not wind_manifest["models"]:
         return None
 
-    manifest_path = WEB_DIR / "wind_maps" / "manifest.json"
+    manifest_path = WEB_DIR / "wind_maps" / ("directions.json" if directions else "manifest.json")
+    if directions:
+        wind_manifest["purpose"] = "vertical_air_arrows"
     write_json(manifest_path, wind_manifest, pretty=True)
-    write_compact_product_manifest(manifest_path.with_name(COMPACT_PRODUCT_MANIFEST_FILENAME), wind_manifest)
+    if not directions:
+        write_compact_product_manifest(manifest_path.with_name(COMPACT_PRODUCT_MANIFEST_FILENAME), wind_manifest)
     wind_manifest["url"] = rel(manifest_path)
     return wind_manifest
 
@@ -804,6 +813,7 @@ def main() -> None:
         manifest["counts"]["thermal_panels"] += model_manifest["counts"]["thermal_panels"]
         manifest["counts"]["region_forecasts"] += model_manifest["counts"]["region_forecasts"]
 
+    export_wind_maps(source_manifest, directions=True)
     wind_manifest = export_wind_maps(source_manifest)
     if wind_manifest:
         manifest["products"]["maps"]["wind"] = wind_manifest["url"]
