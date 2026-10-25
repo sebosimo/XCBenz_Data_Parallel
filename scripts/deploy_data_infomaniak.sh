@@ -375,7 +375,7 @@ preflight_remote_capacity() {
       rm -f \"\$probe\"
       trap - 0 HUP INT TERM
       if [ '$DEPLOY_ACCOUNT_QUOTA_BYTES' -gt 0 ]; then
-        usage_kib=\$(du -sk '$DEPLOY_ACCOUNT_QUOTA_USAGE_ROOT' | awk '{print \$1}')
+        usage_kib=\$(du -sxk '$DEPLOY_ACCOUNT_QUOTA_USAGE_ROOT' | awk '{print \$1}')
         usage_bytes=\$((usage_kib * 1024))
         live_kib=0
         for subtree in live_stations webcams radar_maps airspace fai_records satellite_cloud_maps w_forecast; do

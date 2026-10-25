@@ -115,7 +115,9 @@ def lease(root):
 
 def capacity(root, incoming, quota=QUOTA):
     # Account quota, not the hosting server's shared filesystem capacity.
-    result = subprocess.run(["nice", "-n", "19", "du", "-sk", str(Path.home())], check=True,
+    # Infomaniak mounts provider-managed backup snapshots below the home dir.
+    # Stay on the active account filesystem instead of recounting remote NFS.
+    result = subprocess.run(["nice", "-n", "19", "du", "-sxk", str(Path.home())], check=True,
                             capture_output=True, text=True, timeout=600)
     used = int(result.stdout.split()[0]) * 1024
     if used + incoming + RESERVE > quota:
