@@ -1,0 +1,22 @@
+Options -Indexes
+AddType application/octet-stream .wvp
+
+<IfModule mod_headers.c>
+  Header set Access-Control-Allow-Origin "*"
+  Header set Access-Control-Allow-Methods "GET, HEAD, OPTIONS"
+  Header set Access-Control-Allow-Headers "Origin, Range, Accept, Content-Type"
+  Header set Access-Control-Expose-Headers "Content-Range, Content-Length, Accept-Ranges"
+  Header set X-Content-Type-Options "nosniff"
+  <FilesMatch "\.(wvp|json)$">
+    Header set Cache-Control "public, max-age=31536000, immutable"
+  </FilesMatch>
+  <Files "latest.json">
+    Header set Cache-Control "no-cache, must-revalidate"
+  </Files>
+</IfModule>
+
+# Packed blocks already contain gzip data. HTTP compression would invalidate
+# byte offsets and make range reads unusable. JSON keeps the parent policy.
+<IfModule mod_setenvif.c>
+  SetEnvIfNoCase Request_URI "\.wvp$" no-gzip=1 no-brotli=1
+</IfModule>

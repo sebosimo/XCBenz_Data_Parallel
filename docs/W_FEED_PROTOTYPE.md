@@ -161,10 +161,52 @@ exact Tailscale address. The intended URLs are
 forward to be running. The Coding Server also retains verified local snapshots
 under `http://100.83.24.48:8765/v2/ch1/` and `/v2/ch2/`.
 
-An HTTPS production website still needs HTTPS publication through the shared
-publication lease, remote quota checks and namespace-preservation rules. The
-independent weather backend and private development feed do not change the
-production website or existing forecast publisher.
+## HTTPS publication
+
+`w_forecast.publication` publishes complete scheduled v2 runs independently at
+`https://data.xcbenz.com/web_exports/w_forecast/ch1/latest.json` and the matching
+`ch2/latest.json`. The frontend's default W base URL is their parent directory.
+This data release does not deploy the frontend prototype.
+
+Install `xcbenz-w-publish.service` and `.timer` from `deploy/w-prototype/` on the
+weather host. The publisher runs every fifteen minutes, independently of model
+generation, so a failed upload can retry without fetching W again. Its private
+`/root/xcbenz-forecast-secrets/w-publish.env` supplies `INFOMANIAK_HOST`,
+`INFOMANIAK_USER`, `INFOMANIAK_DATA_ROOT`, `INFOMANIAK_SSH_KEY_PATH` and
+`INFOMANIAK_KNOWN_HOSTS_PATH`. Reuse the existing forecast key and pinned host
+file by path. Never mount these credentials into the W generation containers.
+The default account quota is 250 GB with a 5 GiB reserve. `DATA_HOST_BASE_URL`
+and `DEPLOY_ACCOUNT_QUOTA_BYTES` can override the public origin and ceiling.
+
+The publisher takes a verified hardlink snapshot under the model writer lock,
+checks remote account usage before uploading, and stages only the current
+pointer, immutable manifest and referenced packages outside `web_exports`.
+Promotion uses the existing version-1 publication lease. Its mutation guard
+stays held throughout the short promotion, preventing a forecast swap or lease
+recovery from interrupting it. Existing leases fail closed and retry next poll.
+Immutable bytes arrive first and `latest.json` is renamed last. Older runs and
+configuration changes within the same run are rejected. Remote W retention keeps
+the current run, two newest source runs and six hours for active readers. Each
+cleanup is bounded to 5000 files and 2 GiB, touching only W-owned names.
+
+The ordinary forecast publisher must include `w_forecast` in both its preserved
+subtrees and capacity accounting before this timer is enabled. This applies to
+the weather runtime and GitHub Actions fallback. The W-local Apache policy is
+preserved with that subtree. It enables CORS and exposed range headers, keeps
+hashed assets immutable, forces `latest.json` to revalidate, and disables HTTP
+gzip/Brotli for `.wvp` packages. JSON retains the inherited compression policy.
+
+After each promotion, HTTPS checks verify discovery and manifest hashes plus
+HTTP 206 range, CORS and compression behavior on the first and last frames.
+Unchanged pointers skip upload and repeat the HTTP checks.
+
+```sh
+systemctl status xcbenz-w-publish.timer xcbenz-w-publish.service
+journalctl -u xcbenz-w-publish.service -n 50
+systemctl start xcbenz-w-publish.service
+# Stop W publication only; existing HTTPS data and generation remain available:
+systemctl disable --now xcbenz-w-publish.timer
+```
 
 ## Measurements and checks
 

@@ -1,0 +1,14 @@
+[Unit]
+Description=Publish verified XCBenz W feeds to Infomaniak HTTPS
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+WorkingDirectory=/root/xcbenz-w-prototype
+EnvironmentFile=/root/xcbenz-forecast-secrets/w-publish.env
+ExecStart=/bin/sh /root/xcbenz-w-prototype/deploy/w-prototype/run_publish.sh
+TimeoutStartSec=50min
+UMask=0022
+Nice=10
+MemoryMax=256M

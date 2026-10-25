@@ -1,0 +1,12 @@
+[Unit]
+Description=Publish the latest complete W model runs every fifteen minutes
+
+[Timer]
+OnBootSec=4min
+OnCalendar=*:2/15
+RandomizedDelaySec=30s
+Persistent=true
+Unit=xcbenz-w-publish.service
+
+[Install]
+WantedBy=timers.target
