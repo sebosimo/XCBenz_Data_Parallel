@@ -378,7 +378,7 @@ preflight_remote_capacity() {
         usage_kib=\$(du -sk '$DEPLOY_ACCOUNT_QUOTA_USAGE_ROOT' | awk '{print \$1}')
         usage_bytes=\$((usage_kib * 1024))
         live_kib=0
-        for subtree in live_stations webcams radar_maps airspace fai_records satellite_cloud_maps; do
+        for subtree in live_stations webcams radar_maps airspace fai_records satellite_cloud_maps w_forecast; do
           if [ -d '$REMOTE_CURRENT'/\"\$subtree\" ]; then
             subtree_kib=\$(du -sk '$REMOTE_CURRENT'/\"\$subtree\" | awk '{print \$1}')
             live_kib=\$((live_kib + subtree_kib))
@@ -511,7 +511,7 @@ retry "preserve live-owned folders" \
   current='$REMOTE_CURRENT'
   target='$REMOTE_TMP/web_exports'
   mkdir -p \"\$target\"
-  for subtree in live_stations webcams radar_maps airspace fai_records satellite_cloud_maps; do
+  for subtree in live_stations webcams radar_maps airspace fai_records satellite_cloud_maps w_forecast; do
     if [ -d \"\$current/\$subtree\" ]; then
       rm -rf \"\$target/\$subtree\"
       cp -a \"\$current/\$subtree\" \"\$target/\$subtree\"

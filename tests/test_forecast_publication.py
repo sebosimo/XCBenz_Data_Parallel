@@ -59,6 +59,7 @@ class ForecastPublicationTests(unittest.TestCase):
             "airspace",
             "fai_records",
             "satellite_cloud_maps",
+            "w_forecast",
         )
         for subtree in self.subtrees:
             (self.current / subtree).mkdir()
