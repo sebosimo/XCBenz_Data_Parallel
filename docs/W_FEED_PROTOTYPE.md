@@ -2,8 +2,8 @@
 
 The optimized backend is on `codex/w-feed-efficient-backend`, based on the
 original `codex/ch1-w-feed-prototype`. The original CH1 snapshot contract remains
-readable. The default worker now produces the model-independent v2 contract.
-Existing forecast publication and the website are unchanged.
+readable. The default worker produces the model-independent v2 contract. W has
+an independent HTTPS publisher. The frontend prototype remains a separate release.
 
 ## Current download policy
 
@@ -175,7 +175,10 @@ generation, so a failed upload can retry without fetching W again. Its private
 `INFOMANIAK_USER`, `INFOMANIAK_DATA_ROOT`, `INFOMANIAK_SSH_KEY_PATH` and
 `INFOMANIAK_KNOWN_HOSTS_PATH`. Reuse the existing forecast key and pinned host
 file by path. Never mount these credentials into the W generation containers.
-The default account quota is 250 GB with a 5 GiB reserve. `DATA_HOST_BASE_URL`
+The default account quota is 250 GB with a 5 GiB reserve. Account scans use
+`du -sxk` to stay on the active filesystem. Infomaniak mounts read-only NFS
+backup snapshots below the home directory; traversing them recounts historical
+data and can stall publication. `DATA_HOST_BASE_URL`
 and `DEPLOY_ACCOUNT_QUOTA_BYTES` can override the public origin and ceiling.
 
 The publisher takes a verified hardlink snapshot under the model writer lock,
@@ -207,6 +210,26 @@ systemctl start xcbenz-w-publish.service
 # Stop W publication only; existing HTTPS data and generation remain available:
 systemctl disable --now xcbenz-w-publish.timer
 ```
+
+### Enabled deployment, 2026-10-25
+
+The weather-host uploader is enabled, using publication source `ce056aad2a`.
+The first CH1 and CH2 uploads completed at 14:57 and 14:58 UTC. A second cycle
+verified both feeds and skipped unchanged uploads. The canonical JavaScript
+reader decoded first/last-hour overviews and Switzerland viewport tiles over
+HTTPS for both models, with verified checksums and HTTP 206 range responses.
+
+The forecast source checkout and GitHub fallback contain main revision
+`a27253a887`, including W preservation and the filesystem-bounded quota scan.
+The weather runtime uses `xcbenz-forecast:w-publication-a27253a887`, also tagged
+`xcbenz-forecast:local`, image
+`sha256:5d060328b2b228eb0b709f9ade3209210ed7e74f1e2b37856acdd734f51567e4`.
+The prior image is retained as `xcbenz-forecast:pre-w-publication-20261025`.
+An old forecast one-shot stuck in backup traversal was stopped, and the active
+coordinator retried with the corrected image. Other services stayed running.
+Account usage before W publication was about 81.0 GB against the 250 GB quota.
+Do not restore a forecast publisher without W preservation while this feed is
+enabled. Stop only `xcbenz-w-publish.timer` to pause future W uploads.
 
 ## Measurements and checks
 
