@@ -256,6 +256,31 @@ Account usage before W publication was about 81.0 GB against the 250 GB quota.
 Do not restore a forecast publisher without W preservation while this feed is
 enabled. Stop only `xcbenz-w-publish.timer` to pause future W uploads.
 
+### Enabled 250-metre section heights, 2026-10-26
+
+Generator and publisher source `4312143f25` is deployed on the weather host.
+The W service uses the thirty-minute timeout from `64604b8481`, retaining its
+two-CPU, 3 GiB container limit, shared heavy-job lock and disk reserve. Previous
+code is retained at `/root/xcbenz-w-prototype.pre-section-4312143f25`.
+
+The first complete publications are CH1 2026-10-26 15Z with 34 hours and 578
+section frames, and CH2 12Z with 121 hours and 2057 section frames. Both map
+indexes retain the original ten heights. The one-time `--allow-section-extension`
+rollout verified all existing map metadata and frame records were identical.
+The regular publisher then verified both public feeds without that option at
+19:54:59 UTC. Both permanent fifteen-minute timers remain enabled and active.
+
+Public JavaScript checks validated both manifest hashes, all 17 heights and
+range-readable tiles at 2250 and 4500 metres for the first and last forecast
+hours. Additional compressed data is 149,908,126 bytes for CH1 and 119,257,645
+bytes for CH2, 269,165,771 bytes together. Full generation took 551 seconds for
+CH1 and 479 seconds for CH2; process peak RSS was 912 MB and 307 MB. These are
+weather-server measurements for this run, not phone latency measurements.
+
+Release evidence is retained on the Coding Server under
+`/home/sebas/reviews/xcbenz-w-section-production-20261026/`. The updated private
+prototype reads the public feeds. This backend rollout did not deploy a website.
+
 ## Measurements and checks
 
 All comparative measurements were made on the Coding Server. Repacking the
