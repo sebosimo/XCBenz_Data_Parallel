@@ -14,7 +14,7 @@ import time
 
 import requests
 
-from .config import Config, MODELS
+from .config import Config, MODELS, SECTION_ALTITUDES
 from .feed import Feed, utc
 from .geometry import decode_w, prepare
 from .grib import atomic_json, check_space, download
@@ -116,7 +116,8 @@ def run(args):
     provenance = revision()
     model = MODELS[getattr(args, "model", "ch1")]
     packaging = getattr(args, "packaging", "whole-v1")
-    config = Config(bbox=tuple(args.bbox), spacing=args.spacing or model.spacing, altitudes=tuple(args.altitudes))
+    config = Config(bbox=tuple(args.bbox), spacing=args.spacing or model.spacing,
+                    altitudes=tuple(args.altitudes), section_altitudes=tuple(getattr(args, "section_altitudes", ())))
     work, output = Path(args.work_dir).resolve(), Path(args.output).resolve()
     if work == output or work.is_relative_to(output) or output.is_relative_to(work):
         raise ValueError("work and output must be separate directories")
@@ -133,7 +134,7 @@ def run(args):
             if not 0 <= args.start <= end <= model.maximum_horizon(reference):
                 raise ValueError("horizon range is outside the selected model run")
             horizons = list(range(args.start, end + 1))
-            print(f"{model.id.upper()} W {utc(reference)}, horizons {args.start} through {end}, {config.width}x{config.height}, {len(config.altitudes)} altitudes", flush=True)
+            print(f"{model.id.upper()} W {utc(reference)}, horizons {args.start} through {end}, {config.width}x{config.height}, {len(config.all_altitudes)} altitudes", flush=True)
             static_urls = source.static_urls()
             static_files, static_metadata = {}, {}
             for kind, url in static_urls.items():
@@ -158,7 +159,7 @@ def run(args):
                 if checkpoint.get("identity") == checkpoint_identity:
                     existing.update(feed.verified_frames(checkpoint["frames"], reference))
             frames, timings, sources = [], [], {}
-            missing = [h for h in horizons if not all((h, a) in existing for a in config.altitudes)]
+            missing = [h for h in horizons if not all((h, a) in existing for a in config.all_altitudes)]
 
             def fetch(horizon, path, cancelled):
                 url = source.w_url(reference, horizon)
@@ -168,8 +169,8 @@ def run(args):
 
             with downloads(missing, fetch, work / "downloads", prefetch=getattr(args, "prefetch", True)) as pending_downloads:
                 for horizon in horizons:
-                    if all((horizon, a) in existing for a in config.altitudes):
-                        frames.extend(existing[(horizon, a)] for a in config.altitudes)
+                    if all((horizon, a) in existing for a in config.all_altitudes):
+                        frames.extend(existing[(horizon, a)] for a in config.all_altitudes)
                         sample = existing[(horizon, config.altitudes[0])]
                         sources[str(horizon)] = sample["source_file"]
                         timings.append({"horizon": horizon, "resumed": True})
@@ -188,7 +189,7 @@ def run(args):
                         source_file = {"sha256": fetched["sha256"], "bytes": fetched["bytes"]}
                         sources[str(horizon)] = source_file
                         export_start = time.monotonic()
-                        for index, altitude in enumerate(config.altitudes):
+                        for index, altitude in enumerate(config.all_altitudes):
                             values = plan.regrid(native[index])
                             frame = feed.frame(values, reference, horizon, altitude)
                             frame["source_file"] = source_file
@@ -239,6 +240,8 @@ def main():
     parser.add_argument("--bbox", nargs=4, type=float, default=Config().bbox, metavar=("WEST", "SOUTH", "EAST", "NORTH"))
     parser.add_argument("--spacing", type=float, default=None, help="default: CH1 0.01 degrees, CH2 0.02")
     parser.add_argument("--altitudes", nargs="+", type=int, default=Config().altitudes)
+    parser.add_argument("--section-altitudes", nargs="*", type=int, default=SECTION_ALTITUDES,
+                        help="Additional cross-section heights; pass without values to disable")
     parser.add_argument("--keep-runs", type=int, default=2)
     args = parser.parse_args()
     if args.keep_runs < 2:

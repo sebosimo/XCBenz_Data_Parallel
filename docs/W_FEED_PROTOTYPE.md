@@ -44,7 +44,10 @@ horizons. Both cover 0.8 to 16.4 degrees east and 42.4 to 50 degrees north.
 Each model has separate discovery, static files, caches and publication pointers.
 
 Ten AMSL altitudes are 1000, 1500, 2000, 2500, 3000, 4000, 5000, 6000, 7000
-and 8000 metres. Override `--bbox`, `--spacing` or `--altitudes` for smaller trials.
+and 8000 metres for maps. Cross-sections also use every 250 metres from 2000
+through 4500 metres, giving 17 distinct output heights. Override `--bbox`,
+`--spacing`, `--altitudes` or `--section-altitudes` for smaller trials. Passing
+`--section-altitudes` without values disables the extra section heights.
 
 ```sh
 python -m w_forecast.runner --model ch1 --run latest \
@@ -98,6 +101,25 @@ Fetch discovery with revalidation or no-store; hash-addressed files are immutabl
 The manifest records the model, source initialization, UTC valid times, available
 hours and altitudes, grid, int16 encoding, statistics, source hashes and package
 metadata. CH1 and CH2 pointers advance independently.
+
+The map manifest retains its original map heights and frames. An optional
+`cross_section` descriptor references an immutable manifest by `path`, `sha256`
+and `bytes` within the same run directory. It includes all map and section
+heights, sharing the existing map objects. Readers fetch it only when opening
+a section and must verify its hash, model, grid, configuration, coverage and map
+frames against the pinned map run. Older feeds without this descriptor remain
+readable at their original resolution. Publication validates and uploads the
+entire section closure before advancing `latest.json`; resume and both retention
+paths include the section manifest and its objects.
+
+`loadSectionForecast` opens this index. `openSectionFrame` reads only the package
+directory, skipping the map overview. Its `loadPoints` method requests only tiles
+owning section sample points, using tile halos for bilinear neighbours. Two
+heights with two tile requests each remain the cross-section concurrency limit.
+The scheduled worker enables the 250-metre section heights by default. Existing
+publication guards still reject a configuration change within the same source
+run, so deploy this producer before a new model cycle rather than weakening that
+guard.
 
 The grid uses EPSG:4326, row-major storage, south-to-north rows and west-to-east
 columns. `index = y * width + x`; grid points have explicit origins and degree

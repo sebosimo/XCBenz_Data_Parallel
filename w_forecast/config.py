@@ -23,6 +23,7 @@ class Model:
 
 
 MODELS = {"ch1": Model("ch1", 3, 0.01), "ch2": Model("ch2", 6, 0.02)}
+SECTION_ALTITUDES = tuple(range(2000, 4501, 250))
 
 
 @dataclass(frozen=True)
@@ -31,6 +32,7 @@ class Config:
     bbox: tuple[float, float, float, float] = (0.8, 42.4, 16.4, 50.0)
     spacing: float = 0.01
     altitudes: tuple[int, ...] = (1000, 1500, 2000, 2500, 3000, 4000, 5000, 6000, 7000, 8000)
+    section_altitudes: tuple[int, ...] = ()
 
     def __post_init__(self):
         if len(self.bbox) != 4 or not all(math.isfinite(v) for v in self.bbox):
@@ -44,11 +46,18 @@ class Config:
             raise ValueError("altitudes must be unique and ascending")
         if not all(isinstance(v, int) and 0 < v <= 15000 for v in self.altitudes):
             raise ValueError("altitudes must be integer metres in (0, 15000]")
-        if len(self.altitudes) > 24 or self.width * self.height > 5_000_000:
+        if (tuple(sorted(set(self.section_altitudes))) != self.section_altitudes
+                or not all(isinstance(v, int) and 0 < v <= 15000 for v in self.section_altitudes)):
+            raise ValueError("section altitudes must be unique ascending integer metres in (0, 15000]")
+        if len(self.all_altitudes) > 24 or self.width * self.height > 5_000_000:
             raise ValueError("prototype grid exceeds its bounded working size")
         for extent in (east - west, north - south):
             if abs(extent / self.spacing - round(extent / self.spacing)) > 1e-6:
                 raise ValueError("bbox spans must be exact multiples of spacing")
+
+    @property
+    def all_altitudes(self):
+        return tuple(sorted(set(self.altitudes) | set(self.section_altitudes)))
 
     @property
     def width(self):

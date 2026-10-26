@@ -13,7 +13,7 @@ from types import SimpleNamespace
 
 import numpy as np
 
-from w_forecast.config import Config
+from w_forecast.config import Config, SECTION_ALTITUDES
 from w_forecast.feed import Feed, FILL, pack
 from w_forecast.geometry import Plan, decode_w, horizontal_plan, vertical_brackets
 from w_forecast.grib import download
@@ -165,6 +165,46 @@ class FeedTests(unittest.TestCase):
         self.feed.publish([first, second], REFERENCE, [1, 2], 33, {}, {})
         with self.assertRaisesRegex(ValueError, "reduce coverage"):
             self.publish([first])
+
+    def test_section_heights_publish_lazily_resume_and_survive_retention(self):
+        config = Config(bbox=(0, 0, .1, .1), spacing=.1, section_altitudes=SECTION_ALTITUDES)
+        self.assertEqual(len(config.altitudes), 10)
+        self.assertEqual(len(config.all_altitudes), 17)
+        self.assertTrue(set(range(2000, 4501, 250)).issubset(config.all_altitudes))
+        feed = Feed(self.temporary.name, config, packaging="packed-v2")
+        frames = [feed.frame(np.full((2, 2), a / 10000), REFERENCE, 1, a) for a in config.all_altitudes]
+        pointer = feed.publish(frames, REFERENCE, [1], 33, {}, {})
+        root = Path(self.temporary.name)
+        main = json.loads((root / pointer["manifest"]).read_bytes())
+        self.assertEqual(main["altitudes_m"], list(config.altitudes))
+        self.assertEqual(len(main["frames"]), 10)
+        section = main["cross_section"]
+        raw = (root / section["path"]).read_bytes()
+        self.assertEqual(len(raw), section["bytes"])
+        self.assertEqual(hashlib.sha256(raw).hexdigest(), section["sha256"])
+        self.assertEqual(json.loads(raw)["altitudes_m"], list(config.all_altitudes))
+        self.assertEqual(len(feed.existing(REFERENCE)), 17)
+        with self.assertRaisesRegex(ValueError, "incomplete"):
+            feed.publish(main["frames"], REFERENCE, [1], 33, {}, {})
+        feed.prune()
+        self.assertTrue(all((root / f["artifact"]["path"]).exists() for f in frames))
+
+    def test_retention_pins_section_index_when_current_run_is_older_than_two_other_runs(self):
+        config = Config(bbox=(0, 0, .1, .1), spacing=.1, altitudes=(1000,), section_altitudes=(2250,))
+        root = Path(self.temporary.name)
+        feed = Feed(root, config, packaging="packed-v2")
+        pointers = []
+        for hours in (0, 6, 12):
+            reference = REFERENCE + dt.timedelta(hours=hours)
+            frames = [feed.frame(np.full((2, 2), a / 10000), reference, 1, a) for a in config.all_altitudes]
+            pointers.append(feed.publish(frames, reference, [1], 33, {}, {}))
+        (root / "latest.json").write_text(json.dumps(pointers[0]))
+        for path in root.rglob("*.json"):
+            os.utime(path, (time.time() - 86400,) * 2)
+        feed.prune()
+        main = json.loads((root / pointers[0]["manifest"]).read_bytes())
+        self.assertTrue((root / main["cross_section"]["path"]).is_file())
+        self.assertEqual(len(feed.existing(REFERENCE)), 2)
 
     def test_retention_keeps_two_runs_and_removes_only_expired_unreachable_objects(self):
         root = Path(self.temporary.name)

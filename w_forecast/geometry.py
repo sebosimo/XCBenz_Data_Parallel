@@ -68,7 +68,7 @@ def horizontal_plan(lat, lon, config):
 
 
 def vertical_brackets(records, source_indices, altitudes, expected_identity):
-    """Build ten 2D plans without ever retaining the complete HHL cube."""
+    """Build requested-height plans without retaining the complete HHL cube."""
     shape = (len(altitudes), len(source_indices))
     lower = np.zeros(shape, dtype=np.uint8)
     fraction = np.zeros(shape, dtype=np.float32)
@@ -143,7 +143,7 @@ def prepare(config, horizontal_path, vertical_path, cache_path, static_hashes):
     arrays = horizontal_plan(grid["lat"], grid["lon"], config)
     del grid
     arrays["lower"], arrays["fraction"] = vertical_brackets(
-        _height_records(vertical_path), arrays["source_indices"], config.altitudes, grid_identity,
+        _height_records(vertical_path), arrays["source_indices"], config.all_altitudes, grid_identity,
     )
     metadata = {"signature": signature, "grid_identity": grid_identity, "native_cells": cell_count}
     cache_path.parent.mkdir(parents=True, exist_ok=True)
@@ -190,7 +190,7 @@ def decode_w(path, plan, reference_time, horizon):
             values = codes_get_values(h)[plan.source_indices].astype(np.float32)
             missing = float(codes_get(h, "missingValue"))
             values[values == missing] = np.nan
-            for row in range(len(plan.config.altitudes)):
+            for row in range(len(plan.config.all_altitudes)):
                 low = plan.lower[row] == level
                 high = (plan.lower[row] > 0) & (plan.lower[row] - 1 == level)
                 native[row, low] += values[low] * (1 - plan.fraction[row, low])

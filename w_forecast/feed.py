@@ -58,7 +58,7 @@ class Feed:
                     or asset["path"] != "objects/" + asset["sha256"] + self.suffix):
                 raise ValueError("unsafe cached frame path")
             if (asset["decoded_bytes"] != self.config.width * self.config.height * 2
-                    or frame["altitude_m"] not in self.config.altitudes
+                    or frame["altitude_m"] not in self.config.all_altitudes
                     or frame["valid_time"] != utc(reference_time + dt.timedelta(hours=frame["horizon_hours"]))):
                 raise ValueError("cached frame metadata differs from the contract")
             obj = self.root / asset["path"]
@@ -85,7 +85,7 @@ class Feed:
     def frame(self, values, reference_time, horizon, altitude):
         if np.shape(values) != (self.config.height, self.config.width):
             raise ValueError("W frame shape does not match the declared grid")
-        if altitude not in self.config.altitudes:
+        if altitude not in self.config.all_altitudes:
             raise ValueError("W frame altitude is absent from the output contract")
         encoded = pack(values)
         directory = None
@@ -127,7 +127,7 @@ class Feed:
     def publish(self, frames, reference_time, horizons, maximum_horizon, source, provenance, *, mode="prototype_snapshot"):
         if mode not in ("prototype_snapshot", "scheduled_forecast"):
             raise ValueError("unsupported W operating mode")
-        expected = {(h, a) for h in horizons for a in self.config.altitudes}
+        expected = {(h, a) for h in horizons for a in self.config.all_altitudes}
         actual = [(f["horizon_hours"], f["altitude_m"]) for f in frames]
         if set(actual) != expected or len(actual) != len(expected):
             raise ValueError("refusing to publish incomplete or duplicate W frames")
@@ -159,7 +159,7 @@ class Feed:
             "reference_time": utc(reference_time), "grid": self.config.grid(),
             "encoding": {"dtype": "int16", "byte_order": "little", "scale_factor": SCALE,
                          "add_offset": 0, "fill_value": FILL},
-            "altitudes_m": list(self.config.altitudes),
+            "altitudes_m": list(self.config.all_altitudes),
             "coverage": {"horizons_hours": list(horizons), "model_maximum_horizon_hours": maximum_horizon,
                          "full_model_run": list(horizons) == list(range(maximum_horizon + 1))},
             "source": source, "provenance": provenance,
@@ -168,18 +168,28 @@ class Feed:
             "frames": sorted(frames, key=lambda f: (f["horizon_hours"], f["altitude_m"])),
             "packaging": self.packaging,
         }
-        payload = (json.dumps(manifest, sort_keys=True, separators=(",", ":"), allow_nan=False) + "\n").encode()
-        digest = hashlib.sha256(payload).hexdigest()
         tag = reference_time.strftime("%Y%m%d_%H%M")
         directory = self.root / "runs" / tag
         directory.mkdir(exist_ok=True)
-        destination = directory / (digest + ".json")
-        if not destination.exists():
-            atomic_json(destination, manifest)
+
+        def save(document):
+            payload = (json.dumps(document, sort_keys=True, separators=(",", ":"), allow_nan=False) + "\n").encode()
+            digest = hashlib.sha256(payload).hexdigest()
+            destination = directory / (digest + ".json")
+            if not destination.exists():
+                atomic_json(destination, document)
+            return {"path": f"runs/{tag}/{digest}.json", "sha256": digest, "bytes": len(payload)}
+
+        if self.config.all_altitudes != self.config.altitudes:
+            section = save(manifest)
+            manifest = {**manifest, "altitudes_m": list(self.config.altitudes),
+                        "frames": [f for f in manifest["frames"] if f["altitude_m"] in self.config.altitudes],
+                        "cross_section": section}
+        asset = save(manifest)
         pointer = {"schema": self.schema, "reference_time": utc(reference_time),
                    "published_at": utc(dt.datetime.now(dt.timezone.utc)),
                    "operational_mode": mode,
-                   "manifest": f"runs/{tag}/{digest}.json", "sha256": digest, "bytes": len(payload)}
+                   "manifest": asset["path"], "sha256": asset["sha256"], "bytes": asset["bytes"]}
         atomic_json(pointer_path, pointer)
         return pointer
 
@@ -192,22 +202,40 @@ class Feed:
         directories = sorted((p for p in (self.root / "runs").iterdir() if p.is_dir() and RUN_RE.fullmatch(p.name)), reverse=True)
         keep = set(directories[:keep_runs])
         cutoff = time.time() - grace_seconds
-        manifests = []
+        manifests, expired = [], []
         for directory in directories:
             paths = list(directory.glob("*.json"))
             for path in paths:
                 if directory in keep or path == current or path.stat().st_mtime >= cutoff:
                     manifests.append(path)
                 else:
-                    path.unlink()
-            if not list(directory.iterdir()):
-                directory.rmdir()
+                    expired.append(path)
         reachable = set()
+        retained = set(manifests)
         # Parse everything before removing any object. Malformed manifests fail closed.
         for path in manifests:
             manifest = json.loads(path.read_text())
+            if section := manifest.get("cross_section"):
+                name = section["path"]
+                if (not re.fullmatch(r"runs/\d{8}_\d{4}/[a-f0-9]{64}\.json", name)
+                        or Path(name).stem != section["sha256"]
+                        or Path(name).parent != path.relative_to(self.root).parent):
+                    raise ValueError("unsafe retained cross-section manifest")
+                detail = self.root / name
+                if (detail.is_symlink() or detail.stat().st_size != section["bytes"]
+                        or sha256_file(detail) != section["sha256"]):
+                    raise ValueError("retained cross-section manifest checksum mismatch")
+                if detail not in retained:
+                    retained.add(detail)
+                    manifests.append(detail)
             reachable.update(f["artifact"]["path"] for f in manifest["frames"])
+        for path in expired:
+            if path not in retained:
+                path.unlink()
         for path in (self.root / "objects").iterdir():
             if (OBJECT_RE.fullmatch(path.name) and "objects/" + path.name not in reachable
                     and path.stat().st_mtime < cutoff):
                 path.unlink()
+        for directory in directories:
+            if not any(directory.iterdir()):
+                directory.rmdir()

@@ -1,5 +1,5 @@
 // Range-readable W v2 packages. Independent gzip blocks need no npm or WASM codec.
-export { loadForecast } from './w-feed.mjs';
+export { loadForecast, loadSectionForecast } from './w-feed.mjs';
 
 function check(value, message) {
   if (!value) throw new Error(`Invalid packed W feed: ${message}`);
@@ -41,7 +41,11 @@ async function decode(compressed, block) {
   return { values, width: block.width, height: block.height };
 }
 
-export async function openFrame(forecast, horizon, altitude, { fetcher = fetch, signal } = {}) {
+export function openSectionFrame(forecast, horizon, altitude, options = {}) {
+  return openFrame(forecast, horizon, altitude, { ...options, includeOverview: false });
+}
+
+export async function openFrame(forecast, horizon, altitude, { fetcher = fetch, signal, includeOverview = true } = {}) {
   check(forecast.manifest.schema === 'xcbenz.w.v2', 'schema');
   const frame = forecast.manifest.frames.find(f => f.horizon_hours === horizon && f.altitude_m === altitude);
   check(frame, 'unavailable time or altitude');
@@ -68,7 +72,7 @@ export async function openFrame(forecast, horizon, altitude, { fetcher = fetch, 
     metrics.range_supported = true;
     return data;
   }
-  const prefix = await range(0, artifact.directory.initial_bytes - 1);
+  const prefix = await range(0, (includeOverview ? artifact.directory.initial_bytes : 16 + artifact.directory.bytes) - 1);
   const view = new DataView(prefix.buffer, prefix.byteOffset, prefix.byteLength);
   check(new TextDecoder().decode(prefix.slice(0, 8)) === 'XCBWVP2\0'
     && view.getUint32(8, true) === 2 && view.getUint32(12, true) === artifact.directory.bytes, 'header');
@@ -89,7 +93,7 @@ export async function openFrame(forecast, horizon, altitude, { fetcher = fetch, 
       && /^[a-f0-9]{64}$/.test(block.sha256), 'block contract');
     offset += block.bytes;
   }
-  check(body + offset === artifact.bytes && body + directory.overview.block.bytes === prefix.length, 'package length');
+  check(body + offset === artifact.bytes && body + directory.overview.block.bytes === artifact.directory.initial_bytes, 'package length');
   check(directory.overview.block.width === Math.ceil(grid.width / 4)
     && directory.overview.block.height === Math.ceil(grid.height / 4), 'overview grid');
   let tileIndex = 0;
@@ -115,7 +119,7 @@ export async function openFrame(forecast, horizon, altitude, { fetcher = fetch, 
     }
     return cache.get(block.offset);
   }
-  const overview = { ...await load(directory.overview.block), stride: 4 };
+  const overview = includeOverview ? { ...await load(directory.overview.block), stride: 4 } : null;
   async function loadTile(tile) {
     check(directory.tiles.includes(tile), 'unknown tile');
     return { ...tile, ...await load(tile.block) };
@@ -129,6 +133,23 @@ export async function openFrame(forecast, horizon, altitude, { fetcher = fetch, 
     const y0 = Math.floor((south - grid.latitude_start) / grid.latitude_step);
     const y1 = Math.ceil((north - grid.latitude_start) / grid.latitude_step);
     const pending = directory.tiles.filter(t => t.x <= x1 && t.x + t.core_width - 1 >= x0 && t.y <= y1 && t.y + t.core_height - 1 >= y0);
+    return loadTiles(pending, concurrency);
+  }
+  async function loadPoints(points, concurrency = 2) {
+    check(Number.isInteger(concurrency) && concurrency >= 1, 'point concurrency');
+    const columns = Math.ceil(grid.width / 256);
+    const keys = new Set();
+    for (const { lon, lat } of points) {
+      const x = (lon - grid.longitude_start) / grid.longitude_step;
+      const y = (lat - grid.latitude_start) / grid.latitude_step;
+      if (Number.isFinite(x) && Number.isFinite(y) && x >= 0 && y >= 0 && x <= grid.width - 1 && y <= grid.height - 1) {
+        keys.add(Math.floor(Math.floor(y) / 256) * columns + Math.floor(Math.floor(x) / 256));
+      }
+    }
+    // The owning tile has a one-cell halo for all four bilinear neighbours.
+    return loadTiles(directory.tiles.filter(t => keys.has(Math.floor(t.y / 256) * columns + Math.floor(t.x / 256))), concurrency);
+  }
+  async function loadTiles(pending, concurrency) {
     const output = new Array(pending.length);
     let next = 0;
     const workers = Array.from({ length: Math.min(4, Math.max(1, concurrency), pending.length) }, async () => {
@@ -140,5 +161,5 @@ export async function openFrame(forecast, horizon, altitude, { fetcher = fetch, 
     await Promise.all(workers);
     return output;
   }
-  return { frame, directory, overview, loadTile, loadViewport, metrics, checksumVerified };
+  return { frame, directory, overview, loadTile, loadViewport, loadPoints, metrics, checksumVerified };
 }

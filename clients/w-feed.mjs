@@ -31,6 +31,11 @@ export async function loadForecast(baseUrl, { fetcher = fetch, signal } = {}) {
   requireValue(raw.byteLength === pointer.bytes, 'manifest byte count');
   const checksumVerified = await verifyHash(raw, pointer.sha256);
   const manifest = JSON.parse(new TextDecoder().decode(raw));
+  validateManifest(manifest, pointer);
+  return { root, pointer, manifest, checksumVerified };
+}
+
+function validateManifest(manifest, pointer) {
   requireValue(manifest.schema === pointer.schema, 'unsupported manifest schema');
   requireValue(manifest.reference_time === pointer.reference_time, 'mixed forecast runs');
   requireValue(manifest.quantity === 'geometric_vertical_velocity' && manifest.units === 'm/s'
@@ -64,7 +69,26 @@ export async function loadForecast(baseUrl, { fetcher = fetch, signal } = {}) {
       && /^[a-f0-9]{64}$/.test(artifact.directory.sha256), 'package directory');
   }
   requireValue(keys.size === manifest.coverage.horizons_hours.length * manifest.altitudes_m.length, 'incomplete frames');
-  return { root, pointer, manifest, checksumVerified };
+}
+
+// Resolve the immutable detail index only after a cross-section is requested.
+export async function loadSectionForecast(forecast, { fetcher = fetch, signal } = {}) {
+  const section = forecast.manifest.cross_section;
+  if (!section) return forecast;
+  requireValue(/^runs\/\d{8}_\d{4}\/[a-f0-9]{64}\.json$/.test(section.path)
+    && section.path.endsWith(`/${section.sha256}.json`)
+    && section.path.split('/')[1] === forecast.pointer.manifest.split('/')[1], 'unsafe cross-section manifest path');
+  const raw = await (await get(new URL(section.path, forecast.root), fetcher, signal)).arrayBuffer();
+  requireValue(raw.byteLength === section.bytes, 'cross-section manifest byte count');
+  const checksumVerified = await verifyHash(raw, section.sha256);
+  const manifest = JSON.parse(new TextDecoder().decode(raw));
+  validateManifest(manifest, forecast.pointer);
+  for (const key of ['model', 'member', 'config_id', 'grid', 'encoding', 'coverage', 'source', 'operational_mode', 'altitude_reference']) {
+    requireValue(JSON.stringify(manifest[key]) === JSON.stringify(forecast.manifest[key]), 'cross-section run identity');
+  }
+  requireValue(!manifest.cross_section && forecast.manifest.altitudes_m.every(a => manifest.altitudes_m.includes(a))
+    && JSON.stringify(manifest.frames.filter(f => forecast.manifest.altitudes_m.includes(f.altitude_m))) === JSON.stringify(forecast.manifest.frames), 'cross-section map coverage');
+  return { ...forecast, manifest, checksumVerified };
 }
 
 export async function loadFrame(forecast, horizon, altitude, { fetcher = fetch, signal } = {}) {

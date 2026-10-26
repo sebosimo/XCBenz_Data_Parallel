@@ -31,12 +31,13 @@ class WPublicationTests(unittest.TestCase):
         shutil.copyfile(policy, self.stage / "w.htaccess")
         self.reference = dt.datetime(2026, 10, 24, tzinfo=dt.timezone.utc)
 
-    def candidate(self, reference=None, model="ch1"):
+    def candidate(self, reference=None, model="ch1", section_altitudes=()):
         reference = reference or self.reference
-        config = Config(bbox=(0, 0, .1, .1), spacing=.05, altitudes=(1000,))
+        config = Config(bbox=(0, 0, .1, .1), spacing=.05, altitudes=(1000,), section_altitudes=section_altitudes)
         feed = Feed(self.stage / model, config, model=model, packaging="packed-v2")
         maximum = 120 if model == "ch2" else 45 if reference.hour == 3 else 33
-        frames = [feed.frame(np.ones((3, 3)), reference, h, 1000) for h in range(maximum + 1)]
+        frames = [feed.frame(np.full((3, 3), a / 1000), reference, h, a)
+                  for h in range(maximum + 1) for a in config.all_altitudes]
         return feed.publish(frames, reference, list(range(maximum + 1)), maximum,
                             {}, {}, mode="scheduled_forecast")
 
@@ -66,6 +67,40 @@ class WPublicationTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "checksum"):
             promote(self.remote, self.stage, "ch1")
         self.assertEqual((target / "latest.json").read_bytes(), before)
+
+    def test_section_manifest_and_extra_objects_are_published_and_retained(self):
+        pointers = []
+        for hours in (0, 6, 12):
+            pointers.append(self.candidate(self.reference + dt.timedelta(hours=hours), section_altitudes=(2250, 4500)))
+            _, main, files = verified(self.stage / "ch1", "ch1")
+            self.assertEqual(main["altitudes_m"], [1000])
+            self.assertIn(main["cross_section"]["path"], files)
+            self.assertEqual(len([name for name in files if name.endswith(".wvp")]), 3)
+            promote(self.remote, self.stage, "ch1")
+        target = self.remote / "web_exports/w_forecast/ch1"
+        # A current pointer can be older than newer staged/retained runs.
+        (target / "latest.json").write_text(json.dumps(pointers[0]))
+        for path in target.rglob("*"):
+            os.utime(path, (time.time() - 30000,) * 2)
+        prune(target)
+        _, main, files = verified(target, "ch1")
+        self.assertEqual(len(list((target / "runs").iterdir())), 3)
+        self.assertTrue(all((target / name).exists() for name in files))
+
+    def test_corrupt_section_index_or_extra_frame_prevents_publication(self):
+        self.candidate(section_altitudes=(2250,))
+        _, main, _ = verified(self.stage / "ch1", "ch1")
+        path = self.stage / "ch1" / main["cross_section"]["path"]
+        raw = path.read_bytes()
+        path.write_bytes(b"corrupt")
+        with self.assertRaisesRegex(ValueError, "cross-section manifest checksum"):
+            verified(self.stage / "ch1", "ch1")
+        path.write_bytes(raw)
+        detail = json.loads(raw)
+        extra = next(f for f in detail["frames"] if f["altitude_m"] == 2250)
+        (self.stage / "ch1" / extra["artifact"]["path"]).write_bytes(b"corrupt")
+        with self.assertRaisesRegex(ValueError, "object checksum"):
+            verified(self.stage / "ch1", "ch1")
 
     def test_busy_lease_blocks_and_never_removes_foreign_metadata(self):
         self.candidate()
@@ -199,6 +234,30 @@ class WPublicationTests(unittest.TestCase):
         with patch("w_forecast.publication.urlopen", side_effect=responses("gzip")):
             with self.assertRaisesRegex(ValueError, "byte ranges, encoding or CORS"):
                 verify_https("https://fixture/", "ch1", pointer)
+
+    def test_https_validation_reads_section_index_and_checks_extra_height_ranges(self):
+        pointer = self.candidate(section_altitudes=(2250, 4500))
+        root = self.stage / "ch1"
+        requests = []
+        class Response(BytesIO):
+            def __init__(self, body, status=200, headers=None):
+                super().__init__(body)
+                self.status, self.headers = status, headers or {}
+        def respond(request, **kwargs):
+            url = request if isinstance(request, str) else request.full_url
+            name = url.removeprefix("https://fixture/ch1/")
+            requests.append(name)
+            path = root / name
+            if name.endswith(".wvp"):
+                return Response(path.read_bytes()[:16], 206, {
+                    "Content-Range": f"bytes 0-15/{path.stat().st_size}",
+                    "Access-Control-Allow-Origin": "*", "Access-Control-Expose-Headers": "Content-Range"})
+            return Response(path.read_bytes(), headers={"Cache-Control": "no-cache"})
+        with patch("w_forecast.publication.urlopen", side_effect=respond):
+            verify_https("https://fixture/", "ch1", pointer)
+        main = json.loads((root / pointer["manifest"]).read_bytes())
+        self.assertIn(main["cross_section"]["path"], requests)
+        self.assertEqual(sum(name.endswith(".wvp") for name in requests), 4)
 
 
 if __name__ == "__main__":

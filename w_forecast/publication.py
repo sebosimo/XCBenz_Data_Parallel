@@ -64,13 +64,37 @@ def verified(root, model):
             or manifest["coverage"]["model_maximum_horizon_hours"] != maximum
             or reference.strftime("%Y%m%d_%H%M") != relative.split("/")[1]):
         raise ValueError("W publication requires a complete scheduled model run")
-    expected = {(hour, altitude) for hour in hours for altitude in manifest["altitudes_m"]}
-    frames = manifest["frames"]
-    if not expected or len(frames) != len(expected) or {
-        (f["horizon_hours"], f["altitude_m"]) for f in frames
-    } != expected:
-        raise ValueError("incomplete or duplicate W frame coverage")
     files = {"latest.json", relative}
+    manifests = [manifest]
+    section = manifest.get("cross_section")
+    if section:
+        name = section["path"]
+        if (not MANIFEST.fullmatch(name) or Path(name).parent != Path(relative).parent
+                or Path(name).stem != section["sha256"]):
+            raise ValueError("unsafe W cross-section manifest path")
+        path = root / name
+        if (path.is_symlink() or path.stat().st_size != section["bytes"]
+                or digest(path) != section["sha256"]):
+            raise ValueError("W cross-section manifest checksum mismatch")
+        detail = json.loads(path.read_bytes())
+        shared = ("schema", "model", "member", "reference_time", "config_id", "grid", "encoding",
+                  "coverage", "operational_mode", "quantity", "units", "positive_direction",
+                  "altitude_reference", "packaging", "source")
+        if (any(detail.get(key) != manifest.get(key) for key in shared)
+                or "cross_section" in detail
+                or not set(manifest["altitudes_m"]).issubset(detail["altitudes_m"])
+                or [f for f in detail["frames"] if f["altitude_m"] in manifest["altitudes_m"]] != manifest["frames"]):
+            raise ValueError("W cross-section manifest differs from its map run")
+        files.add(name)
+        manifests.append(detail)
+    frames = []
+    for document in manifests:
+        expected = {(hour, altitude) for hour in hours for altitude in document["altitudes_m"]}
+        if not expected or len(document["frames"]) != len(expected) or {
+            (f["horizon_hours"], f["altitude_m"]) for f in document["frames"]
+        } != expected:
+            raise ValueError("incomplete or duplicate W frame coverage")
+        frames.extend(document["frames"])
     for frame in frames:
         artifact = frame["artifact"]
         name = artifact["path"]
@@ -133,7 +157,7 @@ def prune(root, now=None):
     pointer = json.loads((root / "latest.json").read_bytes())
     directories = sorted((p for p in (root / "runs").iterdir()
                           if p.is_dir() and re.fullmatch(r"\d{8}_\d{4}", p.name)), reverse=True)
-    reachable, expired = set(), []
+    reachable, expired, retained = set(), [], set()
     # Parse all retained manifests before deleting anything. Unknown files stay.
     for directory in directories:
         for path in directory.glob("*.json"):
@@ -143,13 +167,30 @@ def prune(root, now=None):
             if directory in directories[:2] or relative == pointer["manifest"] or path.stat().st_mtime >= cutoff:
                 if digest(path) != path.stem:
                     raise ValueError("corrupt retained W manifest")
-                for frame in json.loads(path.read_bytes())["frames"]:
-                    name = frame["artifact"]["path"]
-                    if not OBJECT.fullmatch(name):
-                        raise ValueError("unsafe retained W object")
-                    reachable.add(name)
+                retained.add(path)
             else:
                 expired.append(path)
+    pending = list(retained)
+    for path in pending:
+        document = json.loads(path.read_bytes())
+        if section := document.get("cross_section"):
+            name = section["path"]
+            if (not MANIFEST.fullmatch(name) or Path(name).stem != section["sha256"]
+                    or Path(name).parent != path.relative_to(root).parent):
+                raise ValueError("unsafe retained W cross-section manifest")
+            detail = root / name
+            if (detail.is_symlink() or detail.stat().st_size != section["bytes"]
+                    or digest(detail) != section["sha256"]):
+                raise ValueError("corrupt retained W cross-section manifest")
+            if detail not in retained:
+                retained.add(detail)
+                pending.append(detail)
+        for frame in document["frames"]:
+            name = frame["artifact"]["path"]
+            if not OBJECT.fullmatch(name):
+                raise ValueError("unsafe retained W object")
+            reachable.add(name)
+    expired = [path for path in expired if path not in retained]
     expired.extend(p for p in (root / "objects").iterdir()
                    if OBJECT.fullmatch("objects/" + p.name)
                    and "objects/" + p.name not in reachable and p.stat().st_mtime < cutoff)
@@ -235,7 +276,18 @@ def verify_https(base, model, expected):
     if len(payload) != pointer["bytes"] or hashlib.sha256(payload).hexdigest() != pointer["sha256"]:
         raise ValueError("public HTTPS W manifest checksum mismatch")
     manifest = json.loads(payload)
-    for frame in (manifest["frames"][0], manifest["frames"][-1]):
+    frames = [manifest["frames"][0], manifest["frames"][-1]]
+    if section := manifest.get("cross_section"):
+        with urlopen(base + model + "/" + section["path"], timeout=30) as response:
+            payload = response.read()
+        if len(payload) != section["bytes"] or hashlib.sha256(payload).hexdigest() != section["sha256"]:
+            raise ValueError("public HTTPS W cross-section manifest checksum mismatch")
+        detail = json.loads(payload)
+        extra = [f for f in detail["frames"] if f["altitude_m"] not in manifest["altitudes_m"]]
+        if not extra:
+            raise ValueError("public HTTPS W cross-section manifest has no extra heights")
+        frames.extend([extra[0], extra[-1]])
+    for frame in frames:
         artifact = frame["artifact"]
         request = Request(base + model + "/" + artifact["path"], headers={
             "Range": "bytes=0-15", "Accept-Encoding": "gzip, br", "Origin": "https://xcbenz.com"})
