@@ -10,6 +10,6 @@ WorkingDirectory=/root/xcbenz-w-prototype
 ExecStart=/bin/sh /root/xcbenz-w-prototype/deploy/w-prototype/run_models.sh
 ExecStopPost=/bin/sh /root/xcbenz-w-prototype/deploy/w-prototype/stop_models.sh
 SuccessExitStatus=75
-TimeoutStartSec=15min
+TimeoutStartSec=30min
 TimeoutStopSec=50s
 UMask=0022

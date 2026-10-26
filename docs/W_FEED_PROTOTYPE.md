@@ -164,7 +164,7 @@ publication credentials and does not touch production forecast output volumes.
 The independent `xcbenz-w-feed.timer` polls every fifteen minutes. Its one-shot
 service runs CH1 then CH2 under the shared lock and resource guard. Successful
 hours are reused. Exit 75 defers work to a later poll. Other failures retain the
-last verified pointer, and the other model can still update. A fifteen-minute
+last verified pointer, and the other model can still update. A thirty-minute
 service timeout stops only the named W containers. Each successful run writes
 `run-stats.json`. Keep two source runs plus a six-hour grace period, then delete
 only expired unreachable W objects. Incomplete runs never replace discovery.
