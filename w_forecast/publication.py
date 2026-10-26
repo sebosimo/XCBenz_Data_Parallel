@@ -206,7 +206,16 @@ def prune(root, now=None):
             directory.rmdir()
 
 
-def promote(root, stage, model):
+def section_extension(old, candidate):
+    """Allow a one-time section addition only when every map field is unchanged."""
+    if old.get("cross_section") or not candidate.get("cross_section"):
+        return False
+    ignored = {"config_id", "provenance", "cross_section"}
+    return ({key: value for key, value in old.items() if key not in ignored}
+            == {key: value for key, value in candidate.items() if key not in ignored})
+
+
+def promote(root, stage, model, *, allow_section_extension=False):
     source = stage / model
     pointer, manifest, files = verified(source, model)
     target = root / "web_exports" / "w_forecast" / model
@@ -216,7 +225,8 @@ def promote(root, stage, model):
             if previous["reference_time"] > pointer["reference_time"]:
                 raise ValueError("refusing W forecast downgrade")
             if previous["reference_time"] == pointer["reference_time"] and old["config_id"] != manifest["config_id"]:
-                raise ValueError("refusing W configuration change within a run")
+                if not allow_section_extension or not section_extension(old, manifest):
+                    raise ValueError("refusing W configuration change within a run")
         target.mkdir(parents=True, exist_ok=True)
         # Immutable files arrive before the one mutable commit point. Rename on
         # this filesystem is atomic and leaves in-flight old readers intact.
@@ -301,7 +311,7 @@ def verify_https(base, model, expected):
     print(json.dumps(dict(model=model, https_verified=True)), flush=True)
 
 
-def publish(feed, model):
+def publish(feed, model, *, allow_section_extension=False):
     """Snapshot verified source files, stage remotely, then promote under v1."""
     env = os.environ
     host, user, root = (env[n] for n in ("INFOMANIAK_HOST", "INFOMANIAK_USER", "INFOMANIAK_DATA_ROOT"))
@@ -353,7 +363,8 @@ def publish(feed, model):
             subprocess.run(["rsync", "-rt", "--chmod=D755,F644", "-e", transport,
                             str(snapshot) + "/", target + ":" + stage + "/"], check=True, timeout=600)
             remote("timeout", "210", "python3", stage + "/publish.py", "promote",
-                   "--root", root, "--stage", stage, "--model", model)
+                   "--root", root, "--stage", stage, "--model", model,
+                   *(["--allow-section-extension"] if allow_section_extension else []))
             verify_https(base, model, pointer)
         finally:
             remote("rm", "-rf", "--", stage)
@@ -368,14 +379,16 @@ def main():
     parser.add_argument("--model", choices=("ch1", "ch2"))
     parser.add_argument("--incoming", type=int)
     parser.add_argument("--quota", type=int, default=QUOTA)
+    parser.add_argument("--allow-section-extension", action="store_true",
+                        help="One-time rollout: add a section index to a run with identical map data")
     args = parser.parse_args()
     try:
         if args.action == "publish":
-            publish(args.feed.resolve(), args.model)
+            publish(args.feed.resolve(), args.model, allow_section_extension=args.allow_section_extension)
         elif args.action == "preflight":
             capacity(args.root, args.incoming, args.quota)
         else:
-            promote(args.root, args.stage, args.model)
+            promote(args.root, args.stage, args.model, allow_section_extension=args.allow_section_extension)
     except BlockingIOError as error:
         print(str(error), flush=True)
         raise SystemExit(75)

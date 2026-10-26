@@ -118,8 +118,11 @@ owning section sample points, using tile halos for bilinear neighbours. Two
 heights with two tile requests each remain the cross-section concurrency limit.
 The scheduled worker enables the 250-metre section heights by default. Existing
 publication guards still reject a configuration change within the same source
-run, so deploy this producer before a new model cycle rather than weakening that
-guard.
+run. For an approved one-time rollout, `publication publish
+--allow-section-extension` permits adding the first section index only when all
+existing map metadata, source hashes and frame records are identical. It does
+not permit changing map data or updating an existing section configuration.
+Normal scheduled publication does not enable this option.
 
 The grid uses EPSG:4326, row-major storage, south-to-north rows and west-to-east
 columns. `index = y * width + x`; grid points have explicit origins and degree

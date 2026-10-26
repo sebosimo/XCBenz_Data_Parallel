@@ -102,6 +102,34 @@ class WPublicationTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "object checksum"):
             verified(self.stage / "ch1", "ch1")
 
+    def test_same_run_section_addition_requires_explicit_opt_in_and_identical_map(self):
+        for model in ("ch1", "ch2"):
+            self.candidate(model=model)
+            promote(self.remote, self.stage, model)
+            target = self.remote / "web_exports/w_forecast" / model
+            before = (target / "latest.json").read_bytes()
+            self.candidate(model=model, section_altitudes=(2250, 4500))
+            with self.assertRaisesRegex(ValueError, "configuration change"):
+                promote(self.remote, self.stage, model)
+            self.assertEqual((target / "latest.json").read_bytes(), before)
+            promote(self.remote, self.stage, model, allow_section_extension=True)
+            _, manifest, _ = verified(target, model)
+            self.assertTrue(manifest["cross_section"])
+
+    def test_section_rollout_never_accepts_changed_map_data_or_a_second_configuration_change(self):
+        from copy import deepcopy
+        from w_forecast.publication import section_extension
+        self.candidate()
+        _, old, _ = verified(self.stage / "ch1", "ch1")
+        self.candidate(section_altitudes=(2250,))
+        _, candidate, _ = verified(self.stage / "ch1", "ch1")
+        self.assertTrue(section_extension(old, candidate))
+        for key in ("frames", "grid", "source", "encoding", "coverage", "altitudes_m", "reference_time"):
+            changed = deepcopy(candidate)
+            changed[key] = None
+            self.assertFalse(section_extension(old, changed), key)
+        self.assertFalse(section_extension(candidate, candidate))
+
     def test_busy_lease_blocks_and_never_removes_foreign_metadata(self):
         self.candidate()
         lock = self.remote / ".xcbenz_web_exports_publish.lock"
