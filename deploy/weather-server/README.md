@@ -53,9 +53,16 @@ because that restoration occurs after fetching and could replace verified
 files. Production already uses `--no-restore-web-exports`.
 
 An upstream correction that retains the same model run tag requires a forced
-refresh. No production speedup is claimed until a bounded canary measures cold
-and reused runs. Deploy the reviewed forecast image with the matching weather
-Compose state-path change; retain the previous image for rollback.
+refresh. The 2026-11-07 canary took 22.0 minutes cold and 6.8 minutes with both
+models reused, excluding publication. All 148819 model files remained identical.
+A separate partial-export replay regenerated CH1 from captured inputs, retained
+CH2 unchanged, and passed combined-output validation. That replay measures
+correctness; production timing for a newly fetched model still needs observation.
+
+The weather deployment now uses `xcbenz-forecast:audit-86085e0ed4` with the
+matching persistent receipt path. Its first production computation will seed
+the receipts. Keep `xcbenz-forecast:local` as the previous image for rollback.
+The server audit document records the full test results and deployment details.
 
 This image lets the weather server's durable backend coordinator probe source
 readiness and run one pinned forecast publication under the shared heavy-work
