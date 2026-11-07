@@ -29,6 +29,14 @@ must also match generation inputs and the complete retained output inventory.
 
 ## Validated model reuse
 
+The runner logs `model reuse miss` with a model, requested run, and reason.
+`different_model_run` is expected when fresh source data arrives.
+`different_generation_inputs` means source, dependencies, static GRIB data,
+settings, or scientific environment changed. Missing, invalid, or changed
+output inventories require regeneration. Logs omit receipt contents, private
+paths, and environment values. A code update invalidates existing receipts,
+including an update that only adds diagnostics.
+
 The runner reuses retained model exports when the requested run and generation
 identity match a private receipt and every model-owned output passes SHA-256
 verification. Missing, changed, extra, or symlinked files cause regeneration.

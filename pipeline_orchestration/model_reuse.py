@@ -14,6 +14,7 @@ import os
 import re
 import sys
 import tempfile
+from collections.abc import Callable
 from pathlib import Path
 
 PRODUCT_ROOTS = (
@@ -124,22 +125,38 @@ class ModelReuseStore:
         ):
             raise ValueError("model reuse receipts must be outside public exports")
 
-    def load(self, model: str, run: str, identity: str) -> dict | None:
+    def load(
+        self, model: str, run: str, identity: str,
+        *, on_miss: Callable[[str], None] | None = None,
+    ) -> dict | None:
         _validate_model_run(model, run)
         path = self.state_root / f"{model}.json"
+
+        def miss(reason: str) -> None:
+            if on_miss is not None:
+                on_miss(reason)
+
         try:
             if path.is_symlink() or path.stat().st_size > MAX_RECEIPT_BYTES:
-                return None
+                return miss("unsafe_or_oversized_receipt")
             receipt = json.loads(path.read_bytes())
             if (
-                receipt["version"] != 1 or receipt["identity"] != identity
-                or receipt["model"] != model or receipt["run"] != run
+                receipt["version"] != 1 or receipt["model"] != model
                 or not isinstance(receipt["profile_steps"], dict) or not receipt["profile_steps"]
             ):
-                return None
-            return receipt if receipt["files"] == _inventory(self.web_root, model, run) else None
-        except (OSError, ValueError, KeyError, TypeError):
-            return None
+                return miss("invalid_receipt_metadata")
+            if receipt["run"] != run:
+                return miss("different_model_run")
+            if receipt["identity"] != identity:
+                return miss("different_generation_inputs")
+            if receipt["files"] != _inventory(self.web_root, model, run):
+                return miss("changed_output_inventory")
+            return receipt
+        except FileNotFoundError:
+            return miss("missing_receipt_or_output")
+        except (OSError, ValueError, KeyError, TypeError) as error:
+            # Exception messages can contain private paths or receipt contents.
+            return miss(f"unverifiable_receipt_or_output:{type(error).__name__}")
 
     def record_validated(self, model: str, run: str, identity: str, source_manifest: dict) -> None:
         _validate_model_run(model, run)

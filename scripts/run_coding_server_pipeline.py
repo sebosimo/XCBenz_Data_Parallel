@@ -1077,7 +1077,12 @@ def run_pipeline(args: argparse.Namespace) -> int:
         identity = generation_identity(REPO_ROOT, base_env, reuse_settings)
         if not is_force_refresh(args.run_mode):
             for model, run in (("ch1", latest_ch1), ("ch2", latest_ch2)):
-                receipt = reuse_store.load(model, run, identity)
+                receipt = reuse_store.load(
+                    model, run, identity,
+                    on_miss=lambda reason, model=model, run=run: log(
+                        f"model reuse miss: model={model}, run={run}, reason={reason}"
+                    ),
+                )
                 if receipt is not None:
                     reused_models[model] = receipt
         jobs = [job for job in jobs if job.name.split("-", 1)[0] not in reused_models]

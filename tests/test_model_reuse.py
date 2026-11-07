@@ -66,6 +66,30 @@ class ModelReuseTests(unittest.TestCase):
         target.with_name("unexpected.bin").write_bytes(b"extra")
         self.assertIsNone(self.store.load("ch2", RUN, "generator-v1"))
 
+    def test_miss_diagnostics_distinguish_inputs_from_outputs_without_private_values(self):
+        reasons = []
+
+        def load(run=RUN, identity="generator-v1"):
+            return self.store.load("ch2", run, identity, on_miss=reasons.append)
+
+        self.assertIsNone(load())
+        self.assertEqual(reasons.pop(), "missing_receipt_or_output")
+        self.record()
+        self.assertIsNone(load(run="20261107_0600"))
+        self.assertEqual(reasons.pop(), "different_model_run")
+        self.assertIsNone(load(identity="private-settings-digest"))
+        self.assertEqual(reasons.pop(), "different_generation_inputs")
+        target = self.web / "wind_maps/icon-ch2" / RUN / "fixture.bin"
+        target.write_bytes(b"changed")
+        self.assertIsNone(load())
+        self.assertEqual(reasons.pop(), "changed_output_inventory")
+        (self.store.state_root / "ch2.json").write_text("private-invalid-json")
+        self.assertIsNone(load())
+        self.assertEqual(reasons.pop(), "unverifiable_receipt_or_output:JSONDecodeError")
+        self.record()
+        self.assertIsNotNone(load())
+        self.assertEqual(reasons, [])
+
     def test_receipts_are_private_bounded_and_replace_previous_run(self):
         with self.assertRaises(ValueError):
             ModelReuseStore(self.web / "state", self.web)
