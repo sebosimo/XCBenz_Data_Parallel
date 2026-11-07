@@ -90,6 +90,18 @@ class ModelReuseTests(unittest.TestCase):
         target.symlink_to(outside)
         self.assertIsNone(self.store.load("ch2", RUN, "generator-v1"))
 
+    def test_inventory_and_serialized_receipt_limits_fail_closed(self):
+        self.record()
+        with mock.patch("pipeline_orchestration.model_reuse.MAX_FILES", 2):
+            self.assertIsNone(self.store.load("ch2", RUN, "generator-v1"))
+            with self.assertRaisesRegex(ValueError, "file budget"):
+                self.record()
+        with mock.patch("pipeline_orchestration.model_reuse.MAX_RECEIPT_BYTES", 32):
+            self.assertIsNone(self.store.load("ch2", RUN, "generator-v1"))
+            with self.assertRaisesRegex(ValueError, "byte budget"):
+                self.record()
+        self.assertIsNotNone(self.store.load("ch2", RUN, "generator-v1"))
+
     def test_identity_covers_code_locations_policy_and_static_assets(self):
         (self.root / "locations.json").write_text("{}")
         (self.root / "fetch_data.py").write_text("VERSION = 1")

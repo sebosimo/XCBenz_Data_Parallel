@@ -22,7 +22,9 @@ PRODUCT_ROOTS = (
 )
 REQUIRED_ROOTS = PRODUCT_ROOTS[:7]
 MAX_RECEIPT_BYTES = 32 * 1024 * 1024
-MAX_FILES = 100000
+# A full CH2 run currently includes about 112,500 value tiles plus other
+# products. Keep the independent 32 MiB serialized receipt limit as well.
+MAX_FILES = 200000
 MODEL_FIELDS = {"ch1": "runs", "ch2": "runs_ch2"}
 
 
