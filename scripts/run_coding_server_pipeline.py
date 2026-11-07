@@ -30,7 +30,11 @@ if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
 from pipeline_orchestration.job_plan import PlannedChunk, build_job_plan  # noqa: E402
-
+from pipeline_orchestration.model_reuse import (  # noqa: E402
+    ModelReuseStore,
+    generation_identity,
+    merge_reused_profiles,
+)
 
 DEFAULT_REPOSITORY = "sebosimo/XCBenz_Data_Parallel"
 DEFAULT_DATA_BRANCH = "data-web"
@@ -796,10 +800,13 @@ def serial_publish_steps(
     *,
     latest_ch1: str,
     latest_ch2: str,
+    reused_models: dict[str, dict] | None = None,
 ) -> None:
     run_checked("merge-map-chunks", [*py, "scripts/merge_map_chunks.py"], env=env, log_dir=log_dir)
     run_checked("apply-retention", [*py, "scripts/apply_retention.py"], env=env, log_dir=log_dir)
     run_checked("generate-combined-manifest", [*py, "generate_combined_manifest.py"], env=env, log_dir=log_dir)
+    if reused_models:
+        merge_reused_profiles(REPO_ROOT / "manifest.json", reused_models)
 
     generate_env = dict(env)
     generate_env.update(
@@ -811,7 +818,19 @@ def serial_publish_steps(
             "VALUE_TILE_VALIDATE_GENERATED": "false",
         }
     )
-    run_checked("generate-web-exports", [*py, "generate_web_exports.py"], env=generate_env, log_dir=log_dir)
+    if reused_models:
+        generate_env["VALUE_TILE_GENERATE_RUNS"] = ",".join(
+            f"icon-{model}={run}" for model, run in (("ch1", latest_ch1), ("ch2", latest_ch2))
+            if model not in reused_models
+        )
+    if len(reused_models or {}) == 2:
+        # A retry after successful local validation can reuse both models.
+        # No map sources exist in this case, so do not invoke tile generation.
+        staging_root = REPO_ROOT / "web_exports_staging"
+        staging_root.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(REPO_ROOT / "locations.json", staging_root / "locations.json")
+    else:
+        run_checked("generate-web-exports", [*py, "generate_web_exports.py"], env=generate_env, log_dir=log_dir)
 
     retention_env = dict(env)
     retention_env.update(
@@ -964,6 +983,15 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--skip-deploy", action="store_true", help="Generate and validate web_exports but do not publish them.")
     parser.add_argument("--skip-static-prewarm", action="store_true")
     parser.add_argument("--skip-remote-validate", action="store_true")
+    parser.add_argument(
+        "--model-reuse", action=argparse.BooleanOptionalAction,
+        default=env_bool("XCBENZ_MODEL_REUSE", True),
+        help="Reuse retained model exports only after receipt and SHA-256 verification.",
+    )
+    parser.add_argument(
+        "--model-reuse-state-dir",
+        default=os.getenv("XCBENZ_MODEL_REUSE_STATE_DIR", ".local_pipeline/model-reuse"),
+    )
     parser.add_argument("--restore-web-exports", dest="restore_web_exports", action="store_true", default=env_bool("XCBENZ_RESTORE_WEB_EXPORTS", True))
     parser.add_argument("--no-restore-web-exports", dest="restore_web_exports", action="store_false")
     parser.add_argument("--push-data-branch", dest="push_data_branch", action="store_true", default=None)
@@ -1031,6 +1059,30 @@ def run_pipeline(args: argparse.Namespace) -> int:
             latest_ch2=latest_ch2,
         )
 
+    reuse_store = None
+    reused_models = {}
+    identity = None
+    reuse_settings = {
+        "job_layout": args.job_layout,
+        "ch1_chunk_size": args.ch1_chunk_size,
+        "ch2_chunk_size": args.ch2_chunk_size,
+        "prefetch_next_horizon": args.prefetch_next_horizon,
+        "release_profile_only_fields": args.release_profile_only_fields,
+    }
+    if args.model_reuse and not args.restore_web_exports:
+        state_root = Path(args.model_reuse_state_dir)
+        if not state_root.is_absolute():
+            state_root = REPO_ROOT / state_root
+        reuse_store = ModelReuseStore(state_root, REPO_ROOT / "web_exports")
+        identity = generation_identity(REPO_ROOT, base_env, reuse_settings)
+        if not is_force_refresh(args.run_mode):
+            for model, run in (("ch1", latest_ch1), ("ch2", latest_ch2)):
+                receipt = reuse_store.load(model, run, identity)
+                if receipt is not None:
+                    reused_models[model] = receipt
+        jobs = [job for job in jobs if job.name.split("-", 1)[0] not in reused_models]
+        log(f"model reuse: verified={','.join(sorted(reused_models)) or 'none'}, fetch_jobs={len(jobs)}")
+
     for staging in ("map_chunks", "web_profile_chunks", "web_exports_staging"):
         safe_rmtree(REPO_ROOT / staging)
 
@@ -1058,7 +1110,20 @@ def run_pipeline(args: argparse.Namespace) -> int:
             py,
             latest_ch1=latest_ch1,
             latest_ch2=latest_ch2,
+            reused_models=reused_models,
         )
+        if reuse_store is not None and identity is not None:
+            for model, receipt in reused_models.items():
+                if reuse_store.load(model, receipt["run"], identity) is None:
+                    raise RuntimeError(f"reused {model} output changed during generation")
+            if generation_identity(REPO_ROOT, base_env, reuse_settings) != identity:
+                raise RuntimeError("generation inputs changed during execution; retry before publication")
+            source_manifest = json.loads((REPO_ROOT / "manifest.json").read_bytes())
+            for model, run in (("ch1", latest_ch1), ("ch2", latest_ch2)):
+                try:
+                    reuse_store.record_validated(model, run, identity, source_manifest)
+                except (OSError, ValueError, KeyError, TypeError) as error:
+                    log(f"model reuse receipt skipped for {model}: {type(error).__name__}")
         if deploy:
             deploy_outputs(args, base_env, log_dir, py)
         if args.push_data_branch:

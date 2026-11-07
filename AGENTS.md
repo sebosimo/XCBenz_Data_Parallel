@@ -10,7 +10,7 @@ Related repositories:
 
 ## Production Ownership
 
-- The Coding Server polls MeteoSwiss every five minutes and is the primary
+- The Weather Server coordinator polls MeteoSwiss and is the primary
   publisher of browser-ready artifacts to
   `https://data.xcbenz.com/web_exports/`.
 - Infomaniak is the production data source of truth.
@@ -19,8 +19,13 @@ Related repositories:
   the same complete CH1/CH2 source pair.
 - GitHub Actions retains an independent six-hour schedule as a final recovery
   layer and rechecks the live manifest before heavy work.
-- GitHub Actions is the only writer of the generated `data-web` branch. The
-  Coding Server must keep `XCBENZ_PUSH_DATA_BRANCH=false`.
+- GitHub Actions is the only writer of the generated `data-web` branch. Direct
+  server publishers must keep `XCBENZ_PUSH_DATA_BRANCH=false`. The coding-server
+  primary forecast timer is inactive; that server runs greenfield live data.
+
+The runner and poller retain their historical `coding_server` filenames, but
+production invokes them from the weather-server image. See
+`deploy/weather-server/README.md` for the current entry point.
 
 Rules of thumb:
 

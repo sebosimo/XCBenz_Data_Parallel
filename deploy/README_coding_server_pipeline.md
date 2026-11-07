@@ -3,19 +3,18 @@
 The Coding Server pipeline writes browser-ready artifacts directly and does not
 generate or publish NetCDF intermediates.
 
-## Current Production Status
+## Current production ownership
 
-- The Coding Server runs the `main` checkout. This document deliberately does
-  not pin a deployed commit because that value becomes stale after every
-  update. Verify the live revision on the server when needed.
-- `xcbenz-coding-server-forecast.timer` is enabled and active.
-- The staging timer is disabled.
-- A manual production publish passed local and remote validation on 2026-07-13.
-- The Coding Server is the primary publisher to
-  `https://data.xcbenz.com/web_exports/`.
-- The weather server watchdog checks production twice per hour and dispatches
-  GitHub Actions only after two consecutive stale observations.
-- GitHub Actions retains its independent six-hour schedule as a last resort.
+Verified 2026-11-07: the weather-server coordinator is the primary forecast
+publisher. The coding-server forecast timer is inactive. Current deployment,
+model reuse, and rollback guidance is in [the weather runtime README](weather-server/README.md).
+The watchdog and GitHub Actions remain independent recovery layers.
+
+## Historical coding-server deployment and compatibility runner
+
+The timer setup and host paths below describe the former primary deployment.
+Do not enable that timer while the weather server owns forecast publication.
+The Python runner remains shared with the weather runtime.
 
 Coding Server checkout and live revision check:
 
@@ -47,7 +46,7 @@ part of the publisher isolation boundary.
 
 ## Server Polling
 
-Production scheduling on the coding server should call `scripts/poll_coding_server_pipeline.py`, not the heavy runner directly. The poller is cheap enough for a 5 minute timer:
+A deliberately restored coding-server deployment should call `scripts/poll_coding_server_pipeline.py`, not the heavy runner directly. The poller is cheap enough for a 5 minute timer:
 
 1. Probe MeteoSwiss STAC for the latest complete CH1 and CH2 run pair.
 2. Compare the pair with `.local_pipeline/poller_state.json`.
@@ -184,7 +183,7 @@ systemctl --user start xcbenz-coding-server-forecast.timer
 
 ## Production Publisher and Fallback
 
-The production design has three independent layers:
+The former coding-server production design had three independent layers:
 
 1. The Coding Server polls MeteoSwiss every 5 minutes and is the primary
    publisher to `https://data.xcbenz.com/web_exports/`.
