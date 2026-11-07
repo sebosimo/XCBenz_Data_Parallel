@@ -6,6 +6,27 @@ inactive. GitHub Actions and the weather watchdog remain independent recovery
 layers. Historical `coding_server` script names do not describe current host
 ownership.
 
+## Finding the code for a change
+
+The weather coordinator decides when to run a forecast. This repository owns
+the forecast calculation, retained browser exports, validation, and upload.
+
+| Change | Entry point |
+| --- | --- |
+| Source readiness and complete run selection | `scripts/poll_coding_server_pipeline.py`, `pipeline_orchestration/forecast_completeness.py` |
+| Model horizons and work partitioning | `pipeline_orchestration/job_plan.py` |
+| Local concurrency, resources, and execution order | `scripts/run_coding_server_pipeline.py` |
+| Validated model reuse | `pipeline_orchestration/model_reuse.py` |
+| Container execution and the global heavy-work lock | `deploy/weather-server/run_forecast.sh` |
+| Scheduling, durable queue state, archive ordering | `Hetzner_Server/backend-coordinator/`, in the separate deployment repository |
+
+In the runner, `build_jobs` creates the fetch plan, `run_pipeline` applies
+reuse and schedules work, and `serial_publish_steps` exports, retains, and
+validates the combined result. `deploy_outputs` runs only after those checks.
+Keep changes to scientific calculations separate from orchestration changes.
+An unchanged run tag alone is insufficient evidence for reuse; the receipt
+must also match generation inputs and the complete retained output inventory.
+
 ## Validated model reuse
 
 The runner reuses retained model exports when the requested run and generation
