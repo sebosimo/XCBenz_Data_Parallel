@@ -40,8 +40,20 @@ including an update that only adds diagnostics.
 The runner reuses retained model exports when the requested run and generation
 identity match a private receipt and every model-owned output passes SHA-256
 verification. Missing, changed, extra, or symlinked files cause regeneration.
-The identity covers generator source, locations, Python dependencies, static
-GRIB inputs, product environment settings, and job configuration.
+Each model has its own identity. Generator source, locations, Python dependencies,
+product environment settings, and job configuration remain shared inputs. The
+four default horizontal/vertical `static_data/*_constants_icon-{ch1,ch2}-eps.grib2`
+files belong only to their respective model. Unknown GRIB files and alternate
+static directories remain shared inputs. Reference files are hashed in full,
+including their run metadata. A CH1 reference refresh therefore preserves CH2
+eligibility without weakening checks on CH2's own inputs.
+
+The runner logs `model reuse identity` with component digests for source, runtime,
+policy, settings and static inputs. Compare those hashes across runs to explain
+`different_generation_inputs`; private values are never logged. Fingerprint
+version 2 invalidates the former combined fingerprint, so the first successful
+run after this update seeds fresh receipts. Receipt files keep their existing
+schema and size limits.
 
 Receipts are written only after combined-output validation. There are at most
 two receipts, each limited to 32 MiB, outside `web_exports`; forecast data is
@@ -67,10 +79,15 @@ A separate partial-export replay regenerated CH1 from captured inputs, retained
 CH2 unchanged, and passed combined-output validation. That replay measures
 correctness; production timing for a newly fetched model still needs observation.
 
-The weather deployment now uses `xcbenz-forecast:audit-86085e0ed4` with the
-matching persistent receipt path. Its first production computation will seed
-the receipts. Keep `xcbenz-forecast:local` as the previous image for rollback.
-The server audit document records the full test results and deployment details.
+The server audit document records deployed image pins, test results and measured
+production behavior. The model-specific fingerprint update can be built with
+`deploy/weather-server/Dockerfile.reuse` on the preceding verified production
+image, preserving its dependencies. Push the source revision before deployment.
+Change only `XCBENZ_FORECAST_IMAGE` in the weather Compose environment, verify the
+effective configuration differs only in that image, and preserve both execution
+gates. The coordinator reads the pin for each new job and needs no restart.
+For rollback, restore the preceding image pin, `xcbenz-forecast:audit-2e9e042288`.
+Its combined fingerprints safely reject version-2 identities and regenerate.
 
 This image lets the weather server's durable backend coordinator probe source
 readiness and run one pinned forecast publication under the shared heavy-work

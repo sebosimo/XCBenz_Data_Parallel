@@ -32,7 +32,7 @@ if str(REPO_ROOT) not in sys.path:
 from pipeline_orchestration.job_plan import PlannedChunk, build_job_plan  # noqa: E402
 from pipeline_orchestration.model_reuse import (  # noqa: E402
     ModelReuseStore,
-    generation_identity,
+    generation_identities,
     merge_reused_profiles,
 )
 
@@ -1061,7 +1061,7 @@ def run_pipeline(args: argparse.Namespace) -> int:
 
     reuse_store = None
     reused_models = {}
-    identity = None
+    identities = None
     reuse_settings = {
         "job_layout": args.job_layout,
         "ch1_chunk_size": args.ch1_chunk_size,
@@ -1074,11 +1074,16 @@ def run_pipeline(args: argparse.Namespace) -> int:
         if not state_root.is_absolute():
             state_root = REPO_ROOT / state_root
         reuse_store = ModelReuseStore(state_root, REPO_ROOT / "web_exports")
-        identity = generation_identity(REPO_ROOT, base_env, reuse_settings)
+        identities = generation_identities(
+            REPO_ROOT, base_env, reuse_settings,
+            on_identity=lambda model, components: log(
+                "model reuse identity: " + json.dumps({"model": model, **components}, sort_keys=True)
+            ),
+        )
         if not is_force_refresh(args.run_mode):
             for model, run in (("ch1", latest_ch1), ("ch2", latest_ch2)):
                 receipt = reuse_store.load(
-                    model, run, identity,
+                    model, run, identities[model],
                     on_miss=lambda reason, model=model, run=run: log(
                         f"model reuse miss: model={model}, run={run}, reason={reason}"
                     ),
@@ -1117,16 +1122,16 @@ def run_pipeline(args: argparse.Namespace) -> int:
             latest_ch2=latest_ch2,
             reused_models=reused_models,
         )
-        if reuse_store is not None and identity is not None:
+        if reuse_store is not None and identities is not None:
             for model, receipt in reused_models.items():
-                if reuse_store.load(model, receipt["run"], identity) is None:
+                if reuse_store.load(model, receipt["run"], identities[model]) is None:
                     raise RuntimeError(f"reused {model} output changed during generation")
-            if generation_identity(REPO_ROOT, base_env, reuse_settings) != identity:
+            if generation_identities(REPO_ROOT, base_env, reuse_settings) != identities:
                 raise RuntimeError("generation inputs changed during execution; retry before publication")
             source_manifest = json.loads((REPO_ROOT / "manifest.json").read_bytes())
             for model, run in (("ch1", latest_ch1), ("ch2", latest_ch2)):
                 try:
-                    reuse_store.record_validated(model, run, identity, source_manifest)
+                    reuse_store.record_validated(model, run, identities[model], source_manifest)
                 except (OSError, ValueError, KeyError, TypeError) as error:
                     log(f"model reuse receipt skipped for {model}: {type(error).__name__}")
         if deploy:

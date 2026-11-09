@@ -1,0 +1,7 @@
+# Targeted rollout on the preceding production runtime; no dependency changes.
+ARG BASE_IMAGE=xcbenz-forecast:audit-2e9e042288
+FROM ${BASE_IMAGE}
+ARG SOURCE_REVISION
+LABEL ch.xcbenz.audit.revision="${SOURCE_REVISION}"
+COPY pipeline_orchestration/model_reuse.py /app/pipeline_orchestration/model_reuse.py
+COPY scripts/run_coding_server_pipeline.py /app/scripts/run_coding_server_pipeline.py

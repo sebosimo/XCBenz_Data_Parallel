@@ -41,11 +41,16 @@ def file_digest(path: Path) -> str:
     return digest.hexdigest()
 
 
-def generation_identity(repo: Path, env: dict[str, str], settings: dict) -> str:
-    """Bind receipts to source, dependencies, locations, static data, and policy.
+def generation_identities(
+    repo: Path, env: dict[str, str], settings: dict,
+    *, on_identity: Callable[[str, dict[str, str]], None] | None = None,
+) -> dict[str, str]:
+    """Bind each model to shared generation inputs and its own reference files.
 
-    Persist only the aggregate digest. Environment values may be private.
-    Container IDs, temporary paths, and scheduler state are not scientific inputs.
+    Only the known default model assets are separated. Unknown static files,
+    including alternate static directories, remain shared dependencies. Hash
+    every input once and retain full byte checks, including GRIB run metadata.
+    Diagnostics contain component digests, never private environment values.
     """
     sources = set(repo.glob("*.py"))
     for directory in ("forecast_fetch", "pipeline_orchestration", "scripts"):
@@ -53,9 +58,22 @@ def generation_identity(repo: Path, env: dict[str, str], settings: dict) -> str:
     for name in ("locations.json", "requirements.txt", "pyproject.toml", "uv.lock"):
         if (repo / name).is_file():
             sources.add(repo / name)
+    static_files = set()
     for directory in repo.glob("static_data*"):
         if directory.is_dir():
-            sources.update(path for path in directory.rglob("*.grib2") if path.is_file())
+            static_files.update(path for path in directory.rglob("*.grib2") if path.is_file())
+    static_owners = {
+        f"static_data/{kind}_constants_icon-{model}-eps.grib2": model
+        for model in MODEL_FIELDS for kind in ("horizontal", "vertical")
+    }
+    static_by_model: dict[str, dict[str, str]] = {model: {} for model in MODEL_FIELDS}
+    for path in sorted(static_files):
+        name = path.relative_to(repo).as_posix()
+        file_hash = file_digest(path)
+        owner = static_owners.get(name)
+        for model in MODEL_FIELDS:
+            if owner is None or owner == model:
+                static_by_model[model][name] = file_hash
     prefixes = (
         "CH1_", "CH2_", "ENABLE_", "WIND_", "RAIN_", "SUNRAIN_", "SUNSHINE_",
         "CLOUD_", "VALUE_", "REQUIRE_", "WEB_", "EMAGRAM_", "GRIB_", "ECCODES_",
@@ -63,18 +81,31 @@ def generation_identity(repo: Path, env: dict[str, str], settings: dict) -> str:
     policy = {key: value for key, value in env.items() if key.startswith(prefixes)}
     for key in ("CH1_RUN_TAG", "CH2_RUN_TAG"):
         policy.pop(key, None)
-    payload = {
-        "version": 1,
-        "files": {str(path.relative_to(repo)): file_digest(path) for path in sorted(sources)},
-        "python": sys.version,
-        "dependencies": sorted(
-            (distribution.metadata.get("Name", ""), distribution.version)
-            for distribution in importlib.metadata.distributions()
-        ),
-        "policy": policy,
-        "settings": settings,
+
+    def digest(value: object) -> str:
+        return hashlib.sha256(_json_bytes(value)).hexdigest()
+
+    shared = {
+        "source": digest({str(path.relative_to(repo)): file_digest(path) for path in sorted(sources)}),
+        "runtime": digest({
+            "python": sys.version,
+            "dependencies": sorted(
+                (distribution.metadata.get("Name", ""), distribution.version)
+                for distribution in importlib.metadata.distributions()
+            ),
+        }),
+        "policy": digest(policy),
+        "settings": digest(settings),
     }
-    return hashlib.sha256(_json_bytes(payload)).hexdigest()
+    identities = {}
+    for model in MODEL_FIELDS:
+        components = {**shared, "static": digest(static_by_model[model])}
+        # Version 2 deliberately invalidates the former combined fingerprint.
+        identity = digest({"version": 2, "model": model, "components": components})
+        identities[model] = identity
+        if on_identity is not None:
+            on_identity(model, {**components, "identity": identity})
+    return identities
 
 
 def _validate_model_run(model: str, run: str) -> None:
