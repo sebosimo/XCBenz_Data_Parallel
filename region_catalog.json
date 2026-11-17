@@ -2,7 +2,7 @@
   "regions": 592,
   "reference_points": 592,
   "source_sha256": "34212cb0ea0ac5210690c1bb856ce1a82b80a4af968fc2e8ae05dc626dea3ef2",
-  "regions_sha256": "766a0530c0612f51b3e17b69d9454ca6e9ca53cd672d5fb751bedfbfb57da4d6",
+  "regions_sha256": "a2a245fda20ddcce7a3a1ad639016f2be81c0650496deb346e86ba2e74ff83bb",
   "locations_sha256": "58be3c9f31c688ac4d3b0c253b816ba035843773610d29a38d6a0b755510553c",
   "assigned_ids": [
     "manual_63a7c4e7c0c7",
@@ -48,5 +48,5 @@
   "polygon_decimal_places": 4,
   "point_decimal_places": 5,
   "authoring_repository": "sebosimo/xcbenz-regions",
-  "authoring_commit": "b86e774"
+  "authoring_commit": "7b28654333a055127f0adfe6d8c633f0b023311d"
 }
