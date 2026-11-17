@@ -15,8 +15,11 @@ generation identity includes `locations.json`, so an expanded catalog invalidate
 old reuse receipts. Existing download, chunking and publication paths are retained.
 Command-line chunk-size overrides are authoritative for both fetching and export
 validation, including when they replace inherited environment settings.
-`Dockerfile.regions` overlays only the catalog, completeness guards and range
-compression policy on the deployed reuse image, without dependency changes.
+Retained exports never advertise locations removed from the current catalog;
+their existing files remain subject to normal run retention.
+`Dockerfile.regions` overlays the catalog, completeness guards, chunk settings,
+retention index and range compression policy on the deployed reuse image,
+without dependency changes.
 
 Verified 2026-11-07: this runtime is the primary forecast publisher, executed
 by `Hetzner_Server/backend-coordinator`. The coding-server forecast timer is

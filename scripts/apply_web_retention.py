@@ -356,7 +356,7 @@ def rebuild_main_manifest(
             "region_locations": sum(1 for item in locations.values() if item.get("type") == "region"),
             "legacy_locations": sum(1 for item in locations.values() if item.get("type") == "legacy"),
             "profiles": 0,
-            "emagram_bundles": bundle_count,
+            "emagram_bundles": 0,
             "thermal_panels": 0,
             "region_forecasts": 0,
             "wind_map_levels": (wind_manifest or {}).get("counts", {}).get("levels", 0),
@@ -406,8 +406,12 @@ def rebuild_main_manifest(
             for run_dir in sorted((path for path in model_root.iterdir() if path.is_dir()), reverse=True):
                 run_manifest = {"locations": {}}
                 for forecast_path in sorted(run_dir.glob("*.json")):
-                    forecast = load_json(forecast_path)
                     location_id = forecast_path.stem
+                    # A retained run can still contain files for locations
+                    # removed from the catalog. Never advertise those again.
+                    if location_id not in locations:
+                        continue
+                    forecast = load_json(forecast_path)
                     location = forecast.get("location") or locations.get(location_id) or {}
                     products = forecast.get("products") or {}
                     steps = forecast.get("steps") or []
@@ -445,6 +449,7 @@ def rebuild_main_manifest(
         model_manifest["counts"]["locations"] = len(seen_locations)
         manifest["models"][model_key] = model_manifest
         manifest["counts"]["profiles"] += model_manifest["counts"]["profiles"]
+        manifest["counts"]["emagram_bundles"] += model_manifest["counts"]["emagram_bundles"]
         manifest["counts"]["thermal_panels"] += model_manifest["counts"]["thermal_panels"]
         manifest["counts"]["region_forecasts"] += model_manifest["counts"]["region_forecasts"]
 
