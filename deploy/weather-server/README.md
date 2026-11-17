@@ -1,5 +1,21 @@
 # Weather Server Forecast Runtime
 
+## Reviewed region catalog
+
+`locations.json` contains the 592 reviewed region reference points, without the
+four retired standalone locations. The source is `sebosimo/xcbenz-regions`, whose
+`scripts/export_forecast_catalog.py` validates and exports the paired browser
+geometry and location catalog. `region_catalog.json` records their hashes and
+authoring revision. The full-precision authoring master preserves reference
+coordinates; the browser geometry uses the reviewed four-decimal contours.
+
+Both latest model runs must contain exactly the input location set and all
+expected hours. Retained older runs can have their earlier coverage. The normal
+generation identity includes `locations.json`, so an expanded catalog invalidates
+old reuse receipts. Existing download, chunking and publication paths are retained.
+`Dockerfile.regions` overlays only the catalog, completeness guards and range
+compression policy on the deployed reuse image, without dependency changes.
+
 Verified 2026-11-07: this runtime is the primary forecast publisher, executed
 by `Hetzner_Server/backend-coordinator`. The coding-server forecast timer is
 inactive. GitHub Actions and the weather watchdog remain independent recovery
