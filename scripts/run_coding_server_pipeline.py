@@ -439,6 +439,10 @@ def base_pipeline_env(args: argparse.Namespace, deploy: bool) -> dict[str, str]:
             "DATA_HOST_BASE_URL": args.data_host_base_url,
             "WEB_EXPORT_DATA_ROOT": web_data_root,
             "DOWNLOAD_WORKERS": str(args.download_workers),
+            # The exporter must expect the same profile chunks as the fetch
+            # plan, including CLI overrides of inherited environment values.
+            "XCBENZ_CH1_CHUNK_SIZE": str(args.ch1_chunk_size if args.job_layout == "combined" else 0),
+            "XCBENZ_CH2_CHUNK_SIZE": str(args.ch2_chunk_size),
             "XCBENZ_FETCH_HORIZON_BATCH": "true",
             "XCBENZ_PREFETCH_NEXT_HORIZON": "true" if args.prefetch_next_horizon else "false",
             "XCBENZ_RELEASE_PROFILE_ONLY_FIELDS": "true" if args.release_profile_only_fields else "false",

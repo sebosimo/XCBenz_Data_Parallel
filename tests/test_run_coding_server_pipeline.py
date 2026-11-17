@@ -11,6 +11,7 @@ from unittest import mock
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
 
 import run_coding_server_pipeline as runner  # noqa: E402
+from generate_web_exports import expected_profile_chunks
 
 
 def _split_jobs(run_tag: str):
@@ -31,6 +32,25 @@ def _split_jobs(run_tag: str):
 
 
 class RunCodingServerPipelineTests(unittest.TestCase):
+    def test_export_chunk_expectations_match_cli_fetch_plan(self):
+        for layout in ("combined", "split"):
+            with self.subTest(layout=layout), mock.patch.dict(runner.os.environ, {
+                "XCBENZ_CH1_CHUNK_SIZE": "31", "XCBENZ_CH2_CHUNK_SIZE": "31",
+            }):
+                args = runner.build_parser().parse_args([
+                    "--job-layout", layout, "--ch1-chunk-size", "9", "--ch2-chunk-size", "15",
+                ])
+                env = runner.base_pipeline_env(args, False)
+                jobs = runner.build_jobs(
+                    args=args, base=env, run_dir=Path("test-run"), py=["python"],
+                    latest_ch1="20260716_1200", latest_ch2="20260716_1200",
+                )
+                for model in ("ch1", "ch2"):
+                    prefix = f"{model}-{'combined' if layout == 'combined' else 'profile'}-"
+                    actual = {job.name.removeprefix(prefix) for job in jobs if job.name.startswith(prefix)}
+                    with mock.patch.dict(runner.os.environ, env):
+                        self.assertEqual(expected_profile_chunks(f"icon-{model}", "20260716_1200"), actual)
+
     def test_history_hydration_uses_the_intended_run_pair(self):
         with mock.patch.object(runner, "run_checked") as run_checked:
             runner.hydrate_forecast_history(
@@ -182,6 +202,9 @@ class RunCodingServerPipelineTests(unittest.TestCase):
                 ch2_run_tag=None,
                 plan_only=False,
                 download_workers=4,
+                job_layout="split",
+                ch1_chunk_size=0,
+                ch2_chunk_size=0,
                 prefetch_next_horizon=False,
                 release_profile_only_fields=False,
             )

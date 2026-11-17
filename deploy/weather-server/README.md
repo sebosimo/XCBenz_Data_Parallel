@@ -13,6 +13,8 @@ Both latest model runs must contain exactly the input location set and all
 expected hours. Retained older runs can have their earlier coverage. The normal
 generation identity includes `locations.json`, so an expanded catalog invalidates
 old reuse receipts. Existing download, chunking and publication paths are retained.
+Command-line chunk-size overrides are authoritative for both fetching and export
+validation, including when they replace inherited environment settings.
 `Dockerfile.regions` overlays only the catalog, completeness guards and range
 compression policy on the deployed reuse image, without dependency changes.
 
