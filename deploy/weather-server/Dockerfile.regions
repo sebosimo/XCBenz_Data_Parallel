@@ -1,0 +1,9 @@
+# Preserve the deployed runtime and forecast reuse behavior.
+ARG BASE_IMAGE=xcbenz-forecast:reuse-35275ec4e1
+FROM ${BASE_IMAGE}
+ARG SOURCE_REVISION
+LABEL ch.xcbenz.regions.revision="${SOURCE_REVISION}"
+COPY locations.json region_catalog.json /app/
+COPY pipeline_orchestration/forecast_completeness.py /app/pipeline_orchestration/
+COPY scripts/validate_outputs.py scripts/validate_remote_web_exports.py /app/scripts/
+COPY deploy/infomaniak-data.htaccess /app/deploy/

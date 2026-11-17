@@ -129,7 +129,9 @@ def choose_first(mapping: dict[str, Any], label: str) -> tuple[str, Any]:
     return key, mapping[key]
 
 
-def validate_models(manifest: dict[str, Any]) -> list[tuple[str, str, str]]:
+def validate_models(
+    manifest: dict[str, Any], *, expected_locations: Any = None,
+) -> list[tuple[str, str, str]]:
     models = manifest.get("models") or {}
     selected: list[tuple[str, str, str]] = []
     for model_key in ("icon-ch1", "icon-ch2"):
@@ -142,7 +144,9 @@ def validate_models(manifest: dict[str, Any]) -> list[tuple[str, str, str]]:
             raise ValidationError(f"{model_key} latest_run {latest!r} is missing from runs")
         run_key = latest or sorted(runs.keys(), reverse=True)[0]
         run_entry = runs[run_key]
-        errors = profile_run_errors(model_key, run_key, run_entry)
+        errors = profile_run_errors(
+            model_key, run_key, run_entry, expected_locations=expected_locations,
+        )
         if errors:
             raise ValidationError(f"{model_key} {run_key} is incomplete: {errors[0]}")
         locations = run_entry.get("locations") or {}
@@ -361,7 +365,7 @@ def validate_value_tiles(manifest: dict[str, Any]) -> None:
 def main() -> int:
     try:
         manifest, manifest_url, headers = fetch_json("web_exports/manifest.json")
-        fetch_json("web_exports/locations.json")
+        locations, _locations_url, _locations_headers = fetch_json("web_exports/locations.json")
         if "models" not in manifest or "products" not in manifest:
             raise ValidationError(f"{manifest_url} does not look like a web_exports manifest")
         validate_compact_manifest(manifest)
@@ -371,7 +375,7 @@ def main() -> int:
         cors = headers.get("Access-Control-Allow-Origin")
         if cors not in ("*", None):
             raise ValidationError(f"unexpected CORS header on manifest: {cors!r}")
-        selected_bundles = validate_models(manifest)
+        selected_bundles = validate_models(manifest, expected_locations=locations)
         for model_key, run_key, location_id in selected_bundles:
             validate_bundle(manifest, model_key, run_key, location_id)
         validate_map_product(manifest, "wind")

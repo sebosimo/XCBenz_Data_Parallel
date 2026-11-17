@@ -266,6 +266,9 @@ def main() -> int:
         root = load_json(ROOT_MANIFEST)
         web = load_json(WEB_MANIFEST)
         compact_web = load_json(COMPACT_WEB_MANIFEST)
+        locations = load_json(Path("locations.json"))
+        if load_json(Path("web_exports/locations.json")) != locations:
+            raise ValueError("Exported location catalog differs from generation input")
         if expand_compact_manifest(compact_web) != web:
             raise ValueError(f"{COMPACT_WEB_MANIFEST} does not expand to {WEB_MANIFEST}")
     except Exception as exc:  # noqa: BLE001 - this is a CI guard.
@@ -297,7 +300,9 @@ def main() -> int:
             return fail(f"{model_key} latest_run {latest!r} is absent from runs")
         if not latest:
             return fail(f"{model_key} has no latest_run")
-        completeness_errors = profile_run_errors(model_key, latest, runs[latest])
+        completeness_errors = profile_run_errors(
+            model_key, latest, runs[latest], expected_locations=locations,
+        )
         if completeness_errors:
             return fail(f"{model_key} {latest} is incomplete: {completeness_errors[0]}")
         for run_tag, run_entry in runs.items():

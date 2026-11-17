@@ -125,6 +125,19 @@ class PublishedCompletenessTests(unittest.TestCase):
         self.assertIn("Zurich: 120/121 steps", errors[0])
         self.assertIn("missing H070", errors[0])
 
+    def test_missing_region_and_retired_point_fail_even_with_complete_hours(self):
+        run = {"locations": {
+            "bern": {"steps": list(expected_step_labels("icon-ch1", "20260728_1200"))},
+            "reims": {"steps": list(expected_step_labels("icon-ch1", "20260728_1200"))},
+        }}
+        errors = profile_run_errors(
+            "icon-ch1", "20260728_1200", run,
+            expected_locations={"bern", "draft_terrain_048"},
+        )
+        self.assertEqual(errors, [
+            "missing 1 locations: draft_terrain_048", "unexpected 1 locations: reims",
+        ])
+
     def test_remote_model_validation_checks_both_latest_runs(self):
         ch1_steps = list(expected_step_labels("icon-ch1", "20260728_1200"))
         ch2_steps = list(expected_step_labels("icon-ch2", "20260728_1200"))

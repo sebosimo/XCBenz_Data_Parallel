@@ -12,6 +12,9 @@ AddType application/geo+json .geojson
 AddType application/octet-stream .bin .xvt
 
 <IfModule mod_setenvif.c>
+  # Profile offsets address raw float32 bytes. Compressed ranges cannot be
+  # decoded independently and do not have the same offsets as the raw data.
+  SetEnvIfNoCase Range . no-gzip=1 no-brotli=1
   SetEnvIf Request_URI "^/web_exports/(live_stations/(latest|manifest)\.json|webcams/(latest|catalog)\.json|webcams/history/index\.json|webcams/thumbs/[^/]+\.jpg)$" xcbenz_live_no_cache=1
   SetEnvIf Request_URI "^/web_exports/value_tiles/v1/[^/]+/[^/]+/[0-9a-f]{12}/" xcbenz_value_tile_immutable=1
 </IfModule>

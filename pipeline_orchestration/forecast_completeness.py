@@ -153,7 +153,10 @@ def step_labels(steps: object) -> tuple[str, ...]:
     return tuple(labels)
 
 
-def profile_run_errors(model: str, run_tag: str, run_entry: object) -> list[str]:
+def profile_run_errors(
+    model: str, run_tag: str, run_entry: object,
+    *, expected_locations: Iterable[str] | None = None,
+) -> list[str]:
     """Validate every location in a generated latest-run manifest exactly."""
     if not isinstance(run_entry, dict):
         return ["run entry is not an object"]
@@ -163,6 +166,14 @@ def profile_run_errors(model: str, run_tag: str, run_entry: object) -> list[str]
 
     expected = expected_step_labels(model, run_tag)
     errors: list[str] = []
+    if expected_locations is not None:
+        expected_ids = set(expected_locations)
+        missing = sorted(expected_ids.difference(locations))
+        extra = sorted(set(locations).difference(expected_ids))
+        if missing:
+            errors.append(f"missing {len(missing)} locations: {', '.join(missing[:5])}")
+        if extra:
+            errors.append(f"unexpected {len(extra)} locations: {', '.join(extra[:5])}")
     for location_id, location_entry in locations.items():
         if not isinstance(location_entry, dict):
             errors.append(f"{location_id}: location entry is not an object")
