@@ -954,3187 +954,3187 @@
   "manual_63a7c4e7c0c7": {
     "lat": 48.277709,
     "lon": 9.727707,
-    "display_name": "Thermal region 3 - Ehingen",
+    "display_name": "Oberschwaben - Ehingen",
     "type": "region",
-    "region_name": "Thermal region 3"
+    "region_name": "Oberschwaben"
   },
   "manual_bc1a9f818a89": {
     "lat": 48.244978,
     "lon": 10.360601,
-    "display_name": "Thermal region 6 - Krumbach",
+    "display_name": "Iller-Lech-Schotterplatten - Krumbach",
     "type": "region",
-    "region_name": "Thermal region 6"
+    "region_name": "Iller-Lech-Schotterplatten"
   },
   "manual_efbf35b67884": {
     "lat": 47.779021,
     "lon": 10.617599,
-    "display_name": "Thermal region 8 - Marktoberdorf",
+    "display_name": "Ostallgäuer Alpenvorland - Marktoberdorf",
     "type": "region",
-    "region_name": "Thermal region 8"
+    "region_name": "Ostallgäuer Alpenvorland"
   },
   "manual_6dba9096661d": {
     "lat": 44.615923,
     "lon": 5.451456,
-    "display_name": "Thermal region 1 - Thermal point 2",
+    "display_name": "Diois - Luc-en-Diois",
     "type": "region",
-    "region_name": "Thermal region 1"
+    "region_name": "Diois"
   },
   "manual_a8e25a86f946": {
     "lat": 44.382629,
     "lon": 5.937897,
-    "display_name": "Thermal region 3 - Thermal point 5",
+    "display_name": "Pays du Buëch et Val de Durance - Monêtier-Allemont",
     "type": "region",
-    "region_name": "Thermal region 3"
+    "region_name": "Pays du Buëch et Val de Durance"
   },
   "manual_28fb5cca3cfd": {
     "lat": 44.23098,
     "lon": 5.632694,
-    "display_name": "Thermal region 6 - Thermal point 7",
+    "display_name": "Baronnies orientales - Lachau",
     "type": "region",
-    "region_name": "Thermal region 6"
+    "region_name": "Baronnies orientales"
   },
   "manual_a432ed76e441": {
     "lat": 44.116812,
     "lon": 6.799561,
-    "display_name": "Thermal region 9 - Thermal point 10",
+    "display_name": "Haut Var - Villeneuve-d'Entraunes",
     "type": "region",
-    "region_name": "Thermal region 9"
+    "region_name": "Haut Var"
   },
   "recovered_digne_les_bains": {
     "lat": 44.09574,
     "lon": 6.23211,
-    "display_name": "Thermal region 11 - Digne-les-Bains",
+    "display_name": "Pays dignois - Digne-les-Bains",
     "type": "region",
-    "region_name": "Thermal region 11"
+    "region_name": "Pays dignois"
   },
   "manual_d3a71aff21fc": {
     "lat": 43.908092,
     "lon": 6.537561,
-    "display_name": "Thermal region 12 - Thermal point 13",
+    "display_name": "Moyen Verdon - Saint-Julien-du-Verdon",
     "type": "region",
-    "region_name": "Thermal region 12"
+    "region_name": "Moyen Verdon"
   },
   "manual_36b0dddfcfd7": {
     "lat": 43.977575,
     "lon": 7.142482,
-    "display_name": "Thermal region 15 - Thermal point 16",
+    "display_name": "Moyenne Tinée et Vésubie - Bairols",
     "type": "region",
-    "region_name": "Thermal region 15"
+    "region_name": "Moyenne Tinée et Vésubie"
   },
   "manual_27f90b9a983b": {
     "lat": 44.027995,
     "lon": 5.958647,
-    "display_name": "Thermal region 17 - Thermal point 18",
+    "display_name": "Val de Durance - Les Mées",
     "type": "region",
-    "region_name": "Thermal region 17"
+    "region_name": "Val de Durance"
   },
   "manual_719d3ba3628c": {
     "lat": 44.02632,
     "lon": 5.493557,
-    "display_name": "Thermal region 19 - Thermal point 20",
+    "display_name": "Plateau d'Albion - Saint-Christol",
     "type": "region",
-    "region_name": "Thermal region 19"
+    "region_name": "Plateau d'Albion"
   },
   "manual_69590b1dbf69": {
     "lat": 43.799732,
     "lon": 6.81133,
-    "display_name": "Thermal region 21 - Thermal point 22",
+    "display_name": "Préalpes de Castellane - Thorenc",
     "type": "region",
-    "region_name": "Thermal region 21"
+    "region_name": "Préalpes de Castellane"
   },
   "manual_2cc6978187af": {
     "lat": 43.596331,
     "lon": 5.961431,
-    "display_name": "Thermal region 23 - Thermal point 24",
+    "display_name": "Provence verte - Varages",
     "type": "region",
-    "region_name": "Thermal region 23"
+    "region_name": "Provence verte"
   },
   "manual_98511feb3e7e": {
     "lat": 47.268291,
     "lon": 12.34578,
-    "display_name": "Thermal region 25 - Thermal point 26",
+    "display_name": "Oberpinzgau - Bramberg am Wildkogel",
     "type": "region",
-    "region_name": "Thermal region 25"
+    "region_name": "Oberpinzgau"
   },
   "manual_5a8b215b63d6": {
     "lat": 46.971433,
     "lon": 12.893191,
-    "display_name": "Thermal region 27 - Thermal point 28",
+    "display_name": "Oberes Mölltal - Döllach",
     "type": "region",
-    "region_name": "Thermal region 27"
+    "region_name": "Oberes Mölltal"
   },
   "manual_7de37f3c3c92": {
     "lat": 46.744301,
     "lon": 13.202495,
-    "display_name": "Thermal region 30 - Thermal point 29",
+    "display_name": "Oberes Drautal - Bruggen",
     "type": "region",
-    "region_name": "Thermal region 30"
+    "region_name": "Oberes Drautal"
   },
   "manual_d6b6d1560801": {
     "lat": 46.747144,
     "lon": 12.436812,
-    "display_name": "Thermal region 31 - Thermal point 32",
+    "display_name": "Hochpustertal - Schlittenhaus",
     "type": "region",
-    "region_name": "Thermal region 31"
+    "region_name": "Hochpustertal"
   },
   "manual_45ff67c2a90f": {
     "lat": 47.846533,
     "lon": 11.490145,
-    "display_name": "Thermal region 33 - Thermal point 34",
+    "display_name": "Isar-Loisach-Vorland - Geretsried",
     "type": "region",
-    "region_name": "Thermal region 33"
+    "region_name": "Isar-Loisach-Vorland"
   },
   "manual_a11cd0782125": {
     "lat": 47.446593,
     "lon": 12.387247,
-    "display_name": "Thermal region 35 - Thermal point 36",
+    "display_name": "Kitzbüheler Alpen - Kitzbühel",
     "type": "region",
-    "region_name": "Thermal region 35"
+    "region_name": "Kitzbüheler Alpen"
   },
   "manual_8efba0730683": {
     "lat": 47.151286,
     "lon": 12.806251,
-    "display_name": "Thermal region 38 - Thermal point 39",
+    "display_name": "Pinzgauer Hohe Tauern - Ferleitental",
     "type": "region",
-    "region_name": "Thermal region 38"
+    "region_name": "Pinzgauer Hohe Tauern"
   },
   "manual_0f7bd6ebefff": {
     "lat": 47.425597,
     "lon": 12.844602,
-    "display_name": "Thermal region 40 - Thermal point 41",
+    "display_name": "Saalfeldener Becken - Saalfelden am Steinernen Meer",
     "type": "region",
-    "region_name": "Thermal region 40"
+    "region_name": "Saalfeldener Becken"
   },
   "manual_72e6e2a9df4d": {
     "lat": 47.670705,
     "lon": 12.404222,
-    "display_name": "Thermal region 42 - Thermal point 43",
+    "display_name": "Kaiserwinkl - Kössen",
     "type": "region",
-    "region_name": "Thermal region 42"
+    "region_name": "Kaiserwinkl"
   },
   "manual_daca7cc08042": {
     "lat": 46.498301,
     "lon": 12.610334,
-    "display_name": "Thermal region 44 - Thermal point 45",
+    "display_name": "Alpi Carniche occidentali - Forcella Lavardet",
     "type": "region",
-    "region_name": "Thermal region 44"
+    "region_name": "Alpi Carniche occidentali"
   },
   "manual_881e38ce21c6": {
     "lat": 46.266539,
     "lon": 12.468567,
-    "display_name": "Thermal region 46 - Thermal point 47",
+    "display_name": "Valcellina - Pinedo",
     "type": "region",
-    "region_name": "Thermal region 46"
+    "region_name": "Valcellina"
   },
   "manual_e9f4048e41d4": {
     "lat": 46.152773,
     "lon": 12.676203,
-    "display_name": "Thermal region 48 - Thermal point 49",
+    "display_name": "Pedemontana pordenonese - Montereale Valcellina",
     "type": "region",
-    "region_name": "Thermal region 48"
+    "region_name": "Pedemontana pordenonese"
   },
   "manual_7d9af1195b5e": {
     "lat": 46.507159,
     "lon": 13.309519,
-    "display_name": "Thermal region 50 - Thermal point 51",
+    "display_name": "Val Canale e Canal del Ferro - Pontebba",
     "type": "region",
-    "region_name": "Thermal region 50"
+    "region_name": "Val Canale e Canal del Ferro"
   },
   "manual_8b33803994f2": {
     "lat": 46.275293,
     "lon": 13.137248,
-    "display_name": "Thermal region 52 - Thermal point 53",
+    "display_name": "Gemonese - Gemona del Friuli",
     "type": "region",
-    "region_name": "Thermal region 52"
+    "region_name": "Gemonese"
   },
   "manual_73f01e9be327": {
     "lat": 46.244161,
     "lon": 13.585239,
-    "display_name": "Thermal region 54 - Thermal point 55",
+    "display_name": "Posočje - Kobarid",
     "type": "region",
-    "region_name": "Thermal region 54"
+    "region_name": "Posočje"
   },
   "recovered_podkoren": {
     "lat": 46.4914,
     "lon": 13.75237,
-    "display_name": "Thermal region 56 - Podkoren",
+    "display_name": "Zgornjesavska dolina - Podkoren",
     "type": "region",
-    "region_name": "Thermal region 56"
+    "region_name": "Zgornjesavska dolina"
   },
   "manual_7231b1d72e82": {
     "lat": 47.167263,
     "lon": 13.26298,
-    "display_name": "Thermal region 57 - Thermal point 58",
+    "display_name": "Großarltal - Karteis",
     "type": "region",
-    "region_name": "Thermal region 57"
+    "region_name": "Großarltal"
   },
   "manual_85ff4ffd2f55": {
     "lat": 46.951695,
     "lon": 13.505895,
-    "display_name": "Thermal region 61 - Thermal point 62",
+    "display_name": "Maltatal - Malta",
     "type": "region",
-    "region_name": "Thermal region 61"
+    "region_name": "Maltatal"
   },
   "manual_0655e9e65df5": {
     "lat": 47.129537,
     "lon": 13.813581,
-    "display_name": "Thermal region 63 - Thermal point 64",
+    "display_name": "Lungau - Tamsweg",
     "type": "region",
-    "region_name": "Thermal region 63"
+    "region_name": "Lungau"
   },
   "manual_0adae212aa80": {
     "lat": 47.395654,
     "lon": 13.692725,
-    "display_name": "Thermal region 65 - Thermal point 66",
+    "display_name": "Oberes Ennstal West - Schladming",
     "type": "region",
-    "region_name": "Thermal region 65"
+    "region_name": "Oberes Ennstal West"
   },
   "manual_c75659e26613": {
     "lat": 47.531653,
     "lon": 14.114363,
-    "display_name": "Thermal region 67 - Thermal point 68",
+    "display_name": "Oberes Ennstal Ost - Stainach",
     "type": "region",
-    "region_name": "Thermal region 67"
+    "region_name": "Oberes Ennstal Ost"
   },
   "manual_0be919acae69": {
     "lat": 46.711134,
     "lon": 13.654688,
-    "display_name": "Thermal region 69 - Thermal point 70",
+    "display_name": "Unteres Drautal - Pattendorf",
     "type": "region",
-    "region_name": "Thermal region 69"
+    "region_name": "Unteres Drautal"
   },
   "manual_39a7df824b1e": {
     "lat": 47.151077,
     "lon": 14.408895,
-    "display_name": "Thermal region 71 - Thermal point 72",
+    "display_name": "Oberes Murtal - Scheifling",
     "type": "region",
-    "region_name": "Thermal region 71"
+    "region_name": "Oberes Murtal"
   },
   "draft_terrain_001": {
     "lat": 49.87626348761863,
     "lon": 1.2439091602545929,
-    "display_name": "Saint-Nicolas-d'Aliermont - plain - Saint-Nicolas-d'Aliermont",
+    "display_name": "Petit Caux et Aliermont - Saint-Nicolas-d'Aliermont",
     "type": "region",
-    "region_name": "Saint-Nicolas-d'Aliermont - plain"
+    "region_name": "Petit Caux et Aliermont"
   },
   "draft_terrain_002": {
     "lat": 49.80016925231773,
     "lon": 1.9854749460363499,
-    "display_name": "Poix-de-Picardie - plain - Poix-de-Picardie",
+    "display_name": "Amiénois - Poix-de-Picardie",
     "type": "region",
-    "region_name": "Poix-de-Picardie - plain"
+    "region_name": "Amiénois"
   },
   "draft_terrain_003": {
     "lat": 49.826940293060844,
     "lon": 2.7151297366884966,
-    "display_name": "Rosières-en-Santerre - plain - Rosières-en-Santerre",
+    "display_name": "Santerre - Rosières-en-Santerre",
     "type": "region",
-    "region_name": "Rosières-en-Santerre - plain"
+    "region_name": "Santerre"
   },
   "draft_terrain_004": {
     "lat": 49.809134532462586,
     "lon": 3.4578288610684367,
-    "display_name": "Ribemont - plain - Ribemont",
+    "display_name": "Vermandois - Ribemont",
     "type": "region",
-    "region_name": "Ribemont - plain"
+    "region_name": "Vermandois"
   },
   "draft_terrain_005": {
     "lat": 49.88889815929734,
     "lon": 4.264204263400255,
-    "display_name": "Signy-le-Petit - plain - Signy-le-Petit",
+    "display_name": "Thiérache ardennaise - Signy-le-Petit",
     "type": "region",
-    "region_name": "Signy-le-Petit - plain"
+    "region_name": "Thiérache ardennaise"
   },
   "draft_terrain_006": {
     "lat": 49.93872097817587,
     "lon": 16.161205118300032,
-    "display_name": "Vysoké Mýto - uplands - Vysoké Mýto",
+    "display_name": "Svitavská pahorkatina - Vysoké Mýto",
     "type": "region",
-    "region_name": "Vysoké Mýto - uplands"
+    "region_name": "Svitavská pahorkatina"
   },
   "draft_terrain_007": {
     "lat": 49.48108365578729,
     "lon": 1.1069204176541287,
-    "display_name": "Mont-Saint-Aignan - plain - Mont-Saint-Aignan",
+    "display_name": "Pays de Caux - Mont-Saint-Aignan",
     "type": "region",
-    "region_name": "Mont-Saint-Aignan - plain"
+    "region_name": "Pays de Caux"
   },
   "draft_terrain_008": {
     "lat": 49.63791375260153,
     "lon": 1.7406597127628312,
-    "display_name": "Formerie - plain - Formerie",
+    "display_name": "Pays de Bray - Formerie",
     "type": "region",
-    "region_name": "Formerie - plain"
+    "region_name": "Pays de Bray"
   },
   "draft_terrain_009": {
     "lat": 49.568989932717585,
     "lon": 2.36474387061481,
-    "display_name": "Ansauvillers - plain - Ansauvillers",
+    "display_name": "Plateau picard - Ansauvillers",
     "type": "region",
-    "region_name": "Ansauvillers - plain"
+    "region_name": "Plateau picard"
   },
   "draft_terrain_010": {
     "lat": 49.708353034011765,
     "lon": 4.918392343326756,
-    "display_name": "Sedan - plateau - Sedan",
+    "display_name": "Ardenne sedanaise - Sedan",
     "type": "region",
-    "region_name": "Sedan - plateau"
+    "region_name": "Ardenne sedanaise"
   },
   "draft_terrain_011": {
     "lat": 49.78899803727116,
     "lon": 5.550151408663022,
-    "display_name": "Léglise - plain - Léglise",
+    "display_name": "Ardenne méridionale - Léglise",
     "type": "region",
-    "region_name": "Léglise - plain"
+    "region_name": "Ardenne méridionale"
   },
   "draft_terrain_012": {
     "lat": 49.85288755331377,
     "lon": 6.191934233867125,
-    "display_name": "Gilsdorf - plain - Gilsdorf",
+    "display_name": "Gutland - Gilsdorf",
     "type": "region",
-    "region_name": "Gilsdorf - plain"
+    "region_name": "Gutland"
   },
   "draft_terrain_013": {
     "lat": 49.81079308180426,
     "lon": 6.716893830883534,
-    "display_name": "Ehrang - uplands - Ehrang",
+    "display_name": "Trierer Moseltal und Hunsrück - Ehrang",
     "type": "region",
-    "region_name": "Ehrang - uplands"
+    "region_name": "Trierer Moseltal und Hunsrück"
   },
   "draft_terrain_014": {
     "lat": 49.83169730167269,
     "lon": 7.543098471650854,
-    "display_name": "Simmertal - plateau - Simmertal",
+    "display_name": "Soonwald und Nahebergland - Simmertal",
     "type": "region",
-    "region_name": "Simmertal - plateau"
+    "region_name": "Soonwald und Nahebergland"
   },
   "draft_terrain_015": {
     "lat": 49.85596715971241,
     "lon": 8.105275757807416,
-    "display_name": "Wörrstadt - plain - Wörrstadt",
+    "display_name": "Rheinhessisches Hügelland - Wörrstadt",
     "type": "region",
-    "region_name": "Wörrstadt - plain"
+    "region_name": "Rheinhessisches Hügelland"
   },
   "draft_terrain_016": {
     "lat": 49.81554325717398,
     "lon": 8.760000755737796,
-    "display_name": "Ober-Ramstadt - plateau - Ober-Ramstadt",
+    "display_name": "Nördlicher Odenwald und Untermainebene - Ober-Ramstadt",
     "type": "region",
-    "region_name": "Ober-Ramstadt - plateau"
+    "region_name": "Nördlicher Odenwald und Untermainebene"
   },
   "draft_terrain_017": {
     "lat": 49.82503373859938,
     "lon": 9.364270527428813,
-    "display_name": "Altenbuch - plateau - Altenbuch",
+    "display_name": "Spessart - Altenbuch",
     "type": "region",
-    "region_name": "Altenbuch - plateau"
+    "region_name": "Spessart"
   },
   "draft_terrain_018": {
     "lat": 49.85377807632392,
     "lon": 10.05213934793237,
-    "display_name": "Kürnach - plain - Kürnach",
+    "display_name": "Mainfränkische Platten - Kürnach",
     "type": "region",
-    "region_name": "Kürnach - plain"
+    "region_name": "Mainfränkische Platten"
   },
   "draft_terrain_019": {
     "lat": 49.886130247808644,
     "lon": 10.90786159015579,
-    "display_name": "Bamberg - plain - Bamberg",
+    "display_name": "Steigerwald und Bamberger Becken - Bamberg",
     "type": "region",
-    "region_name": "Bamberg - plain"
+    "region_name": "Steigerwald und Bamberger Becken"
   },
   "draft_terrain_020": {
     "lat": 49.92827319807082,
     "lon": 11.577189973988183,
-    "display_name": "Bayreuth - plain - Bayreuth",
+    "display_name": "Nördliche Frankenalb und Obermainland - Bayreuth",
     "type": "region",
-    "region_name": "Bayreuth - plain"
+    "region_name": "Nördliche Frankenalb und Obermainland"
   },
   "draft_terrain_021": {
     "lat": 49.91322673945325,
     "lon": 12.210347326453796,
-    "display_name": "Wiesau - plateau - Wiesau",
+    "display_name": "Fichtelgebirge und Naab-Wondreb-Senke - Wiesau",
     "type": "region",
-    "region_name": "Wiesau - plateau"
+    "region_name": "Fichtelgebirge und Naab-Wondreb-Senke"
   },
   "draft_terrain_022": {
     "lat": 49.769265451343465,
     "lon": 12.995449217088412,
-    "display_name": "Stříbro - plateau - Stříbro",
+    "display_name": "Plaská pahorkatina - Stříbro",
     "type": "region",
-    "region_name": "Stříbro - plateau"
+    "region_name": "Plaská pahorkatina"
   },
   "draft_terrain_023": {
     "lat": 49.86756083559613,
     "lon": 13.635123640425153,
-    "display_name": "Radnice - plain - Radnice",
+    "display_name": "Plaská pahorkatina a Křivoklátsko - Radnice",
     "type": "region",
-    "region_name": "Radnice - plain"
+    "region_name": "Plaská pahorkatina a Křivoklátsko"
   },
   "draft_terrain_024": {
     "lat": 49.84581576100476,
     "lon": 14.260091751232927,
-    "display_name": "Mníšek pod Brdy - plain - Mníšek pod Brdy",
+    "display_name": "Dobříšská pahorkatina a Brdy - Mníšek pod Brdy",
     "type": "region",
-    "region_name": "Mníšek pod Brdy - plain"
+    "region_name": "Dobříšská pahorkatina a Brdy"
   },
   "draft_terrain_025": {
     "lat": 49.84694241498061,
     "lon": 14.901114005888967,
-    "display_name": "Sázava - plain - Sázava",
+    "display_name": "Posázaví - Sázava",
     "type": "region",
-    "region_name": "Sázava - plain"
+    "region_name": "Posázaví"
   },
   "draft_terrain_026": {
     "lat": 49.7668108834191,
     "lon": 15.470579085720873,
-    "display_name": "Habry - plateau - Habry",
+    "display_name": "Hornosázavská pahorkatina - Habry",
     "type": "region",
-    "region_name": "Habry - plateau"
+    "region_name": "Hornosázavská pahorkatina"
   },
   "draft_terrain_027": {
     "lat": 49.24003734673295,
     "lon": 1.3793512377780952,
-    "display_name": "Les Andelys - plain - Les Andelys",
+    "display_name": "Vexin normand - Les Andelys",
     "type": "region",
-    "region_name": "Les Andelys - plain"
+    "region_name": "Vexin normand"
   },
   "draft_terrain_028": {
     "lat": 49.5654040705664,
     "lon": 3.0047268441499018,
-    "display_name": "Noyon - plain - Noyon",
+    "display_name": "Noyonnais - Noyon",
     "type": "region",
-    "region_name": "Noyon - plain"
+    "region_name": "Noyonnais"
   },
   "draft_terrain_029": {
     "lat": 49.58010512853966,
     "lon": 3.877608952938909,
-    "display_name": "Sissonne - plain - Sissonne",
+    "display_name": "Laonnois - Sissonne",
     "type": "region",
-    "region_name": "Sissonne - plain"
+    "region_name": "Laonnois"
   },
   "draft_terrain_030": {
     "lat": 49.48925709420256,
     "lon": 4.56766008985483,
-    "display_name": "Attigny - plain - Attigny",
+    "display_name": "Champagne crayeuse ardennaise - Attigny",
     "type": "region",
-    "region_name": "Attigny - plain"
+    "region_name": "Champagne crayeuse ardennaise"
   },
   "draft_terrain_031": {
     "lat": 49.48096418451353,
     "lon": 5.177366524324256,
-    "display_name": "Stenay - plain - Stenay",
+    "display_name": "Pays de Stenay - Stenay",
     "type": "region",
-    "region_name": "Stenay - plain"
+    "region_name": "Pays de Stenay"
   },
   "draft_terrain_032": {
     "lat": 49.5263797616587,
     "lon": 6.120760743516136,
-    "display_name": "Bettembourg - plain - Bettembourg",
+    "display_name": "Minett - Bettembourg",
     "type": "region",
-    "region_name": "Bettembourg - plain"
+    "region_name": "Minett"
   },
   "draft_terrain_033": {
     "lat": 49.48066709710676,
     "lon": 7.153536075791297,
-    "display_name": "Sankt Wendel - plateau - Sankt Wendel",
+    "display_name": "Saar-Nahe-Bergland - Sankt Wendel",
     "type": "region",
-    "region_name": "Sankt Wendel - plateau"
+    "region_name": "Saar-Nahe-Bergland"
   },
   "draft_terrain_034": {
     "lat": 49.55172145743925,
     "lon": 9.56820830345598,
-    "display_name": "Buch am Ahorn - plain - Buch am Ahorn",
+    "display_name": "Bauland - Buch am Ahorn",
     "type": "region",
-    "region_name": "Buch am Ahorn - plain"
+    "region_name": "Bauland"
   },
   "draft_terrain_035": {
     "lat": 49.646088577679585,
     "lon": 10.446476865260454,
-    "display_name": "Markt Bibart - plain - Markt Bibart",
+    "display_name": "Steigerwald und Windsheimer Bucht - Markt Bibart",
     "type": "region",
-    "region_name": "Markt Bibart - plain"
+    "region_name": "Steigerwald und Windsheimer Bucht"
   },
   "draft_terrain_036": {
     "lat": 49.58828741034733,
     "lon": 11.033656156848872,
-    "display_name": "Erlangen - plain - Erlangen",
+    "display_name": "Mittelfränkisches Becken - Erlangen",
     "type": "region",
-    "region_name": "Erlangen - plain"
+    "region_name": "Mittelfränkisches Becken"
   },
   "draft_terrain_037": {
     "lat": 49.54579428429916,
     "lon": 12.138304326816602,
-    "display_name": "Wernberg-Köblitz - plain - Wernberg-Köblitz",
+    "display_name": "Oberpfälzer Hügelland und Naabtal - Wernberg-Köblitz",
     "type": "region",
-    "region_name": "Wernberg-Köblitz - plain"
+    "region_name": "Oberpfälzer Hügelland und Naabtal"
   },
   "draft_terrain_038": {
     "lat": 49.57329011646444,
     "lon": 12.547544403789468,
-    "display_name": "Eslarn - plateau - Eslarn",
+    "display_name": "Oberpfälzer Wald - Eslarn",
     "type": "region",
-    "region_name": "Eslarn - plateau"
+    "region_name": "Oberpfälzer Wald"
   },
   "draft_terrain_039": {
     "lat": 49.58401738865757,
     "lon": 13.343867392461453,
-    "display_name": "Přeštice - plain - Přeštice",
+    "display_name": "Švihovská vrchovina - Přeštice",
     "type": "region",
-    "region_name": "Přeštice - plain"
+    "region_name": "Švihovská vrchovina"
   },
   "draft_terrain_040": {
     "lat": 49.569117679488876,
     "lon": 13.94495855015569,
-    "display_name": "Březnice - plateau - Březnice",
+    "display_name": "Březnická pahorkatina - Březnice",
     "type": "region",
-    "region_name": "Březnice - plateau"
+    "region_name": "Březnická pahorkatina"
   },
   "draft_terrain_041": {
     "lat": 49.43351410809844,
     "lon": 14.665946037776763,
-    "display_name": "Tábor - plain - Tábor",
+    "display_name": "Táborská a Vlašimská pahorkatina - Tábor",
     "type": "region",
-    "region_name": "Tábor - plain"
+    "region_name": "Táborská a Vlašimská pahorkatina"
   },
   "draft_terrain_042": {
     "lat": 49.47407324467402,
     "lon": 14.981001010668889,
-    "display_name": "Pacov - plateau - Pacov",
+    "display_name": "Křemešnická vrchovina - Pacov",
     "type": "region",
-    "region_name": "Pacov - plateau"
+    "region_name": "Křemešnická vrchovina"
   },
   "draft_terrain_043": {
     "lat": 49.55883313128234,
     "lon": 16.098889330174565,
-    "display_name": "Nové Město na Moravě - plateau - Nové Město na Moravě",
+    "display_name": "Žďárské vrchy a Novoměstsko - Nové Město na Moravě",
     "type": "region",
-    "region_name": "Nové Město na Moravě - plateau"
+    "region_name": "Žďárské vrchy a Novoměstsko"
   },
   "draft_terrain_044": {
     "lat": 49.05888952083528,
     "lon": 1.031968347432348,
-    "display_name": "Claville - plain - Claville",
+    "display_name": "Plateau du Neubourg - Claville",
     "type": "region",
-    "region_name": "Claville - plain"
+    "region_name": "Plateau du Neubourg"
   },
   "draft_terrain_045": {
     "lat": 49.20762215849558,
     "lon": 2.103732076510183,
-    "display_name": "Amblainville - plain - Amblainville",
+    "display_name": "Vexin français - Amblainville",
     "type": "region",
-    "region_name": "Amblainville - plain"
+    "region_name": "Vexin français"
   },
   "draft_terrain_046": {
     "lat": 49.314577044863455,
     "lon": 2.6121729378942944,
-    "display_name": "Pont-Sainte-Maxence - plain - Pont-Sainte-Maxence",
+    "display_name": "Valois - Pont-Sainte-Maxence",
     "type": "region",
-    "region_name": "Pont-Sainte-Maxence - plain"
+    "region_name": "Valois"
   },
   "draft_terrain_047": {
     "lat": 49.35218041138823,
     "lon": 3.5124396675202814,
-    "display_name": "Braine - plain - Braine",
+    "display_name": "Soissonnais - Braine",
     "type": "region",
-    "region_name": "Braine - plain"
+    "region_name": "Soissonnais"
   },
   "draft_terrain_048": {
     "lat": 49.257944193026844,
     "lon": 4.007652577260503,
-    "display_name": "Reims - plain - Reims",
+    "display_name": "Champagne rémoise - Reims",
     "type": "region",
-    "region_name": "Reims - plain"
+    "region_name": "Champagne rémoise"
   },
   "draft_terrain_049": {
     "lat": 49.32446194235997,
     "lon": 5.764827150048729,
-    "display_name": "Piennes - plain - Piennes",
+    "display_name": "Pays Haut lorrain - Piennes",
     "type": "region",
-    "region_name": "Piennes - plain"
+    "region_name": "Pays Haut lorrain"
   },
   "draft_terrain_050": {
     "lat": 49.30367394127246,
     "lon": 6.764783576926599,
-    "display_name": "Saarlouis - plain - Saarlouis",
+    "display_name": "Mittleres Saartal - Saarlouis",
     "type": "region",
-    "region_name": "Saarlouis - plain"
+    "region_name": "Mittleres Saartal"
   },
   "draft_terrain_051": {
     "lat": 49.46330054211806,
     "lon": 7.782524646061738,
-    "display_name": "Kaiserslautern - plain - Kaiserslautern",
+    "display_name": "Pfälzerwald und Kaiserslauterer Senke - Kaiserslautern",
     "type": "region",
-    "region_name": "Kaiserslautern - plain"
+    "region_name": "Pfälzerwald und Kaiserslauterer Senke"
   },
   "draft_terrain_052": {
     "lat": 49.4696879394398,
     "lon": 8.43079971887179,
-    "display_name": "Ludwigshafen am Rhein - plain - Ludwigshafen am Rhein",
+    "display_name": "Vorderpfälzische Rheinebene - Ludwigshafen am Rhein",
     "type": "region",
-    "region_name": "Ludwigshafen am Rhein - plain"
+    "region_name": "Vorderpfälzische Rheinebene"
   },
   "draft_terrain_053": {
     "lat": 49.55219336869719,
     "lon": 8.95329300505087,
-    "display_name": "Oberzent - plateau - Oberzent",
+    "display_name": "Sandstein-Odenwald - Oberzent",
     "type": "region",
-    "region_name": "Oberzent - plateau"
+    "region_name": "Sandstein-Odenwald"
   },
   "draft_terrain_054": {
     "lat": 49.512425721283,
     "lon": 11.722489583765872,
-    "display_name": "Sulzbach-Rosenberg - plain - Sulzbach-Rosenberg",
+    "display_name": "Oberpfälzer Alb - Sulzbach-Rosenberg",
     "type": "region",
-    "region_name": "Sulzbach-Rosenberg - plain"
+    "region_name": "Oberpfälzer Alb"
   },
   "draft_terrain_055": {
     "lat": 49.31609953819934,
     "lon": 12.946981297804133,
-    "display_name": "Eschlkam - plateau - Eschlkam",
+    "display_name": "Cham-Further Senke - Eschlkam",
     "type": "region",
-    "region_name": "Eschlkam - plateau"
+    "region_name": "Cham-Further Senke"
   },
   "draft_terrain_056": {
     "lat": 49.31283931508197,
     "lon": 13.6694887904166,
-    "display_name": "Horažďovice - plateau - Horažďovice",
+    "display_name": "Blatenská pahorkatina a Pošumaví - Horažďovice",
     "type": "region",
-    "region_name": "Horažďovice - plateau"
+    "region_name": "Blatenská pahorkatina a Pošumaví"
   },
   "draft_terrain_057": {
     "lat": 49.41014452799631,
     "lon": 15.575544605477646,
-    "display_name": "Jihlava - plateau - Jihlava",
+    "display_name": "Křižanovská vrchovina a Jihlavsko - Jihlava",
     "type": "region",
-    "region_name": "Jihlava - plateau"
+    "region_name": "Křižanovská vrchovina a Jihlavsko"
   },
   "draft_terrain_058": {
     "lat": 49.194919979957795,
     "lon": 16.156766224858647,
-    "display_name": "Náměšť nad Oslavou - plateau - Náměšť nad Oslavou",
+    "display_name": "Jevišovická pahorkatina a Oslavsko - Náměšť nad Oslavou",
     "type": "region",
-    "region_name": "Náměšť nad Oslavou - plateau"
+    "region_name": "Jevišovická pahorkatina a Oslavsko"
   },
   "draft_terrain_059": {
     "lat": 48.92862007907922,
     "lon": 1.5645843196892848,
-    "display_name": "Longnes - plain - Longnes",
+    "display_name": "Mantois - Longnes",
     "type": "region",
-    "region_name": "Longnes - plain"
+    "region_name": "Mantois"
   },
   "draft_terrain_060": {
     "lat": 48.94189349378517,
     "lon": 2.441647475432626,
-    "display_name": "Le Blanc-Mesnil - plain - Le Blanc-Mesnil",
+    "display_name": "Plaine de France - Le Blanc-Mesnil",
     "type": "region",
-    "region_name": "Le Blanc-Mesnil - plain"
+    "region_name": "Plaine de France"
   },
   "draft_terrain_061": {
     "lat": 49.00300163530041,
     "lon": 2.961290271851051,
-    "display_name": "Congis-sur-Thérouanne - plain - Congis-sur-Thérouanne",
+    "display_name": "Multien - Congis-sur-Thérouanne",
     "type": "region",
-    "region_name": "Congis-sur-Thérouanne - plain"
+    "region_name": "Multien"
   },
   "draft_terrain_062": {
     "lat": 48.89024284824934,
     "lon": 3.559535247778619,
-    "display_name": "Montmirail - plain - Montmirail",
+    "display_name": "Brie champenoise - Montmirail",
     "type": "region",
-    "region_name": "Montmirail - plain"
+    "region_name": "Brie champenoise"
   },
   "draft_terrain_063": {
     "lat": 49.11902102239742,
     "lon": 4.553730599112344,
-    "display_name": "Suippes - plain - Suippes",
+    "display_name": "Champagne crayeuse - Suippes",
     "type": "region",
-    "region_name": "Suippes - plain"
+    "region_name": "Champagne crayeuse"
   },
   "draft_terrain_064": {
     "lat": 49.14245842736835,
     "lon": 5.375477749001276,
-    "display_name": "Verdun - plain - Verdun",
+    "display_name": "Verdunois - Verdun",
     "type": "region",
-    "region_name": "Verdun - plain"
+    "region_name": "Verdunois"
   },
   "draft_terrain_065": {
     "lat": 49.13176245308075,
     "lon": 6.165683569342652,
-    "display_name": "Metz - plain - Metz",
+    "display_name": "Pays messin - Metz",
     "type": "region",
-    "region_name": "Metz - plain"
+    "region_name": "Pays messin"
   },
   "draft_terrain_066": {
     "lat": 49.23374732832001,
     "lon": 7.360226425911743,
-    "display_name": "Zweibrücken - plain - Zweibrücken",
+    "display_name": "Zweibrücker Westrich - Zweibrücken",
     "type": "region",
-    "region_name": "Zweibrücken - plain"
+    "region_name": "Zweibrücker Westrich"
   },
   "draft_terrain_067": {
     "lat": 49.12984021612334,
     "lon": 8.578672011599695,
-    "display_name": "Bruchsal - plain - Bruchsal",
+    "display_name": "Kraichgau - Bruchsal",
     "type": "region",
-    "region_name": "Bruchsal - plain"
+    "region_name": "Kraichgau"
   },
   "draft_terrain_068": {
     "lat": 49.2359484970117,
     "lon": 9.358198551538191,
-    "display_name": "Neuenstadt am Kocher - plain - Neuenstadt am Kocher",
+    "display_name": "Hohenloher und Haller Ebene - Neuenstadt am Kocher",
     "type": "region",
-    "region_name": "Neuenstadt am Kocher - plain"
+    "region_name": "Hohenloher und Haller Ebene"
   },
   "draft_terrain_069": {
     "lat": 49.34120849739426,
     "lon": 10.003439425456575,
-    "display_name": "Schrozberg - plain - Schrozberg",
+    "display_name": "Hohenloher Ebene - Schrozberg",
     "type": "region",
-    "region_name": "Schrozberg - plain"
+    "region_name": "Hohenloher Ebene"
   },
   "draft_terrain_070": {
     "lat": 49.29385896194119,
     "lon": 10.731903118310523,
-    "display_name": "Petersaurach - plain - Petersaurach",
+    "display_name": "Südwestliches Mittelfränkisches Becken - Petersaurach",
     "type": "region",
-    "region_name": "Petersaurach - plain"
+    "region_name": "Südwestliches Mittelfränkisches Becken"
   },
   "draft_terrain_071": {
     "lat": 49.302108014870875,
     "lon": 11.30945399084922,
-    "display_name": "Pyrbaum - plain - Pyrbaum",
+    "display_name": "Vorland der Mittleren Frankenalb - Pyrbaum",
     "type": "region",
-    "region_name": "Pyrbaum - plain"
+    "region_name": "Vorland der Mittleren Frankenalb"
   },
   "draft_terrain_072": {
     "lat": 49.19237808869959,
     "lon": 12.033694014667903,
-    "display_name": "Burglengenfeld - plain - Burglengenfeld",
+    "display_name": "Mittlere Frankenalb und Naabtal - Burglengenfeld",
     "type": "region",
-    "region_name": "Burglengenfeld - plain"
+    "region_name": "Mittlere Frankenalb und Naabtal"
   },
   "draft_terrain_073": {
     "lat": 49.205125190071435,
     "lon": 12.514671093739024,
-    "display_name": "Roding - plain - Roding",
+    "display_name": "Regental und Falkensteiner Vorwald - Roding",
     "type": "region",
-    "region_name": "Roding - plain"
+    "region_name": "Regental und Falkensteiner Vorwald"
   },
   "draft_terrain_074": {
     "lat": 49.055823169058165,
     "lon": 13.246316967536474,
-    "display_name": "Lindberg - uplands - Lindberg",
+    "display_name": "Hinterer Bayerischer Wald - Lindberg",
     "type": "region",
-    "region_name": "Lindberg - uplands"
+    "region_name": "Hinterer Bayerischer Wald"
   },
   "draft_terrain_075": {
     "lat": 49.19532923342503,
     "lon": 14.196531333488153,
-    "display_name": "Protivín - plain - Protivín",
+    "display_name": "Písecko a Českobudějovická pánev - Protivín",
     "type": "region",
-    "region_name": "Protivín - plain"
+    "region_name": "Písecko a Českobudějovická pánev"
   },
   "draft_terrain_076": {
     "lat": 48.99287228245187,
     "lon": 14.754264311305906,
-    "display_name": "Třeboň - plain - Třeboň",
+    "display_name": "Třeboňská pánev - Třeboň",
     "type": "region",
-    "region_name": "Třeboň - plain"
+    "region_name": "Třeboňská pánev"
   },
   "draft_terrain_077": {
     "lat": 49.13552190628853,
     "lon": 15.193883544911616,
-    "display_name": "Kunžak - plateau - Kunžak",
+    "display_name": "Česká Kanada - Kunžak",
     "type": "region",
-    "region_name": "Kunžak - plateau"
+    "region_name": "Česká Kanada"
   },
   "draft_terrain_078": {
     "lat": 49.03878677439985,
     "lon": 15.787229119417558,
-    "display_name": "Moravské Budějovice - plain - Moravské Budějovice",
+    "display_name": "Jevišovická pahorkatina - Moravské Budějovice",
     "type": "region",
-    "region_name": "Moravské Budějovice - plain"
+    "region_name": "Jevišovická pahorkatina"
   },
   "draft_terrain_079": {
     "lat": 48.70550314195467,
     "lon": 1.0823599720716885,
-    "display_name": "Brezolles - plain - Brezolles",
+    "display_name": "Thymerais - Brezolles",
     "type": "region",
-    "region_name": "Brezolles - plain"
+    "region_name": "Thymerais"
   },
   "draft_terrain_080": {
     "lat": 48.785495022908364,
     "lon": 2.0137432099728776,
-    "display_name": "Saint-Quentin-en-Yvelines - plain - Saint-Quentin-en-Yvelines",
+    "display_name": "Hurepoix - Saint-Quentin-en-Yvelines",
     "type": "region",
-    "region_name": "Saint-Quentin-en-Yvelines - plain"
+    "region_name": "Hurepoix"
   },
   "draft_terrain_081": {
     "lat": 48.725661748846896,
     "lon": 2.720623282423101,
-    "display_name": "Gretz-Armainvilliers - plain - Gretz-Armainvilliers",
+    "display_name": "Brie boisée - Gretz-Armainvilliers",
     "type": "region",
-    "region_name": "Gretz-Armainvilliers - plain"
+    "region_name": "Brie boisée"
   },
   "draft_terrain_082": {
     "lat": 48.938539850185585,
     "lon": 4.368298581907032,
-    "display_name": "Châlons-en-Champagne - plain - Châlons-en-Champagne",
+    "display_name": "Champagne de Châlons - Châlons-en-Champagne",
     "type": "region",
-    "region_name": "Châlons-en-Champagne - plain"
+    "region_name": "Champagne de Châlons"
   },
   "draft_terrain_083": {
     "lat": 48.96226806537843,
     "lon": 5.71386112928249,
-    "display_name": "Vigneulles-lès-Hattonchâtel - plain - Vigneulles-lès-Hattonchâtel",
+    "display_name": "Côtes de Meuse et Woëvre - Vigneulles-lès-Hattonchâtel",
     "type": "region",
-    "region_name": "Vigneulles-lès-Hattonchâtel - plain"
+    "region_name": "Côtes de Meuse et Woëvre"
   },
   "draft_terrain_084": {
     "lat": 48.982543229568414,
     "lon": 7.031933091420865,
-    "display_name": "Sarralbe - plain - Sarralbe",
+    "display_name": "Pays des étangs - Sarralbe",
     "type": "region",
-    "region_name": "Sarralbe - plain"
+    "region_name": "Pays des étangs"
   },
   "draft_terrain_085": {
     "lat": 48.877198452930465,
     "lon": 7.5088044971721,
-    "display_name": "Ingwiller - plain - Ingwiller",
+    "display_name": "Pays de Hanau - Ingwiller",
     "type": "region",
-    "region_name": "Ingwiller - plain"
+    "region_name": "Pays de Hanau"
   },
   "draft_terrain_086": {
     "lat": 49.07026538098739,
     "lon": 8.190343755420582,
-    "display_name": "Kandel - plain - Kandel",
+    "display_name": "Südpfälzische Rheinebene - Kandel",
     "type": "region",
-    "region_name": "Kandel - plain"
+    "region_name": "Südpfälzische Rheinebene"
   },
   "draft_terrain_087": {
     "lat": 48.87943334790996,
     "lon": 9.171997353138691,
-    "display_name": "Ludwigsburg - plateau - Ludwigsburg",
+    "display_name": "Neckarbecken - Ludwigsburg",
     "type": "region",
-    "region_name": "Ludwigsburg - plateau"
+    "region_name": "Neckarbecken"
   },
   "draft_terrain_088": {
     "lat": 49.01716218508215,
     "lon": 9.757404769798825,
-    "display_name": "Gaildorf - plain - Gaildorf",
+    "display_name": "Schwäbisch-Fränkische Waldberge - Gaildorf",
     "type": "region",
-    "region_name": "Gaildorf - plain"
+    "region_name": "Schwäbisch-Fränkische Waldberge"
   },
   "draft_terrain_089": {
     "lat": 49.057388480396845,
     "lon": 10.338542950850092,
-    "display_name": "Dinkelsbühl - plain - Dinkelsbühl",
+    "display_name": "Wörnitzbecken und Riesvorland - Dinkelsbühl",
     "type": "region",
-    "region_name": "Dinkelsbühl - plain"
+    "region_name": "Wörnitzbecken und Riesvorland"
   },
   "draft_terrain_090": {
     "lat": 49.026855459243386,
     "lon": 10.953512451572042,
-    "display_name": "Weißenburg in Bayern - plateau - Weißenburg in Bayern",
+    "display_name": "Südliche Frankenalb - Weißenburg in Bayern",
     "type": "region",
-    "region_name": "Weißenburg in Bayern - plateau"
+    "region_name": "Südliche Frankenalb"
   },
   "draft_terrain_091": {
     "lat": 49.00624453063019,
     "lon": 11.58178118382191,
-    "display_name": "Dietfurt - plain - Dietfurt",
+    "display_name": "Altmühlalb - Dietfurt",
     "type": "region",
-    "region_name": "Dietfurt - plain"
+    "region_name": "Altmühlalb"
   },
   "draft_terrain_092": {
     "lat": 48.90190612050264,
     "lon": 12.390106395647637,
-    "display_name": "Mötzing - plain - Mötzing",
+    "display_name": "Dungau und unteres Laabertal - Mötzing",
     "type": "region",
-    "region_name": "Mötzing - plain"
+    "region_name": "Dungau und unteres Laabertal"
   },
   "draft_terrain_093": {
     "lat": 48.995659250772654,
     "lon": 12.982529033840184,
-    "display_name": "Ruhmannsfelden - uplands - Ruhmannsfelden",
+    "display_name": "Regensenke und Vorderer Bayerischer Wald - Ruhmannsfelden",
     "type": "region",
-    "region_name": "Ruhmannsfelden - uplands"
+    "region_name": "Regensenke und Vorderer Bayerischer Wald"
   },
   "draft_terrain_094": {
     "lat": 48.895680064576815,
     "lon": 13.891121393945303,
-    "display_name": "Volary - uplands - Volary",
+    "display_name": "Šumava - Volary",
     "type": "region",
-    "region_name": "Volary - uplands"
+    "region_name": "Šumava"
   },
   "draft_terrain_095": {
     "lat": 48.767467388361986,
     "lon": 15.162144017838347,
-    "display_name": "Vitis - plateau - Vitis",
+    "display_name": "Nördliches Waldviertel - Vitis",
     "type": "region",
-    "region_name": "Vitis - plateau"
+    "region_name": "Nördliches Waldviertel"
   },
   "draft_terrain_096": {
     "lat": 48.771186776269516,
     "lon": 16.23379323595702,
-    "display_name": "Jaroslavice - plain - Jaroslavice",
+    "display_name": "Dyjsko-svratecký úval - Jaroslavice",
     "type": "region",
-    "region_name": "Jaroslavice - plain"
+    "region_name": "Dyjsko-svratecký úval"
   },
   "draft_terrain_097": {
     "lat": 48.33168948118152,
     "lon": 0.9926534311579162,
-    "display_name": "Thiron Gardais - plain - Thiron Gardais",
+    "display_name": "Perche - Thiron Gardais",
     "type": "region",
-    "region_name": "Thiron Gardais - plain"
+    "region_name": "Perche"
   },
   "draft_terrain_098": {
     "lat": 48.45458833475129,
     "lon": 1.5154585369664288,
-    "display_name": "Chartres - plain - Chartres",
+    "display_name": "Beauce chartraine - Chartres",
     "type": "region",
-    "region_name": "Chartres - plain"
+    "region_name": "Beauce chartraine"
   },
   "draft_terrain_099": {
     "lat": 48.4639898396737,
     "lon": 2.323668553765409,
-    "display_name": "Cerny - plain - Cerny",
+    "display_name": "Gâtinais français - Cerny",
     "type": "region",
-    "region_name": "Cerny - plain"
+    "region_name": "Gâtinais français"
   },
   "draft_terrain_100": {
     "lat": 48.65890905509662,
     "lon": 3.3850482467295797,
-    "display_name": "Villiers-Saint-Georges - plain - Villiers-Saint-Georges",
+    "display_name": "Brie provinoise - Villiers-Saint-Georges",
     "type": "region",
-    "region_name": "Villiers-Saint-Georges - plain"
+    "region_name": "Brie provinoise"
   },
   "draft_terrain_101": {
     "lat": 48.54426470074455,
     "lon": 4.154687413884008,
-    "display_name": "Arcis-sur-Aube - plain - Arcis-sur-Aube",
+    "display_name": "Champagne crayeuse de l'Aube - Arcis-sur-Aube",
     "type": "region",
-    "region_name": "Arcis-sur-Aube - plain"
+    "region_name": "Champagne crayeuse de l'Aube"
   },
   "draft_terrain_102": {
     "lat": 48.75786696711015,
     "lon": 4.825218781078332,
-    "display_name": "Pargny-sur-Saulx - plain - Pargny-sur-Saulx",
+    "display_name": "Perthois - Pargny-sur-Saulx",
     "type": "region",
-    "region_name": "Pargny-sur-Saulx - plain"
+    "region_name": "Perthois"
   },
   "draft_terrain_103": {
     "lat": 48.67458968620216,
     "lon": 5.282952316028237,
-    "display_name": "Ligny-en-Barrois - plain - Ligny-en-Barrois",
+    "display_name": "Barrois - Ligny-en-Barrois",
     "type": "region",
-    "region_name": "Ligny-en-Barrois - plain"
+    "region_name": "Barrois"
   },
   "draft_terrain_104": {
     "lat": 48.7364433723859,
     "lon": 6.325498202392993,
-    "display_name": "Champenoux - plain - Champenoux",
+    "display_name": "Plateau lorrain - Champenoux",
     "type": "region",
-    "region_name": "Champenoux - plain"
+    "region_name": "Plateau lorrain"
   },
   "draft_terrain_105": {
     "lat": 48.67150531582582,
     "lon": 7.369680988865687,
-    "display_name": "Marmoutier - uplands - Marmoutier",
+    "display_name": "Collines sous-vosgiennes - Marmoutier",
     "type": "region",
-    "region_name": "Marmoutier - uplands"
+    "region_name": "Collines sous-vosgiennes"
   },
   "draft_terrain_106": {
     "lat": 48.59456214564045,
     "lon": 7.760192161249663,
-    "display_name": "Strasbourg - plain - Strasbourg",
+    "display_name": "Plaine d'Alsace - Strasbourg",
     "type": "region",
-    "region_name": "Strasbourg - plain"
+    "region_name": "Plaine d'Alsace"
   },
   "draft_terrain_107": {
     "lat": 48.80681728031896,
     "lon": 8.315664038540525,
-    "display_name": "Gaggenau - uplands - Gaggenau",
+    "display_name": "Nördlicher Schwarzwald - Gaggenau",
     "type": "region",
-    "region_name": "Gaggenau - uplands"
+    "region_name": "Nördlicher Schwarzwald"
   },
   "draft_terrain_108": {
     "lat": 48.66650014532148,
     "lon": 10.159461442219811,
-    "display_name": "Heidenheim an der Brenz - plateau - Heidenheim an der Brenz",
+    "display_name": "Albuch und Härtsfeld - Heidenheim an der Brenz",
     "type": "region",
-    "region_name": "Heidenheim an der Brenz - plateau"
+    "region_name": "Albuch und Härtsfeld"
   },
   "draft_terrain_109": {
     "lat": 48.66439752671197,
     "lon": 10.702290904376758,
-    "display_name": "Tapfheim - plain - Tapfheim",
+    "display_name": "Donauried und Riesalb - Tapfheim",
     "type": "region",
-    "region_name": "Tapfheim - plain"
+    "region_name": "Donauried und Riesalb"
   },
   "draft_terrain_110": {
     "lat": 48.66817737740125,
     "lon": 11.285986800024196,
-    "display_name": "Karlshuld - plain - Karlshuld",
+    "display_name": "Donaumoos und Donau-Isar-Hügelland - Karlshuld",
     "type": "region",
-    "region_name": "Karlshuld - plain"
+    "region_name": "Donaumoos und Donau-Isar-Hügelland"
   },
   "draft_terrain_111": {
     "lat": 48.804004713114836,
     "lon": 11.861212176329285,
-    "display_name": "Abensberg - plain - Abensberg",
+    "display_name": "Donau-Isar-Hügelland - Abensberg",
     "type": "region",
-    "region_name": "Abensberg - plain"
+    "region_name": "Donau-Isar-Hügelland"
   },
   "draft_terrain_112": {
     "lat": 48.63936894585367,
     "lon": 12.83903195036578,
-    "display_name": "Eichendorf - plain - Eichendorf",
+    "display_name": "Isar-Inn-Hügelland und Vilstal - Eichendorf",
     "type": "region",
-    "region_name": "Eichendorf - plain"
+    "region_name": "Isar-Inn-Hügelland und Vilstal"
   },
   "draft_terrain_113": {
     "lat": 48.70975954130733,
     "lon": 13.380116119767141,
-    "display_name": "Tittling - plateau - Tittling",
+    "display_name": "Passauer Abteiland - Tittling",
     "type": "region",
-    "region_name": "Tittling - plateau"
+    "region_name": "Passauer Abteiland"
   },
   "draft_terrain_114": {
     "lat": 48.75525994804594,
     "lon": 14.281899858022646,
-    "display_name": "Větřní - plateau - Větřní",
+    "display_name": "Šumavské podhůří - Větřní",
     "type": "region",
-    "region_name": "Větřní - plateau"
+    "region_name": "Šumavské podhůří"
   },
   "draft_terrain_115": {
     "lat": 48.5023380361502,
     "lon": 14.741493196351895,
-    "display_name": "Weitersfelden - uplands - Weitersfelden",
+    "display_name": "Freiwald und Weinsberger Wald - Weitersfelden",
     "type": "region",
-    "region_name": "Weitersfelden - uplands"
+    "region_name": "Freiwald und Weinsberger Wald"
   },
   "draft_terrain_116": {
     "lat": 48.59786846564392,
     "lon": 15.681585192189242,
-    "display_name": "Gars am Kamp - plateau - Gars am Kamp",
+    "display_name": "Kamptal - Gars am Kamp",
     "type": "region",
-    "region_name": "Gars am Kamp - plateau"
+    "region_name": "Kamptal"
   },
   "draft_terrain_117": {
     "lat": 48.331139236335794,
     "lon": 2.7643513354439966,
-    "display_name": "Montigny-sur-Loing - plain - Montigny-sur-Loing",
+    "display_name": "Gâtinais et vallée du Loing - Montigny-sur-Loing",
     "type": "region",
-    "region_name": "Montigny-sur-Loing - plain"
+    "region_name": "Gâtinais et vallée du Loing"
   },
   "draft_terrain_118": {
     "lat": 48.40082079915026,
     "lon": 3.7580776254601216,
-    "display_name": "Marigny-le-Châtel - plain - Marigny-le-Châtel",
+    "display_name": "Champagne sénonaise - Marigny-le-Châtel",
     "type": "region",
-    "region_name": "Marigny-le-Châtel - plain"
+    "region_name": "Champagne sénonaise"
   },
   "draft_terrain_119": {
     "lat": 48.46252789802949,
     "lon": 4.774415491522796,
-    "display_name": "Montier-en-Der - plain - Montier-en-Der",
+    "display_name": "Pays du Der - Montier-en-Der",
     "type": "region",
-    "region_name": "Montier-en-Der - plain"
+    "region_name": "Pays du Der"
   },
   "draft_terrain_120": {
     "lat": 48.307347154787614,
     "lon": 5.553705911694202,
-    "display_name": "Liffol-le-Grand - plain - Liffol-le-Grand",
+    "display_name": "Pays de Neufchâteau - Liffol-le-Grand",
     "type": "region",
-    "region_name": "Liffol-le-Grand - plain"
+    "region_name": "Pays de Neufchâteau"
   },
   "draft_terrain_121": {
     "lat": 48.54040066544407,
     "lon": 5.872119440786768,
-    "display_name": "Colombey-les-Belles - plain - Colombey-les-Belles",
+    "display_name": "Pays de Colombey - Colombey-les-Belles",
     "type": "region",
-    "region_name": "Colombey-les-Belles - plain"
+    "region_name": "Pays de Colombey"
   },
   "draft_terrain_122": {
     "lat": 48.58575431212838,
     "lon": 6.540089373219766,
-    "display_name": "Chanteheux - plain - Chanteheux",
+    "display_name": "Lunévillois - Chanteheux",
     "type": "region",
-    "region_name": "Chanteheux - plain"
+    "region_name": "Lunévillois"
   },
   "draft_terrain_123": {
     "lat": 48.5096105533044,
     "lon": 9.049577349181025,
-    "display_name": "Tübingen - plateau - Tübingen",
+    "display_name": "Oberer Neckar und Schönbuch - Tübingen",
     "type": "region",
-    "region_name": "Tübingen - plateau"
+    "region_name": "Oberer Neckar und Schönbuch"
   },
   "draft_terrain_124": {
     "lat": 48.66122875281073,
     "lon": 9.555587847367205,
-    "display_name": "Hattenhofen - uplands - Hattenhofen",
+    "display_name": "Mittlere Schwäbische Alb und Vorland - Hattenhofen",
     "type": "region",
-    "region_name": "Hattenhofen - uplands"
+    "region_name": "Mittlere Schwäbische Alb und Vorland"
   },
   "draft_terrain_125": {
     "lat": 48.38748106475894,
     "lon": 11.744531881103967,
-    "display_name": "Freising - plain - Freising",
+    "display_name": "Donau-Isar-Hügelland und Freisinger Moos - Freising",
     "type": "region",
-    "region_name": "Freising - plain"
+    "region_name": "Donau-Isar-Hügelland und Freisinger Moos"
   },
   "draft_terrain_126": {
     "lat": 48.48120461351785,
     "lon": 12.282097774567692,
-    "display_name": "Geisenhausen - plain - Geisenhausen",
+    "display_name": "Isar-Inn-Hügelland - Geisenhausen",
     "type": "region",
-    "region_name": "Geisenhausen - plain"
+    "region_name": "Isar-Inn-Hügelland"
   },
   "draft_terrain_127": {
     "lat": 48.58839666684215,
     "lon": 13.792529853490755,
-    "display_name": "Wegscheid - uplands - Wegscheid",
+    "display_name": "Wegscheider Hochfläche - Wegscheid",
     "type": "region",
-    "region_name": "Wegscheid - uplands"
+    "region_name": "Wegscheider Hochfläche"
   },
   "draft_terrain_128": {
     "lat": 48.317695851412736,
     "lon": 14.298658177624374,
-    "display_name": "Linz - uplands - Linz",
+    "display_name": "Linzer Becken - Linz",
     "type": "region",
-    "region_name": "Linz - uplands"
+    "region_name": "Linzer Becken"
   },
   "draft_terrain_129": {
     "lat": 48.40516971427911,
     "lon": 15.199307450691132,
-    "display_name": "Kirchschlag - uplands - Kirchschlag",
+    "display_name": "Südliches Waldviertel - Kirchschlag",
     "type": "region",
-    "region_name": "Kirchschlag - uplands"
+    "region_name": "Südliches Waldviertel"
   },
   "draft_terrain_130": {
     "lat": 48.37621311911175,
     "lon": 16.198220041369183,
-    "display_name": "Stockerau - plain - Stockerau",
+    "display_name": "Korneuburger Becken - Stockerau",
     "type": "region",
-    "region_name": "Stockerau - plain"
+    "region_name": "Korneuburger Becken"
   },
   "draft_terrain_131": {
     "lat": 47.92574927722359,
     "lon": 1.06485832524617,
-    "display_name": "La Ville-aux-Clercs - plain - La Ville-aux-Clercs",
+    "display_name": "Perche vendômois - La Ville-aux-Clercs",
     "type": "region",
-    "region_name": "La Ville-aux-Clercs - plain"
+    "region_name": "Perche vendômois"
   },
   "draft_terrain_132": {
     "lat": 48.07187698734054,
     "lon": 1.3635665243082804,
-    "display_name": "Châteaudun - plain - Châteaudun",
+    "display_name": "Dunois - Châteaudun",
     "type": "region",
-    "region_name": "Châteaudun - plain"
+    "region_name": "Dunois"
   },
   "draft_terrain_133": {
     "lat": 48.077676791394346,
     "lon": 2.038144608196233,
-    "display_name": "Neuville-aux-Bois - plain - Neuville-aux-Bois",
+    "display_name": "Beauce orléanaise - Neuville-aux-Bois",
     "type": "region",
-    "region_name": "Neuville-aux-Bois - plain"
+    "region_name": "Beauce orléanaise"
   },
   "draft_terrain_134": {
     "lat": 48.030145844237104,
     "lon": 2.652394126104675,
-    "display_name": "Pannes - plain - Pannes",
+    "display_name": "Gâtinais montargois - Pannes",
     "type": "region",
-    "region_name": "Pannes - plain"
+    "region_name": "Gâtinais montargois"
   },
   "draft_terrain_135": {
     "lat": 48.18311948164495,
     "lon": 3.2787179968277087,
-    "display_name": "Sens - plain - Sens",
+    "display_name": "Sénonais - Sens",
     "type": "region",
-    "region_name": "Sens - plain"
+    "region_name": "Sénonais"
   },
   "draft_terrain_136": {
     "lat": 48.219051085797766,
     "lon": 4.145151340206721,
-    "display_name": "Verrières - plain - Verrières",
+    "display_name": "Champagne humide de l'Aube - Verrières",
     "type": "region",
-    "region_name": "Verrières - plain"
+    "region_name": "Champagne humide de l'Aube"
   },
   "draft_terrain_137": {
     "lat": 48.266558694320445,
     "lon": 6.41369573401043,
-    "display_name": "Thaon-les-Vosges - plain - Thaon-les-Vosges",
+    "display_name": "Vallée de la Moselle vosgienne - Thaon-les-Vosges",
     "type": "region",
-    "region_name": "Thaon-les-Vosges - plain"
+    "region_name": "Vallée de la Moselle vosgienne"
   },
   "draft_terrain_138": {
     "lat": 48.35705755283248,
     "lon": 8.654510415956926,
-    "display_name": "Sulz am Neckar - plateau - Sulz am Neckar",
+    "display_name": "Obere Gäue - Sulz am Neckar",
     "type": "region",
-    "region_name": "Sulz am Neckar - plateau"
+    "region_name": "Obere Gäue"
   },
   "draft_terrain_139": {
     "lat": 48.38125080898518,
     "lon": 11.197673638802573,
-    "display_name": "Pfaffenhofen - plateau - Pfaffenhofen",
+    "display_name": "Dachauer und Aichacher Hügelland - Pfaffenhofen",
     "type": "region",
-    "region_name": "Pfaffenhofen - plateau"
+    "region_name": "Dachauer und Aichacher Hügelland"
   },
   "draft_terrain_140": {
     "lat": 48.25185885162317,
     "lon": 12.67578719247408,
-    "display_name": "Neuötting - plain - Neuötting",
+    "display_name": "Rottal und unteres Inntal - Neuötting",
     "type": "region",
-    "region_name": "Neuötting - plain"
+    "region_name": "Rottal und unteres Inntal"
   },
   "draft_terrain_141": {
     "lat": 48.34317521905872,
     "lon": 13.294733970812498,
-    "display_name": "Bad Füssing - plain - Bad Füssing",
+    "display_name": "Unteres Inntal und Innviertel - Bad Füssing",
     "type": "region",
-    "region_name": "Bad Füssing - plain"
+    "region_name": "Unteres Inntal und Innviertel"
   },
   "draft_terrain_142": {
     "lat": 48.170492911812175,
     "lon": 14.488133375255872,
-    "display_name": "Sankt Valentin - plain - Sankt Valentin",
+    "display_name": "Unteres Enns- und Steyrtal - Sankt Valentin",
     "type": "region",
-    "region_name": "Sankt Valentin - plain"
+    "region_name": "Unteres Enns- und Steyrtal"
   },
   "draft_terrain_143": {
     "lat": 48.118351411964795,
     "lon": 14.967930421401679,
-    "display_name": "Blindenmarkt - uplands - Blindenmarkt",
+    "display_name": "Mostviertel - Blindenmarkt",
     "type": "region",
-    "region_name": "Blindenmarkt - uplands"
+    "region_name": "Mostviertel"
   },
   "draft_terrain_144": {
     "lat": 48.22093669857227,
     "lon": 15.645841678182094,
-    "display_name": "Sankt Pölten - plateau - Sankt Pölten",
+    "display_name": "Traisental - Sankt Pölten",
     "type": "region",
-    "region_name": "Sankt Pölten - plateau"
+    "region_name": "Traisental"
   },
   "draft_terrain_145": {
     "lat": 47.61839151889335,
     "lon": 1.1252481666278693,
-    "display_name": "Herbault - plain - Herbault",
+    "display_name": "Gâtine blésoise - Herbault",
     "type": "region",
-    "region_name": "Herbault - plain"
+    "region_name": "Gâtine blésoise"
   },
   "draft_terrain_146": {
     "lat": 47.76793216640603,
     "lon": 1.6434643681429062,
-    "display_name": "Beaugency - plain - Beaugency",
+    "display_name": "Val de Loire orléanais - Beaugency",
     "type": "region",
-    "region_name": "Beaugency - plain"
+    "region_name": "Val de Loire orléanais"
   },
   "draft_terrain_147": {
     "lat": 47.77523308836477,
     "lon": 2.360477097101138,
-    "display_name": "Sully-sur-Loire - plain - Sully-sur-Loire",
+    "display_name": "Forêt d'Orléans et Val de Loire - Sully-sur-Loire",
     "type": "region",
-    "region_name": "Sully-sur-Loire - plain"
+    "region_name": "Forêt d'Orléans et Val de Loire"
   },
   "draft_terrain_148": {
     "lat": 47.89311561115621,
     "lon": 3.115579154701362,
-    "display_name": "Charny - plain - Charny",
+    "display_name": "Puisaye - Charny",
     "type": "region",
-    "region_name": "Charny - plain"
+    "region_name": "Puisaye"
   },
   "draft_terrain_149": {
     "lat": 47.988926609111786,
     "lon": 3.734818067971359,
-    "display_name": "Saint-Florentin - plain - Saint-Florentin",
+    "display_name": "Pays d'Othe - Saint-Florentin",
     "type": "region",
-    "region_name": "Saint-Florentin - plain"
+    "region_name": "Pays d'Othe"
   },
   "draft_terrain_150": {
     "lat": 47.868092578063376,
     "lon": 4.600968359728407,
-    "display_name": "Châtillon-sur-Seine - plain - Châtillon-sur-Seine",
+    "display_name": "Châtillonnais - Châtillon-sur-Seine",
     "type": "region",
-    "region_name": "Châtillon-sur-Seine - plain"
+    "region_name": "Châtillonnais"
   },
   "draft_terrain_151": {
     "lat": 47.96232185003389,
     "lon": 5.275374331844089,
-    "display_name": "Rolampont - plain - Rolampont",
+    "display_name": "Plateau de Langres - Rolampont",
     "type": "region",
-    "region_name": "Rolampont - plain"
+    "region_name": "Plateau de Langres"
   },
   "draft_terrain_152": {
     "lat": 48.06985479364848,
     "lon": 5.816399866344504,
-    "display_name": "Lamarche - plain - Lamarche",
+    "display_name": "Bassigny - Lamarche",
     "type": "region",
-    "region_name": "Lamarche - plain"
+    "region_name": "Bassigny"
   },
   "draft_terrain_153": {
     "lat": 48.05366326168405,
     "lon": 11.11620139114512,
-    "display_name": "Schondorf am Ammersee - plateau - Schondorf am Ammersee",
+    "display_name": "Ammer-Loisach-Hügelland - Schondorf am Ammersee",
     "type": "region",
-    "region_name": "Schondorf am Ammersee - plateau"
+    "region_name": "Ammer-Loisach-Hügelland"
   },
   "draft_terrain_154": {
     "lat": 48.124657806430974,
     "lon": 11.567617037378376,
-    "display_name": "Munich - plateau - Munich",
+    "display_name": "Münchner Schotterebene - Munich",
     "type": "region",
-    "region_name": "Munich - plateau"
+    "region_name": "Münchner Schotterebene"
   },
   "draft_terrain_155": {
     "lat": 48.15421500962154,
     "lon": 12.20687640878058,
-    "display_name": "Altdorf - plateau - Altdorf",
+    "display_name": "Isen-Sempt-Hügelland und Haager Land - Altdorf",
     "type": "region",
-    "region_name": "Altdorf - plateau"
+    "region_name": "Isen-Sempt-Hügelland und Haager Land"
   },
   "draft_terrain_156": {
     "lat": 47.996957158817835,
     "lon": 13.279005231730629,
-    "display_name": "Strasswalchen - plateau - Strasswalchen",
+    "display_name": "Mattigtal und Salzburger Seenland - Strasswalchen",
     "type": "region",
-    "region_name": "Strasswalchen - plateau"
+    "region_name": "Mattigtal und Salzburger Seenland"
   },
   "draft_terrain_157": {
     "lat": 48.14729093144932,
     "lon": 13.786355288186098,
-    "display_name": "Bachmanning - plain - Bachmanning",
+    "display_name": "Inn- und Hausruckviertler Hügelland - Bachmanning",
     "type": "region",
-    "region_name": "Bachmanning - plain"
+    "region_name": "Inn- und Hausruckviertler Hügelland"
   },
   "draft_terrain_158": {
     "lat": 47.913461007213364,
     "lon": 15.48430617106346,
-    "display_name": "Türnitz - uplands - Türnitz",
+    "display_name": "Türnitzer Alpen - Türnitz",
     "type": "region",
-    "region_name": "Türnitz - uplands"
+    "region_name": "Türnitzer Alpen"
   },
   "draft_terrain_159": {
     "lat": 47.990826992115636,
     "lon": 16.231801616583965,
-    "display_name": "Baden - uplands - Baden",
+    "display_name": "Wienerwaldrand und Thermenlinie - Baden",
     "type": "region",
-    "region_name": "Baden - uplands"
+    "region_name": "Wienerwaldrand und Thermenlinie"
   },
   "draft_terrain_160": {
     "lat": 47.63590351073409,
     "lon": 2.769129329891861,
-    "display_name": "Briare - plain - Briare",
+    "display_name": "Giennois - Briare",
     "type": "region",
-    "region_name": "Briare - plain"
+    "region_name": "Giennois"
   },
   "draft_terrain_161": {
     "lat": 47.66247930417661,
     "lon": 3.707920329247014,
-    "display_name": "Vermenton - plain - Vermenton",
+    "display_name": "Auxerrois - Vermenton",
     "type": "region",
-    "region_name": "Vermenton - plain"
+    "region_name": "Auxerrois"
   },
   "draft_terrain_162": {
     "lat": 47.722116213171475,
     "lon": 4.215415181355847,
-    "display_name": "Ravières - plain - Ravières",
+    "display_name": "Tonnerrois - Ravières",
     "type": "region",
-    "region_name": "Ravières - plain"
+    "region_name": "Tonnerrois"
   },
   "draft_terrain_163": {
     "lat": 47.548071635715665,
     "lon": 5.080500685752439,
-    "display_name": "Is-sur-Tille - plain - Is-sur-Tille",
+    "display_name": "Seuil de Bourgogne - Is-sur-Tille",
     "type": "region",
-    "region_name": "Is-sur-Tille - plain"
+    "region_name": "Seuil de Bourgogne"
   },
   "draft_terrain_164": {
     "lat": 47.76856160555193,
     "lon": 5.600572838973426,
-    "display_name": "Fayl-Billot - plain - Fayl-Billot",
+    "display_name": "Plateau de la Vingeanne - Fayl-Billot",
     "type": "region",
-    "region_name": "Fayl-Billot - plain"
+    "region_name": "Plateau de la Vingeanne"
   },
   "draft_terrain_165": {
     "lat": 47.87416530325435,
     "lon": 6.260662853455698,
-    "display_name": "Saint-Loup-sur-Semouse - plateau - Saint-Loup-sur-Semouse",
+    "display_name": "Vôge et dépression sous-vosgienne - Saint-Loup-sur-Semouse",
     "type": "region",
-    "region_name": "Saint-Loup-sur-Semouse - plateau"
+    "region_name": "Vôge et dépression sous-vosgienne"
   },
   "draft_terrain_166": {
     "lat": 47.94191905170057,
     "lon": 12.24453688927181,
-    "display_name": "Söchtenau - plateau - Söchtenau",
+    "display_name": "Chiemgau und Rosenheimer Becken - Söchtenau",
     "type": "region",
-    "region_name": "Söchtenau - plateau"
+    "region_name": "Chiemgau und Rosenheimer Becken"
   },
   "draft_terrain_167": {
     "lat": 47.9193325075124,
     "lon": 12.832311235136306,
-    "display_name": "Petting - plateau - Petting",
+    "display_name": "Rupertiwinkel - Petting",
     "type": "region",
-    "region_name": "Petting - plateau"
+    "region_name": "Rupertiwinkel"
   },
   "draft_terrain_168": {
     "lat": 47.72607246112479,
     "lon": 13.448413361157453,
-    "display_name": "Sankt Wolfgang im Salzkammergut - mountains - Sankt Wolfgang im Salzkammergut",
+    "display_name": "Salzkammergut - Sankt Wolfgang im Salzkammergut",
     "type": "region",
-    "region_name": "Sankt Wolfgang im Salzkammergut - mountains"
+    "region_name": "Salzkammergut"
   },
   "draft_terrain_169": {
     "lat": 47.89223064958783,
     "lon": 14.115482935717708,
-    "display_name": "Kirchdorf an der Krems - uplands - Kirchdorf an der Krems",
+    "display_name": "Steyr- und Teichltal - Kirchdorf an der Krems",
     "type": "region",
-    "region_name": "Kirchdorf an der Krems - uplands"
+    "region_name": "Steyr- und Teichltal"
   },
   "draft_terrain_170": {
     "lat": 47.89107376829288,
     "lon": 14.704635199731108,
-    "display_name": "Gaflenz - uplands - Gaflenz",
+    "display_name": "Enns- und Steyrtaler Voralpen - Gaflenz",
     "type": "region",
-    "region_name": "Gaflenz - uplands"
+    "region_name": "Enns- und Steyrtaler Voralpen"
   },
   "draft_terrain_171": {
     "lat": 47.547683030918165,
     "lon": 15.312169147020406,
-    "display_name": "Turnau - uplands - Turnau",
+    "display_name": "Hochschwabgebiet - Turnau",
     "type": "region",
-    "region_name": "Turnau - uplands"
+    "region_name": "Hochschwabgebiet"
   },
   "draft_terrain_172": {
     "lat": 47.65616227914313,
     "lon": 15.83723558207934,
-    "display_name": "Semmering - uplands - Semmering",
+    "display_name": "Semmering-Rax-Gebiet - Semmering",
     "type": "region",
-    "region_name": "Semmering - uplands"
+    "region_name": "Semmering-Rax-Gebiet"
   },
   "draft_terrain_173": {
     "lat": 47.60839768693121,
     "lon": 16.2120598200392,
-    "display_name": "Lichtenegg - uplands - Lichtenegg",
+    "display_name": "Bucklige Welt - Lichtenegg",
     "type": "region",
-    "region_name": "Lichtenegg - uplands"
+    "region_name": "Bucklige Welt"
   },
   "draft_terrain_174": {
     "lat": 47.308109156906504,
     "lon": 0.9853541648775146,
-    "display_name": "Bléré - plain - Bléré",
+    "display_name": "Vallée du Cher tourangeau - Bléré",
     "type": "region",
-    "region_name": "Bléré - plain"
+    "region_name": "Vallée du Cher tourangeau"
   },
   "draft_terrain_175": {
     "lat": 47.39948880928684,
     "lon": 1.616546440466298,
-    "display_name": "Mur-de-Sologne - plain - Mur-de-Sologne",
+    "display_name": "Sologne - Mur-de-Sologne",
     "type": "region",
-    "region_name": "Mur-de-Sologne - plain"
+    "region_name": "Sologne"
   },
   "draft_terrain_176": {
     "lat": 47.318915606450666,
     "lon": 2.23510273650543,
-    "display_name": "Neuvy-sur-Barangeon - plain - Neuvy-sur-Barangeon",
+    "display_name": "Sologne du Cher - Neuvy-sur-Barangeon",
     "type": "region",
-    "region_name": "Neuvy-sur-Barangeon - plain"
+    "region_name": "Sologne du Cher"
   },
   "draft_terrain_177": {
     "lat": 47.37566894176066,
     "lon": 3.144702752819992,
-    "display_name": "Donzy - plain - Donzy",
+    "display_name": "Donziais - Donzy",
     "type": "region",
-    "region_name": "Donzy - plain"
+    "region_name": "Donziais"
   },
   "draft_terrain_178": {
     "lat": 47.490347362479625,
     "lon": 3.9352873625874607,
-    "display_name": "Avallon - plateau - Avallon",
+    "display_name": "Avallonnais - Avallon",
     "type": "region",
-    "region_name": "Avallon - plateau"
+    "region_name": "Avallonnais"
   },
   "draft_terrain_179": {
     "lat": 47.58883248094502,
     "lon": 14.497240651050406,
-    "display_name": "Hall bei Admont - mountains - Hall bei Admont",
+    "display_name": "Admonter Becken und Gesäuse - Hall bei Admont",
     "type": "region",
-    "region_name": "Hall bei Admont - mountains"
+    "region_name": "Admonter Becken und Gesäuse"
   },
   "draft_terrain_180": {
     "lat": 46.98131111866825,
     "lon": 1.5911479271053286,
-    "display_name": "Levroux - plain - Levroux",
+    "display_name": "Champagne berrichonne - Levroux",
     "type": "region",
-    "region_name": "Levroux - plain"
+    "region_name": "Champagne berrichonne"
   },
   "draft_terrain_181": {
     "lat": 47.18446381515946,
     "lon": 2.6397906381190537,
-    "display_name": "Rians - plain - Rians",
+    "display_name": "Pays Fort et Champagne berrichonne - Rians",
     "type": "region",
-    "region_name": "Rians - plain"
+    "region_name": "Pays Fort et Champagne berrichonne"
   },
   "draft_terrain_182": {
     "lat": 47.0628173666544,
     "lon": 3.641635221064956,
-    "display_name": "Châtillon-en-Bazois - plain - Châtillon-en-Bazois",
+    "display_name": "Bazois - Châtillon-en-Bazois",
     "type": "region",
-    "region_name": "Châtillon-en-Bazois - plain"
+    "region_name": "Bazois"
   },
   "draft_terrain_183": {
     "lat": 47.3806214377987,
     "lon": 4.592147487668951,
-    "display_name": "Vitteaux - plain - Vitteaux",
+    "display_name": "Auxois - Vitteaux",
     "type": "region",
-    "region_name": "Vitteaux - plain"
+    "region_name": "Auxois"
   },
   "draft_terrain_184": {
     "lat": 47.25677541976903,
     "lon": 5.220560113797642,
-    "display_name": "Genlis - plain - Genlis",
+    "display_name": "Plaine dijonnaise - Genlis",
     "type": "region",
-    "region_name": "Genlis - plain"
+    "region_name": "Plaine dijonnaise"
   },
   "draft_terrain_185": {
     "lat": 47.247888166450224,
     "lon": 14.877859853182484,
-    "display_name": "Sankt Lorenzen bei Knittelfeld - mountains - Sankt Lorenzen bei Knittelfeld",
+    "display_name": "Aichfeld und Murboden - Sankt Lorenzen bei Knittelfeld",
     "type": "region",
-    "region_name": "Sankt Lorenzen bei Knittelfeld - mountains"
+    "region_name": "Aichfeld und Murboden"
   },
   "draft_terrain_186": {
     "lat": 47.29322048722465,
     "lon": 15.531274958881625,
-    "display_name": "Passail - uplands - Passail",
+    "display_name": "Grazer Bergland - Passail",
     "type": "region",
-    "region_name": "Passail - uplands"
+    "region_name": "Grazer Bergland"
   },
   "draft_terrain_187": {
     "lat": 47.24118710891285,
     "lon": 16.081996802707295,
-    "display_name": "Wolfau - plateau - Wolfau",
+    "display_name": "Südburgenländisches Hügelland - Wolfau",
     "type": "region",
-    "region_name": "Wolfau - plateau"
+    "region_name": "Südburgenländisches Hügelland"
   },
   "draft_terrain_188": {
     "lat": 46.80831211303669,
     "lon": 1.0185885003692092,
-    "display_name": "Martizay - plain - Martizay",
+    "display_name": "Brenne - Martizay",
     "type": "region",
-    "region_name": "Martizay - plain"
+    "region_name": "Brenne"
   },
   "draft_terrain_189": {
     "lat": 46.96199498021029,
     "lon": 1.990855232404258,
-    "display_name": "Issoudun - plain - Issoudun",
+    "display_name": "Champagne berrichonne de l'Indre - Issoudun",
     "type": "region",
-    "region_name": "Issoudun - plain"
+    "region_name": "Champagne berrichonne de l'Indre"
   },
   "draft_terrain_190": {
     "lat": 46.896218762323784,
     "lon": 2.587969756587057,
-    "display_name": "Dun-sur-Auron - plain - Dun-sur-Auron",
+    "display_name": "Champagne berrichonne du Cher - Dun-sur-Auron",
     "type": "region",
-    "region_name": "Dun-sur-Auron - plain"
+    "region_name": "Champagne berrichonne du Cher"
   },
   "draft_terrain_191": {
     "lat": 46.97495704230344,
     "lon": 3.164252952307326,
-    "display_name": "Nevers - plain - Nevers",
+    "display_name": "Val de Loire nivernais - Nevers",
     "type": "region",
-    "region_name": "Nevers - plain"
+    "region_name": "Val de Loire nivernais"
   },
   "draft_terrain_192": {
     "lat": 46.96343309597848,
     "lon": 4.28621814606772,
-    "display_name": "Autun - uplands - Autun",
+    "display_name": "Autunois - Autun",
     "type": "region",
-    "region_name": "Autun - uplands"
+    "region_name": "Autunois"
   },
   "draft_terrain_193": {
     "lat": 47.00972506808675,
     "lon": 4.847909360984963,
-    "display_name": "Beaune - plateau - Beaune",
+    "display_name": "Côte de Beaune - Beaune",
     "type": "region",
-    "region_name": "Beaune - plateau"
+    "region_name": "Côte de Beaune"
   },
   "draft_terrain_194": {
     "lat": 46.993358292334044,
     "lon": 5.6000112852641895,
-    "display_name": "Mont-sous-Vaudrey - plain - Mont-sous-Vaudrey",
+    "display_name": "Val d'Amour - Mont-sous-Vaudrey",
     "type": "region",
-    "region_name": "Mont-sous-Vaudrey - plain"
+    "region_name": "Val d'Amour"
   },
   "draft_terrain_195": {
     "lat": 47.05425631072942,
     "lon": 15.440035075022923,
-    "display_name": "Graz - plateau - Graz",
+    "display_name": "Grazer Becken - Graz",
     "type": "region",
-    "region_name": "Graz - plateau"
+    "region_name": "Grazer Becken"
   },
   "draft_terrain_196": {
     "lat": 46.94634282173675,
     "lon": 16.02802009022965,
-    "display_name": "Fehring - plain - Fehring",
+    "display_name": "Oststeirisches Hügelland - Fehring",
     "type": "region",
-    "region_name": "Fehring - plain"
+    "region_name": "Oststeirisches Hügelland"
   },
   "draft_terrain_197": {
     "lat": 46.61117360751855,
     "lon": 1.5450345665101284,
-    "display_name": "Argenton-sur-Creuse - plain - Argenton-sur-Creuse",
+    "display_name": "Vallée de la Creuse - Argenton-sur-Creuse",
     "type": "region",
-    "region_name": "Argenton-sur-Creuse - plain"
+    "region_name": "Vallée de la Creuse"
   },
   "draft_terrain_198": {
     "lat": 46.637799175401206,
     "lon": 2.256724295703087,
-    "display_name": "Le Châtelet - plain - Le Châtelet",
+    "display_name": "Boischaut Sud - Le Châtelet",
     "type": "region",
-    "region_name": "Le Châtelet - plain"
+    "region_name": "Boischaut Sud"
   },
   "draft_terrain_199": {
     "lat": 46.777844759918885,
     "lon": 3.945287131502766,
-    "display_name": "Luzy - plain - Luzy",
+    "display_name": "Sud-Morvan - Luzy",
     "type": "region",
-    "region_name": "Luzy - plain"
+    "region_name": "Sud-Morvan"
   },
   "draft_terrain_200": {
     "lat": 46.79885434791044,
     "lon": 14.836264063389617,
-    "display_name": "Sankt Stefan - mountains - Sankt Stefan",
+    "display_name": "Lavanttal - Sankt Stefan",
     "type": "region",
-    "region_name": "Sankt Stefan - mountains"
+    "region_name": "Lavanttal"
   },
   "draft_terrain_201": {
     "lat": 46.79147027436873,
     "lon": 15.550731437985847,
-    "display_name": "Leibnitz - plain - Leibnitz",
+    "display_name": "Leibnitzer Feld - Leibnitz",
     "type": "region",
-    "region_name": "Leibnitz - plain"
+    "region_name": "Leibnitzer Feld"
   },
   "draft_terrain_202": {
     "lat": 46.34811750799891,
     "lon": 0.9851739955311093,
-    "display_name": "Lathus-Saint-Rémy - plain - Lathus-Saint-Rémy",
+    "display_name": "Basse-Marche - Lathus-Saint-Rémy",
     "type": "region",
-    "region_name": "Lathus-Saint-Rémy - plain"
+    "region_name": "Basse-Marche"
   },
   "draft_terrain_203": {
     "lat": 46.351533872952594,
     "lon": 1.932622993387166,
-    "display_name": "Bonnat - plain - Bonnat",
+    "display_name": "Pays de Guéret - Bonnat",
     "type": "region",
-    "region_name": "Bonnat - plain"
+    "region_name": "Pays de Guéret"
   },
   "draft_terrain_204": {
     "lat": 46.59606870955252,
     "lon": 2.826669287847155,
-    "display_name": "Cérilly - plain - Cérilly",
+    "display_name": "Bocage bourbonnais - Cérilly",
     "type": "region",
-    "region_name": "Cérilly - plain"
+    "region_name": "Bocage bourbonnais"
   },
   "draft_terrain_205": {
     "lat": 46.551360724967296,
     "lon": 3.323630287152998,
-    "display_name": "Moulins - plain - Moulins",
+    "display_name": "Sologne bourbonnaise - Moulins",
     "type": "region",
-    "region_name": "Moulins - plain"
+    "region_name": "Sologne bourbonnaise"
   },
   "draft_terrain_206": {
     "lat": 46.67351376328626,
     "lon": 4.350302212866556,
-    "display_name": "Montceau-les-Mines - plain - Montceau-les-Mines",
+    "display_name": "Bassin minier du Creusot-Montceau - Montceau-les-Mines",
     "type": "region",
-    "region_name": "Montceau-les-Mines - plain"
+    "region_name": "Bassin minier du Creusot-Montceau"
   },
   "draft_terrain_207": {
     "lat": 46.6389156490771,
     "lon": 5.217566277475379,
-    "display_name": "Louhans - plain - Louhans",
+    "display_name": "Bresse bourguignonne - Louhans",
     "type": "region",
-    "region_name": "Louhans - plain"
+    "region_name": "Bresse bourguignonne"
   },
   "draft_terrain_208": {
     "lat": 46.63127628138211,
     "lon": 14.32416350679359,
-    "display_name": "Klagenfurt am Wörthersee - uplands - Klagenfurt am Wörthersee",
+    "display_name": "Klagenfurter Becken - Klagenfurt am Wörthersee",
     "type": "region",
-    "region_name": "Klagenfurt am Wörthersee - uplands"
+    "region_name": "Klagenfurter Becken"
   },
   "draft_terrain_209": {
     "lat": 46.659810977884234,
     "lon": 16.146033306579522,
-    "display_name": "Murska Sobota - plain - Murska Sobota",
+    "display_name": "Prekmurje - Murska Sobota",
     "type": "region",
-    "region_name": "Murska Sobota - plain"
+    "region_name": "Prekmurje"
   },
   "draft_terrain_210": {
     "lat": 46.227535525160626,
     "lon": 1.5014537769075194,
-    "display_name": "La Souterraine - plain - La Souterraine",
+    "display_name": "Marche limousine - La Souterraine",
     "type": "region",
-    "region_name": "La Souterraine - plain"
+    "region_name": "Marche limousine"
   },
   "draft_terrain_211": {
     "lat": 46.35452091294775,
     "lon": 2.5981825590557035,
-    "display_name": "Montluçon - plateau - Montluçon",
+    "display_name": "Combraille bourbonnaise - Montluçon",
     "type": "region",
-    "region_name": "Montluçon - plateau"
+    "region_name": "Combraille bourbonnaise"
   },
   "draft_terrain_212": {
     "lat": 46.30854222395701,
     "lon": 3.269304604070743,
-    "display_name": "Saint-Pourçain-sur-Sioule - plateau - Saint-Pourçain-sur-Sioule",
+    "display_name": "Limagne bourbonnaise - Saint-Pourçain-sur-Sioule",
     "type": "region",
-    "region_name": "Saint-Pourçain-sur-Sioule - plateau"
+    "region_name": "Limagne bourbonnaise"
   },
   "draft_terrain_213": {
     "lat": 46.39629949735931,
     "lon": 3.9039129713898006,
-    "display_name": "Saint-François - plain - Saint-François",
+    "display_name": "Basses Marches du Bourbonnais - Saint-François",
     "type": "region",
-    "region_name": "Saint-François - plain"
+    "region_name": "Basses Marches du Bourbonnais"
   },
   "draft_terrain_214": {
     "lat": 46.41852078066803,
     "lon": 4.657573402762264,
-    "display_name": "Cluny - plateau - Cluny",
+    "display_name": "Clunisois - Cluny",
     "type": "region",
-    "region_name": "Cluny - plateau"
+    "region_name": "Clunisois"
   },
   "draft_terrain_215": {
     "lat": 46.33004788633509,
     "lon": 14.189336055332712,
-    "display_name": "Radovljica - mountains - Radovljica",
+    "display_name": "Gorenjska - Radovljica",
     "type": "region",
-    "region_name": "Radovljica - mountains"
+    "region_name": "Gorenjska"
   },
   "draft_terrain_216": {
     "lat": 46.2355051796776,
     "lon": 14.623126302537418,
-    "display_name": "Kamnik - mountains - Kamnik",
+    "display_name": "Kamniško-Savinjske Alpe - Kamnik",
     "type": "region",
-    "region_name": "Kamnik - mountains"
+    "region_name": "Kamniško-Savinjske Alpe"
   },
   "draft_terrain_217": {
     "lat": 46.49850909779214,
     "lon": 15.089447584520018,
-    "display_name": "Slovenj Gradec - uplands - Slovenj Gradec",
+    "display_name": "Slovenjgraška kotlina - Slovenj Gradec",
     "type": "region",
-    "region_name": "Slovenj Gradec - uplands"
+    "region_name": "Slovenjgraška kotlina"
   },
   "draft_terrain_218": {
     "lat": 46.390777542101546,
     "lon": 15.789143258364529,
-    "display_name": "Kidričevo - plain - Kidričevo",
+    "display_name": "Dravsko-Ptujsko polje - Kidričevo",
     "type": "region",
-    "region_name": "Kidričevo - plain"
+    "region_name": "Dravsko-Ptujsko polje"
   },
   "draft_terrain_219": {
     "lat": 46.33275350356734,
     "lon": 16.258156290633234,
-    "display_name": "Sračinec - plain - Sračinec",
+    "display_name": "Varaždinska Podravina - Sračinec",
     "type": "region",
-    "region_name": "Sračinec - plain"
+    "region_name": "Varaždinska Podravina"
   },
   "draft_terrain_220": {
     "lat": 45.927757103447924,
     "lon": 1.049113172703301,
-    "display_name": "Oradour-sur-Glane - plain - Oradour-sur-Glane",
+    "display_name": "Monts de Blond et vallée de la Glane - Oradour-sur-Glane",
     "type": "region",
-    "region_name": "Oradour-sur-Glane - plain"
+    "region_name": "Monts de Blond et vallée de la Glane"
   },
   "draft_terrain_221": {
     "lat": 46.0983601517143,
     "lon": 2.0552043450588795,
-    "display_name": "Ahun - plateau - Ahun",
+    "display_name": "Vallée de la Creuse et pays d'Ahun - Ahun",
     "type": "region",
-    "region_name": "Ahun - plateau"
+    "region_name": "Vallée de la Creuse et pays d'Ahun"
   },
   "draft_terrain_222": {
     "lat": 45.94712978840318,
     "lon": 2.8548636457792105,
-    "display_name": "Saint-Georges-de-Mons - plateau - Saint-Georges-de-Mons",
+    "display_name": "Combrailles - Saint-Georges-de-Mons",
     "type": "region",
-    "region_name": "Saint-Georges-de-Mons - plateau"
+    "region_name": "Combrailles"
   },
   "draft_terrain_223": {
     "lat": 46.02898523411063,
     "lon": 4.282091112600867,
-    "display_name": "Bourg-de-Thizy - uplands - Bourg-de-Thizy",
+    "display_name": "Beaujolais vert - Bourg-de-Thizy",
     "type": "region",
-    "region_name": "Bourg-de-Thizy - uplands"
+    "region_name": "Beaujolais vert"
   },
   "draft_terrain_224": {
     "lat": 46.255148496809284,
     "lon": 5.108998226613893,
-    "display_name": "Polliat - plain - Polliat",
+    "display_name": "Bresse - Polliat",
     "type": "region",
-    "region_name": "Polliat - plain"
+    "region_name": "Bresse"
   },
   "draft_terrain_225": {
     "lat": 46.24085148806766,
     "lon": 15.285756987917226,
-    "display_name": "Celje - uplands - Celje",
+    "display_name": "Celjska kotlina - Celje",
     "type": "region",
-    "region_name": "Celje - uplands"
+    "region_name": "Celjska kotlina"
   },
   "draft_terrain_226": {
     "lat": 46.04569143562723,
     "lon": 16.14706318492288,
-    "display_name": "Konjšćina - plateau - Konjšćina",
+    "display_name": "Hrvatsko zagorje - Konjšćina",
     "type": "region",
-    "region_name": "Konjšćina - plateau"
+    "region_name": "Hrvatsko zagorje"
   },
   "draft_terrain_227": {
     "lat": 45.64712188040911,
     "lon": 0.9984953712113405,
-    "display_name": "Châlus - plain - Châlus",
+    "display_name": "Monts de Châlus - Châlus",
     "type": "region",
-    "region_name": "Châlus - plain"
+    "region_name": "Monts de Châlus"
   },
   "draft_terrain_228": {
     "lat": 45.83501283865113,
     "lon": 1.5179012107054177,
-    "display_name": "Saint-Léonard-de-Noblat - plateau - Saint-Léonard-de-Noblat",
+    "display_name": "Plateaux de la Vienne limousine - Saint-Léonard-de-Noblat",
     "type": "region",
-    "region_name": "Saint-Léonard-de-Noblat - plateau"
+    "region_name": "Plateaux de la Vienne limousine"
   },
   "draft_terrain_229": {
     "lat": 45.69440850924058,
     "lon": 2.282061224344315,
-    "display_name": "La Courtine - plateau - La Courtine",
+    "display_name": "Plateau de Millevaches - La Courtine",
     "type": "region",
-    "region_name": "La Courtine - plateau"
+    "region_name": "Plateau de Millevaches"
   },
   "draft_terrain_230": {
     "lat": 45.92709974860072,
     "lon": 3.310396327678389,
-    "display_name": "Maringues - plain - Maringues",
+    "display_name": "Limagne - Maringues",
     "type": "region",
-    "region_name": "Maringues - plain"
+    "region_name": "Limagne"
   },
   "draft_terrain_231": {
     "lat": 45.904002475527086,
     "lon": 3.823805043067205,
-    "display_name": "Saint-Just-en-Chevalet - uplands - Saint-Just-en-Chevalet",
+    "display_name": "Monts de la Madeleine - Saint-Just-en-Chevalet",
     "type": "region",
-    "region_name": "Saint-Just-en-Chevalet - uplands"
+    "region_name": "Monts de la Madeleine"
   },
   "draft_terrain_232": {
     "lat": 45.92775672673893,
     "lon": 4.770668488116368,
-    "display_name": "Trévoux - plateau - Trévoux",
+    "display_name": "Val de Saône et Dombes - Trévoux",
     "type": "region",
-    "region_name": "Trévoux - plateau"
+    "region_name": "Val de Saône et Dombes"
   },
   "draft_terrain_233": {
     "lat": 46.023955292323954,
     "lon": 12.622305240963186,
-    "display_name": "Roveredo in Piano - plain - Roveredo in Piano",
+    "display_name": "Alta pianura pordenonese - Roveredo in Piano",
     "type": "region",
-    "region_name": "Roveredo in Piano - plain"
+    "region_name": "Alta pianura pordenonese"
   },
   "draft_terrain_234": {
     "lat": 46.05641517654474,
     "lon": 13.24394660490801,
-    "display_name": "Udine - plain - Udine",
+    "display_name": "Alta pianura friulana - Udine",
     "type": "region",
-    "region_name": "Udine - plain"
+    "region_name": "Alta pianura friulana"
   },
   "draft_terrain_235": {
     "lat": 45.96297264367606,
     "lon": 13.625350927708828,
-    "display_name": "Nova Gorica - mountains - Nova Gorica",
+    "display_name": "Collio e Goriška brda - Nova Gorica",
     "type": "region",
-    "region_name": "Nova Gorica - mountains"
+    "region_name": "Collio e Goriška brda"
   },
   "draft_terrain_236": {
     "lat": 45.97826076479765,
     "lon": 14.304092262727886,
-    "display_name": "Vrhnika - uplands - Vrhnika",
+    "display_name": "Ljubljansko barje in Notranjska - Vrhnika",
     "type": "region",
-    "region_name": "Vrhnika - uplands"
+    "region_name": "Ljubljansko barje in Notranjska"
   },
   "draft_terrain_237": {
     "lat": 46.05894669512195,
     "lon": 14.840859350416418,
-    "display_name": "Litija - uplands - Litija",
+    "display_name": "Posavsko hribovje - Litija",
     "type": "region",
-    "region_name": "Litija - uplands"
+    "region_name": "Posavsko hribovje"
   },
   "draft_terrain_238": {
     "lat": 45.8490497014046,
     "lon": 15.789244825273139,
-    "display_name": "Zaprešić - uplands - Zaprešić",
+    "display_name": "Brdovečko prigorje - Zaprešić",
     "type": "region",
-    "region_name": "Zaprešić - uplands"
+    "region_name": "Brdovečko prigorje"
   },
   "draft_terrain_239": {
     "lat": 45.42917256185078,
     "lon": 1.4266254104721834,
-    "display_name": "Lubersac - plain - Lubersac",
+    "display_name": "Plateau d'Uzerche - Lubersac",
     "type": "region",
-    "region_name": "Lubersac - plain"
+    "region_name": "Plateau d'Uzerche"
   },
   "draft_terrain_240": {
     "lat": 45.603102610727326,
     "lon": 1.9085186869445132,
-    "display_name": "Bugeat - uplands - Bugeat",
+    "display_name": "Plateau de Millevaches corrézien - Bugeat",
     "type": "region",
-    "region_name": "Bugeat - uplands"
+    "region_name": "Plateau de Millevaches corrézien"
   },
   "draft_terrain_241": {
     "lat": 45.66291208186902,
     "lon": 2.9308238464668785,
-    "display_name": "Aydat - uplands - Aydat",
+    "display_name": "Monts Dore - Aydat",
     "type": "region",
-    "region_name": "Aydat - uplands"
+    "region_name": "Monts Dore"
   },
   "draft_terrain_242": {
     "lat": 45.54925877495665,
     "lon": 3.2667666551912347,
-    "display_name": "Issoire - uplands - Issoire",
+    "display_name": "Limagne d'Issoire - Issoire",
     "type": "region",
-    "region_name": "Issoire - uplands"
+    "region_name": "Limagne d'Issoire"
   },
   "draft_terrain_243": {
     "lat": 45.73128357132568,
     "lon": 4.203968363688262,
-    "display_name": "Feurs - uplands - Feurs",
+    "display_name": "Plaine du Forez - Feurs",
     "type": "region",
-    "region_name": "Feurs - uplands"
+    "region_name": "Plaine du Forez"
   },
   "draft_terrain_244": {
     "lat": 45.78992286205012,
     "lon": 5.195980124296917,
-    "display_name": "Loyettes - plain - Loyettes",
+    "display_name": "Plaine de l'Ain - Loyettes",
     "type": "region",
-    "region_name": "Loyettes - plain"
+    "region_name": "Plaine de l'Ain"
   },
   "draft_terrain_245": {
     "lat": 45.788976507757155,
     "lon": 12.823057946789566,
-    "display_name": "Portogruaro - plain - Portogruaro",
+    "display_name": "Bassa pianura friulana - Portogruaro",
     "type": "region",
-    "region_name": "Portogruaro - plain"
+    "region_name": "Bassa pianura friulana"
   },
   "draft_terrain_246": {
     "lat": 45.68354182369684,
     "lon": 13.998326921109786,
-    "display_name": "Divača - uplands - Divača",
+    "display_name": "Kras - Divača",
     "type": "region",
-    "region_name": "Divača - uplands"
+    "region_name": "Kras"
   },
   "draft_terrain_247": {
     "lat": 45.713336788423845,
     "lon": 14.598026870807448,
-    "display_name": "Hrib-Loški Potok - uplands - Hrib-Loški Potok",
+    "display_name": "Notranjsko podolje - Hrib-Loški Potok",
     "type": "region",
-    "region_name": "Hrib-Loški Potok - uplands"
+    "region_name": "Notranjsko podolje"
   },
   "draft_terrain_248": {
     "lat": 45.80543345172316,
     "lon": 15.14670613440636,
-    "display_name": "Novo Mesto - uplands - Novo Mesto",
+    "display_name": "Dolenjska - Novo Mesto",
     "type": "region",
-    "region_name": "Novo Mesto - uplands"
+    "region_name": "Dolenjska"
   },
   "draft_terrain_249": {
     "lat": 45.70129996797472,
     "lon": 16.08883689188402,
-    "display_name": "Velika Gorica - plain - Velika Gorica",
+    "display_name": "Turopolje - Velika Gorica",
     "type": "region",
-    "region_name": "Velika Gorica - plain"
+    "region_name": "Turopolje"
   },
   "draft_terrain_250": {
     "lat": 45.32378671603412,
     "lon": 1.0323297240500822,
-    "display_name": "Excideuil - plain - Excideuil",
+    "display_name": "Périgord vert - Excideuil",
     "type": "region",
-    "region_name": "Excideuil - plain"
+    "region_name": "Périgord vert"
   },
   "draft_terrain_251": {
     "lat": 45.26811865274441,
     "lon": 1.79130873184412,
-    "display_name": "Tulle - plateau - Tulle",
+    "display_name": "Pays de Tulle - Tulle",
     "type": "region",
-    "region_name": "Tulle - plateau"
+    "region_name": "Pays de Tulle"
   },
   "draft_terrain_252": {
     "lat": 45.34479220189438,
     "lon": 2.3889070714614213,
-    "display_name": "Champagnac - plateau - Champagnac",
+    "display_name": "Artense - Champagnac",
     "type": "region",
-    "region_name": "Champagnac - plateau"
+    "region_name": "Artense"
   },
   "draft_terrain_253": {
     "lat": 45.51920670888099,
     "lon": 3.7325476638061192,
-    "display_name": "Ambert - uplands - Ambert",
+    "display_name": "Livradois - Ambert",
     "type": "region",
-    "region_name": "Ambert - uplands"
+    "region_name": "Livradois"
   },
   "draft_terrain_254": {
     "lat": 45.45735353235885,
     "lon": 4.39942814650895,
-    "display_name": "Saint-Étienne - uplands - Saint-Étienne",
+    "display_name": "Bassin stéphanois et Pilat - Saint-Étienne",
     "type": "region",
-    "region_name": "Saint-Étienne - uplands"
+    "region_name": "Bassin stéphanois et Pilat"
   },
   "draft_terrain_255": {
     "lat": 45.511675485160914,
     "lon": 4.938552037282766,
-    "display_name": "Estrablin - plateau - Estrablin",
+    "display_name": "Balmes viennoises - Estrablin",
     "type": "region",
-    "region_name": "Estrablin - plateau"
+    "region_name": "Balmes viennoises"
   },
   "draft_terrain_256": {
     "lat": 45.429842660292586,
     "lon": 5.419307666994205,
-    "display_name": "Châbons - uplands - Châbons",
+    "display_name": "Terres froides - Châbons",
     "type": "region",
-    "region_name": "Châbons - uplands"
+    "region_name": "Terres froides"
   },
   "draft_terrain_257": {
     "lat": 45.615954685116634,
     "lon": 8.383528054835857,
-    "display_name": "Gattinara - plain - Gattinara",
+    "display_name": "Colline novaresi - Gattinara",
     "type": "region",
-    "region_name": "Gattinara - plain"
+    "region_name": "Colline novaresi"
   },
   "draft_terrain_258": {
     "lat": 45.54732743137437,
     "lon": 9.037778464879914,
-    "display_name": "Rho - plain - Rho",
+    "display_name": "Alto Milanese - Rho",
     "type": "region",
-    "region_name": "Rho - plain"
+    "region_name": "Alto Milanese"
   },
   "draft_terrain_259": {
     "lat": 45.51064801399059,
     "lon": 11.722018490776044,
-    "display_name": "Camisano Vicentino - plain - Camisano Vicentino",
+    "display_name": "Pianura vicentina - Camisano Vicentino",
     "type": "region",
-    "region_name": "Camisano Vicentino - plain"
+    "region_name": "Pianura vicentina"
   },
   "draft_terrain_260": {
     "lat": 45.654322967760386,
     "lon": 12.232795838323094,
-    "display_name": "Treviso - plain - Treviso",
+    "display_name": "Pianura trevigiana - Treviso",
     "type": "region",
-    "region_name": "Treviso - plain"
+    "region_name": "Pianura trevigiana"
   },
   "draft_terrain_261": {
     "lat": 45.44341179447065,
     "lon": 14.978388519176079,
-    "display_name": "Brod Moravice - uplands - Brod Moravice",
+    "display_name": "Gorski kotar - Brod Moravice",
     "type": "region",
-    "region_name": "Brod Moravice - uplands"
+    "region_name": "Gorski kotar"
   },
   "draft_terrain_262": {
     "lat": 45.49047808739585,
     "lon": 15.57191559778324,
-    "display_name": "Karlovac - plain - Karlovac",
+    "display_name": "Pokuplje - Karlovac",
     "type": "region",
-    "region_name": "Karlovac - plain"
+    "region_name": "Pokuplje"
   },
   "draft_terrain_263": {
     "lat": 45.348275077671055,
     "lon": 16.100891139118932,
-    "display_name": "Glina - plateau - Glina",
+    "display_name": "Banovina - Glina",
     "type": "region",
-    "region_name": "Glina - plateau"
+    "region_name": "Banovina"
   },
   "draft_terrain_264": {
     "lat": 45.15944073922948,
     "lon": 1.5069414526954026,
-    "display_name": "Brive-la-Gaillarde - plain - Brive-la-Gaillarde",
+    "display_name": "Bassin de Brive - Brive-la-Gaillarde",
     "type": "region",
-    "region_name": "Brive-la-Gaillarde - plain"
+    "region_name": "Bassin de Brive"
   },
   "draft_terrain_265": {
     "lat": 44.94399132502376,
     "lon": 2.2911607810782866,
-    "display_name": "Saint-Paul-des-Landes - plateau - Saint-Paul-des-Landes",
+    "display_name": "Bassin d'Aurillac - Saint-Paul-des-Landes",
     "type": "region",
-    "region_name": "Saint-Paul-des-Landes - plateau"
+    "region_name": "Bassin d'Aurillac"
   },
   "draft_terrain_266": {
     "lat": 45.12178443235294,
     "lon": 2.8853106750797957,
-    "display_name": "Murat - uplands - Murat",
+    "display_name": "Monts du Cantal - Murat",
     "type": "region",
-    "region_name": "Murat - uplands"
+    "region_name": "Monts du Cantal"
   },
   "draft_terrain_267": {
     "lat": 45.30453090528076,
     "lon": 3.399011776697652,
-    "display_name": "Brioude - uplands - Brioude",
+    "display_name": "Brivadois - Brioude",
     "type": "region",
-    "region_name": "Brioude - uplands"
+    "region_name": "Brivadois"
   },
   "draft_terrain_268": {
     "lat": 45.12202057853841,
     "lon": 3.815762563885372,
-    "display_name": "Saint-Paulien - uplands - Saint-Paulien",
+    "display_name": "Bassin du Puy et Velay - Saint-Paulien",
     "type": "region",
-    "region_name": "Saint-Paulien - uplands"
+    "region_name": "Bassin du Puy et Velay"
   },
   "draft_terrain_269": {
     "lat": 45.171729683674315,
     "lon": 4.294564332067806,
-    "display_name": "Montfaucon-en-Velay - uplands - Montfaucon-en-Velay",
+    "display_name": "Haut-Velay - Montfaucon-en-Velay",
     "type": "region",
-    "region_name": "Montfaucon-en-Velay - uplands"
+    "region_name": "Haut-Velay"
   },
   "draft_terrain_270": {
     "lat": 45.31023330199256,
     "lon": 8.430683879563471,
-    "display_name": "Vercelli - plain - Vercelli",
+    "display_name": "Vercellese - Vercelli",
     "type": "region",
-    "region_name": "Vercelli - plain"
+    "region_name": "Vercellese"
   },
   "draft_terrain_271": {
     "lat": 45.483484660925626,
     "lon": 9.632810371336278,
-    "display_name": "Caravaggio - plain - Caravaggio",
+    "display_name": "Bassa bergamasca - Caravaggio",
     "type": "region",
-    "region_name": "Caravaggio - plain"
+    "region_name": "Bassa bergamasca"
   },
   "draft_terrain_272": {
     "lat": 45.33492354648459,
     "lon": 10.327989325260868,
-    "display_name": "Calvisano - plain - Calvisano",
+    "display_name": "Bassa bresciana - Calvisano",
     "type": "region",
-    "region_name": "Calvisano - plain"
+    "region_name": "Bassa bresciana"
   },
   "draft_terrain_273": {
     "lat": 45.39597294028323,
     "lon": 13.722008969103516,
-    "display_name": "Grožnjan - uplands - Grožnjan",
+    "display_name": "Sjeverozapadna Istra - Grožnjan",
     "type": "region",
-    "region_name": "Grožnjan - uplands"
+    "region_name": "Sjeverozapadna Istra"
   },
   "draft_terrain_274": {
     "lat": 45.3803029768892,
     "lon": 14.365801520216806,
-    "display_name": "Kastav - uplands - Kastav",
+    "display_name": "Liburnija - Kastav",
     "type": "region",
-    "region_name": "Kastav - uplands"
+    "region_name": "Liburnija"
   },
   "draft_terrain_275": {
     "lat": 45.27866314075744,
     "lon": 14.733938429861725,
-    "display_name": "Fužine - uplands - Fužine",
+    "display_name": "Zapadni Gorski kotar - Fužine",
     "type": "region",
-    "region_name": "Fužine - uplands"
+    "region_name": "Zapadni Gorski kotar"
   },
   "draft_terrain_276": {
     "lat": 44.88876143724515,
     "lon": 1.032555647442059,
-    "display_name": "Saint-Cyprien - plain - Saint-Cyprien",
+    "display_name": "Périgord noir - Saint-Cyprien",
     "type": "region",
-    "region_name": "Saint-Cyprien - plain"
+    "region_name": "Périgord noir"
   },
   "draft_terrain_277": {
     "lat": 44.8702513020161,
     "lon": 1.8564051657776437,
-    "display_name": "Saint-Céré - uplands - Saint-Céré",
+    "display_name": "Limargue - Saint-Céré",
     "type": "region",
-    "region_name": "Saint-Céré - uplands"
+    "region_name": "Limargue"
   },
   "draft_terrain_278": {
     "lat": 44.81375982373392,
     "lon": 2.7469886607978253,
-    "display_name": "Sainte-Geneviève-sur-Argence - uplands - Sainte-Geneviève-sur-Argence",
+    "display_name": "Carladez - Sainte-Geneviève-sur-Argence",
     "type": "region",
-    "region_name": "Sainte-Geneviève-sur-Argence - uplands"
+    "region_name": "Carladez"
   },
   "draft_terrain_279": {
     "lat": 44.797754482628406,
     "lon": 3.249869462252155,
-    "display_name": "Saint-Chély-d'Apcher - uplands - Saint-Chély-d'Apcher",
+    "display_name": "Margeride occidentale - Saint-Chély-d'Apcher",
     "type": "region",
-    "region_name": "Saint-Chély-d'Apcher - uplands"
+    "region_name": "Margeride occidentale"
   },
   "draft_terrain_280": {
     "lat": 45.0565563212047,
     "lon": 5.04996013762571,
-    "display_name": "Romans-sur-Isère - uplands - Romans-sur-Isère",
+    "display_name": "Drôme des collines - Romans-sur-Isère",
     "type": "region",
-    "region_name": "Romans-sur-Isère - uplands"
+    "region_name": "Drôme des collines"
   },
   "draft_terrain_281": {
     "lat": 45.1362101342117,
     "lon": 5.310022953516879,
-    "display_name": "Saint-Marcellin - mountains - Saint-Marcellin",
+    "display_name": "Basse vallée de l'Isère - Saint-Marcellin",
     "type": "region",
-    "region_name": "Saint-Marcellin - mountains"
+    "region_name": "Basse vallée de l'Isère"
   },
   "draft_terrain_282": {
     "lat": 45.13191741960223,
     "lon": 7.788249570917023,
-    "display_name": "Settimo Torinese - plain - Settimo Torinese",
+    "display_name": "Pianura torinese - Settimo Torinese",
     "type": "region",
-    "region_name": "Settimo Torinese - plain"
+    "region_name": "Pianura torinese"
   },
   "draft_terrain_283": {
     "lat": 45.17424935393802,
     "lon": 9.145868466543426,
-    "display_name": "Pavia - plain - Pavia",
+    "display_name": "Pavese - Pavia",
     "type": "region",
-    "region_name": "Pavia - plain"
+    "region_name": "Pavese"
   },
   "draft_terrain_284": {
     "lat": 45.19139917704007,
     "lon": 10.956039470643033,
-    "display_name": "Castel d'Ario - plain - Castel d'Ario",
+    "display_name": "Mantovano - Castel d'Ario",
     "type": "region",
-    "region_name": "Castel d'Ario - plain"
+    "region_name": "Mantovano"
   },
   "draft_terrain_285": {
     "lat": 45.10842410580381,
     "lon": 11.500175211066395,
-    "display_name": "Badia Polesine - plain - Badia Polesine",
+    "display_name": "Alto Polesine - Badia Polesine",
     "type": "region",
-    "region_name": "Badia Polesine - plain"
+    "region_name": "Alto Polesine"
   },
   "draft_terrain_286": {
     "lat": 45.05355213830031,
     "lon": 12.075509611369,
-    "display_name": "Adria - plain - Adria",
+    "display_name": "Basso Polesine - Adria",
     "type": "region",
-    "region_name": "Adria - plain"
+    "region_name": "Basso Polesine"
   },
   "draft_terrain_287": {
     "lat": 45.13166192566003,
     "lon": 13.920337644402737,
-    "display_name": "Žminj - uplands - Žminj",
+    "display_name": "Središnja Istra - Žminj",
     "type": "region",
-    "region_name": "Žminj - uplands"
+    "region_name": "Središnja Istra"
   },
   "draft_terrain_288": {
     "lat": 45.07522794833329,
     "lon": 14.640360340036711,
-    "display_name": "Vrbnik - uplands - Vrbnik",
+    "display_name": "Krk - Vrbnik",
     "type": "region",
-    "region_name": "Vrbnik - uplands"
+    "region_name": "Krk"
   },
   "draft_terrain_289": {
     "lat": 44.99286907794201,
     "lon": 15.14745712323002,
-    "display_name": "Brinje - uplands - Brinje",
+    "display_name": "Sjeverna Lika - Brinje",
     "type": "region",
-    "region_name": "Brinje - uplands"
+    "region_name": "Sjeverna Lika"
   },
   "draft_terrain_290": {
     "lat": 45.18553521661412,
     "lon": 15.78333490271105,
-    "display_name": "Velika Kladuša - plain - Velika Kladuša",
+    "display_name": "Cazinska krajina - Velika Kladuša",
     "type": "region",
-    "region_name": "Velika Kladuša - plain"
+    "region_name": "Cazinska krajina"
   },
   "draft_terrain_291": {
     "lat": 44.970870155272934,
     "lon": 16.142034940711994,
-    "display_name": "Otoka - plateau - Otoka",
+    "display_name": "Pounje - Otoka",
     "type": "region",
-    "region_name": "Otoka - plateau"
+    "region_name": "Pounje"
   },
   "draft_terrain_292": {
     "lat": 44.521354323844015,
     "lon": 0.9773418719685841,
-    "display_name": "Fumel - plain - Fumel",
+    "display_name": "Pays du Fumélois - Fumel",
     "type": "region",
-    "region_name": "Fumel - plain"
+    "region_name": "Pays du Fumélois"
   },
   "draft_terrain_293": {
     "lat": 44.742920304212745,
     "lon": 1.3989493198744736,
-    "display_name": "Gourdon - plain - Gourdon",
+    "display_name": "Bouriane - Gourdon",
     "type": "region",
-    "region_name": "Gourdon - plain"
+    "region_name": "Bouriane"
   },
   "draft_terrain_294": {
     "lat": 44.621987834813375,
     "lon": 2.2215525524360658,
-    "display_name": "Livinhac-le-Haut - uplands - Livinhac-le-Haut",
+    "display_name": "Bassin de Decazeville - Livinhac-le-Haut",
     "type": "region",
-    "region_name": "Livinhac-le-Haut - uplands"
+    "region_name": "Bassin de Decazeville"
   },
   "draft_terrain_295": {
     "lat": 44.73816791613504,
     "lon": 3.8202275247380135,
-    "display_name": "Langogne - uplands - Langogne",
+    "display_name": "Margeride et haute vallée de l'Allier - Langogne",
     "type": "region",
-    "region_name": "Langogne - uplands"
+    "region_name": "Margeride et haute vallée de l'Allier"
   },
   "draft_terrain_296": {
     "lat": 44.889835543554874,
     "lon": 4.019083665141611,
-    "display_name": "Le Monastier-sur-Gazeille - uplands - Le Monastier-sur-Gazeille",
+    "display_name": "Haut-Vivarais et Mézenc - Le Monastier-sur-Gazeille",
     "type": "region",
-    "region_name": "Le Monastier-sur-Gazeille - uplands"
+    "region_name": "Haut-Vivarais et Mézenc"
   },
   "draft_terrain_297": {
     "lat": 44.747690192652655,
     "lon": 4.559060892770862,
-    "display_name": "Veyras - uplands - Veyras",
+    "display_name": "Boutières - Veyras",
     "type": "region",
-    "region_name": "Veyras - uplands"
+    "region_name": "Boutières"
   },
   "draft_terrain_298": {
     "lat": 44.813106318229885,
     "lon": 7.270523500179921,
-    "display_name": "Airali - mountains - Airali",
+    "display_name": "Val Pellice - Airali",
     "type": "region",
-    "region_name": "Airali - mountains"
+    "region_name": "Val Pellice"
   },
   "draft_terrain_299": {
     "lat": 44.897954812107166,
     "lon": 8.600273954604225,
-    "display_name": "Alessandria - plain - Alessandria",
+    "display_name": "Piana di Alessandria - Alessandria",
     "type": "region",
-    "region_name": "Alessandria - plain"
+    "region_name": "Piana di Alessandria"
   },
   "draft_terrain_300": {
     "lat": 44.85117902421791,
     "lon": 9.34653164246111,
-    "display_name": "Romagnese - uplands - Romagnese",
+    "display_name": "Oltrepò Pavese - Romagnese",
     "type": "region",
-    "region_name": "Romagnese - uplands"
+    "region_name": "Oltrepò Pavese"
   },
   "draft_terrain_301": {
     "lat": 45.04242161388692,
     "lon": 9.857457019750983,
-    "display_name": "Caorso - plain - Caorso",
+    "display_name": "Bassa piacentina - Caorso",
     "type": "region",
-    "region_name": "Caorso - plain"
+    "region_name": "Bassa piacentina"
   },
   "draft_terrain_302": {
     "lat": 44.82458064678477,
     "lon": 10.57742826681292,
-    "display_name": "Castelnovo di Sotto - plain - Castelnovo di Sotto",
+    "display_name": "Bassa reggiana - Castelnovo di Sotto",
     "type": "region",
-    "region_name": "Castelnovo di Sotto - plain"
+    "region_name": "Bassa reggiana"
   },
   "draft_terrain_303": {
     "lat": 44.923925226152676,
     "lon": 14.380717844377102,
-    "display_name": "Cres - uplands - Cres",
+    "display_name": "Cres",
     "type": "region",
-    "region_name": "Cres - uplands"
+    "region_name": "Cres"
   },
   "draft_terrain_304": {
     "lat": 44.82112520095864,
     "lon": 15.15063881445978,
-    "display_name": "Otočac - mountains - Otočac",
+    "display_name": "Gacka - Otočac",
     "type": "region",
-    "region_name": "Otočac - mountains"
+    "region_name": "Gacka"
   },
   "draft_terrain_305": {
     "lat": 44.65943532958776,
     "lon": 15.400844961326342,
-    "display_name": "Perušić - uplands - Perušić",
+    "display_name": "Središnja Lika - Perušić",
     "type": "region",
-    "region_name": "Perušić - uplands"
+    "region_name": "Središnja Lika"
   },
   "draft_terrain_306": {
     "lat": 44.804306402501126,
     "lon": 15.89580280468362,
-    "display_name": "Bihać - mountains - Bihać",
+    "display_name": "Bihaćko polje - Bihać",
     "type": "region",
-    "region_name": "Bihać - mountains"
+    "region_name": "Bihaćko polje"
   },
   "draft_terrain_307": {
     "lat": 44.43504153975009,
     "lon": 1.4017652030290029,
-    "display_name": "Cahors - plain - Cahors",
+    "display_name": "Causse de Cahors - Cahors",
     "type": "region",
-    "region_name": "Cahors - plain"
+    "region_name": "Causse de Cahors"
   },
   "draft_terrain_308": {
     "lat": 44.46977965789573,
     "lon": 1.8891097203762255,
-    "display_name": "Cajarc - plain - Cajarc",
+    "display_name": "Causses du Quercy - Cajarc",
     "type": "region",
-    "region_name": "Cajarc - plain"
+    "region_name": "Causses du Quercy"
   },
   "draft_terrain_309": {
     "lat": 44.419426682324875,
     "lon": 2.608692210375631,
-    "display_name": "Sébazac-Concourès - plateau - Sébazac-Concourès",
+    "display_name": "Causse Comtal - Sébazac-Concourès",
     "type": "region",
-    "region_name": "Sébazac-Concourès - plateau"
+    "region_name": "Causse Comtal"
   },
   "draft_terrain_310": {
     "lat": 44.65584930917872,
     "lon": 2.9508148869591095,
-    "display_name": "Laguiole - uplands - Laguiole",
+    "display_name": "Aubrac - Laguiole",
     "type": "region",
-    "region_name": "Laguiole - uplands"
+    "region_name": "Aubrac"
   },
   "draft_terrain_311": {
     "lat": 44.41640799381305,
     "lon": 4.037777052212671,
-    "display_name": "Les Vans - mountains - Les Vans",
+    "display_name": "Cévennes vivaroises - Les Vans",
     "type": "region",
-    "region_name": "Les Vans - mountains"
+    "region_name": "Cévennes vivaroises"
   },
   "draft_terrain_312": {
     "lat": 44.6642182990702,
     "lon": 4.78170852483902,
-    "display_name": "Cruas - uplands - Cruas",
+    "display_name": "Vallée du Rhône ardéchoise - Cruas",
     "type": "region",
-    "region_name": "Cruas - uplands"
+    "region_name": "Vallée du Rhône ardéchoise"
   },
   "draft_terrain_313": {
     "lat": 44.6947255924153,
     "lon": 5.13237347775432,
-    "display_name": "Aouste-sur-Sye - uplands - Aouste-sur-Sye",
+    "display_name": "Vallée de la Drôme - Aouste-sur-Sye",
     "type": "region",
-    "region_name": "Aouste-sur-Sye - uplands"
+    "region_name": "Vallée de la Drôme"
   },
   "draft_terrain_314": {
     "lat": 44.66039054041786,
     "lon": 7.66829783972976,
-    "display_name": "Savigliano - plateau - Savigliano",
+    "display_name": "Pianura saluzzese - Savigliano",
     "type": "region",
-    "region_name": "Savigliano - plateau"
+    "region_name": "Pianura saluzzese"
   },
   "draft_terrain_315": {
     "lat": 44.719217556702304,
     "lon": 11.275578195418957,
-    "display_name": "Cento - plain - Cento",
+    "display_name": "Pianura bolognese - Cento",
     "type": "region",
-    "region_name": "Cento - plain"
+    "region_name": "Pianura bolognese"
   },
   "draft_terrain_316": {
     "lat": 44.6024910280439,
     "lon": 11.84508995099668,
-    "display_name": "Argenta - plain - Argenta",
+    "display_name": "Basso Ferrarese - Argenta",
     "type": "region",
-    "region_name": "Argenta - plain"
+    "region_name": "Basso Ferrarese"
   },
   "draft_terrain_317": {
     "lat": 44.52829096042022,
     "lon": 15.740948960613004,
-    "display_name": "Udbina - uplands - Udbina",
+    "display_name": "Krbava - Udbina",
     "type": "region",
-    "region_name": "Udbina - uplands"
+    "region_name": "Krbava"
   },
   "draft_terrain_318": {
     "lat": 44.120339497493795,
     "lon": 0.9028018437308081,
-    "display_name": "Valence - plain - Valence",
+    "display_name": "Vallée de la Garonne agenaise - Valence",
     "type": "region",
-    "region_name": "Valence - plain"
+    "region_name": "Vallée de la Garonne agenaise"
   },
   "draft_terrain_319": {
     "lat": 44.17520222597752,
     "lon": 1.5479606818924514,
-    "display_name": "Caussade - plain - Caussade",
+    "display_name": "Quercy caussadais - Caussade",
     "type": "region",
-    "region_name": "Caussade - plain"
+    "region_name": "Quercy caussadais"
   },
   "draft_terrain_320": {
     "lat": 44.06965563524922,
     "lon": 1.9272989678151813,
-    "display_name": "Cordes-sur-Ciel - plateau - Cordes-sur-Ciel",
+    "display_name": "Cordais - Cordes-sur-Ciel",
     "type": "region",
-    "region_name": "Cordes-sur-Ciel - plateau"
+    "region_name": "Cordais"
   },
   "draft_terrain_321": {
     "lat": 44.19501755918615,
     "lon": 2.3240277620085608,
-    "display_name": "Naucelle - plateau - Naucelle",
+    "display_name": "Ségala - Naucelle",
     "type": "region",
-    "region_name": "Naucelle - plateau"
+    "region_name": "Ségala"
   },
   "draft_terrain_322": {
     "lat": 44.202113781092315,
     "lon": 2.8001143455800346,
-    "display_name": "Salles-Curan - uplands - Salles-Curan",
+    "display_name": "Lévézou - Salles-Curan",
     "type": "region",
-    "region_name": "Salles-Curan - uplands"
+    "region_name": "Lévézou"
   },
   "draft_terrain_323": {
     "lat": 44.19866082178557,
     "lon": 3.42769712748532,
-    "display_name": "Meyrueis - uplands - Meyrueis",
+    "display_name": "Causse Méjean - Meyrueis",
     "type": "region",
-    "region_name": "Meyrueis - uplands"
+    "region_name": "Causse Méjean"
   },
   "draft_terrain_324": {
     "lat": 44.43735870677043,
     "lon": 4.331158884331962,
-    "display_name": "Ruoms - plateau - Ruoms",
+    "display_name": "Bas-Vivarais - Ruoms",
     "type": "region",
-    "region_name": "Ruoms - plateau"
+    "region_name": "Bas-Vivarais"
   },
   "draft_terrain_325": {
     "lat": 44.277631458417,
     "lon": 4.729493226962235,
-    "display_name": "Bollène - plain - Bollène",
+    "display_name": "Tricastin - Bollène",
     "type": "region",
-    "region_name": "Bollène - plain"
+    "region_name": "Tricastin"
   },
   "draft_terrain_326": {
     "lat": 44.32179777869358,
     "lon": 5.076592689251126,
-    "display_name": "Vinsobres - uplands - Vinsobres",
+    "display_name": "Baronnies provençales - Vinsobres",
     "type": "region",
-    "region_name": "Vinsobres - uplands"
+    "region_name": "Baronnies provençales"
   },
   "draft_terrain_327": {
     "lat": 44.296731,
     "lon": 7.13751,
-    "display_name": "Canosio - mountains - Canosio",
+    "display_name": "Val Maira - Canosio",
     "type": "region",
-    "region_name": "Canosio - mountains"
+    "region_name": "Val Maira"
   },
   "draft_terrain_328": {
     "lat": 44.50258370813583,
     "lon": 8.384123610486492,
-    "display_name": "Pareto - uplands - Pareto",
+    "display_name": "Monferrato meridionale - Pareto",
     "type": "region",
-    "region_name": "Pareto - uplands"
+    "region_name": "Monferrato meridionale"
   },
   "draft_terrain_329": {
     "lat": 44.581620399253076,
     "lon": 8.916059834286969,
-    "display_name": "Borgo Fornari-Pieve - uplands - Borgo Fornari-Pieve",
+    "display_name": "Valle Scrivia - Borgo Fornari-Pieve",
     "type": "region",
-    "region_name": "Borgo Fornari-Pieve - uplands"
+    "region_name": "Valle Scrivia"
   },
   "draft_terrain_330": {
     "lat": 44.53690054153898,
     "lon": 9.601313376630502,
-    "display_name": "Bedonia - uplands - Bedonia",
+    "display_name": "Alta Val Taro - Bedonia",
     "type": "region",
-    "region_name": "Bedonia - uplands"
+    "region_name": "Alta Val Taro"
   },
   "draft_terrain_331": {
     "lat": 44.686399506950146,
     "lon": 10.084984343705475,
-    "display_name": "Fornovo di Taro - uplands - Fornovo di Taro",
+    "display_name": "Val Taro - Fornovo di Taro",
     "type": "region",
-    "region_name": "Fornovo di Taro - uplands"
+    "region_name": "Val Taro"
   },
   "draft_terrain_332": {
     "lat": 44.372138574758615,
     "lon": 10.81698672707721,
-    "display_name": "Sant'Antonio - uplands - Sant'Antonio",
+    "display_name": "Frignano - Sant'Antonio",
     "type": "region",
-    "region_name": "Sant'Antonio - uplands"
+    "region_name": "Frignano"
   },
   "draft_terrain_333": {
     "lat": 44.47471673109723,
     "lon": 15.031010007443257,
-    "display_name": "Pag - plain - Pag",
+    "display_name": "Pag",
     "type": "region",
-    "region_name": "Pag - plain"
+    "region_name": "Pag"
   },
   "draft_terrain_334": {
     "lat": 44.35148563763057,
     "lon": 15.415435652191084,
-    "display_name": "Starigrad - mountains - Starigrad",
+    "display_name": "Južni Velebit - Starigrad",
     "type": "region",
-    "region_name": "Starigrad - mountains"
+    "region_name": "Južni Velebit"
   },
   "draft_terrain_335": {
     "lat": 44.37212260920163,
     "lon": 16.328345022745594,
-    "display_name": "Drvar - uplands - Drvar",
+    "display_name": "Drvarska kotlina - Drvar",
     "type": "region",
-    "region_name": "Drvar - uplands"
+    "region_name": "Drvarska kotlina"
   },
   "draft_terrain_336": {
     "lat": 43.944264444568184,
     "lon": 1.2252473140384088,
-    "display_name": "Montech - plain - Montech",
+    "display_name": "Vallée de la Garonne montalbanaise - Montech",
     "type": "region",
-    "region_name": "Montech - plain"
+    "region_name": "Vallée de la Garonne montalbanaise"
   },
   "draft_terrain_337": {
     "lat": 43.80202294400751,
     "lon": 1.5842077437164535,
-    "display_name": "Bessières - plain - Bessières",
+    "display_name": "Vallée du Tarn toulousain - Bessières",
     "type": "region",
-    "region_name": "Bessières - plain"
+    "region_name": "Vallée du Tarn toulousain"
   },
   "draft_terrain_338": {
     "lat": 43.85058642891386,
     "lon": 2.7569046055251056,
-    "display_name": "Belmont-sur-Rance - uplands - Belmont-sur-Rance",
+    "display_name": "Monts de Lacaune - Belmont-sur-Rance",
     "type": "region",
-    "region_name": "Belmont-sur-Rance - uplands"
+    "region_name": "Monts de Lacaune"
   },
   "draft_terrain_339": {
     "lat": 43.99484213451909,
     "lon": 3.713396113443865,
-    "display_name": "Sumène - mountains - Sumène",
+    "display_name": "Cévennes méridionales - Sumène",
     "type": "region",
-    "region_name": "Sumène - mountains"
+    "region_name": "Cévennes méridionales"
   },
   "draft_terrain_340": {
     "lat": 44.0923026341923,
     "lon": 4.140402740830401,
-    "display_name": "Saint-Hilaire-de-Brethmas - plateau - Saint-Hilaire-de-Brethmas",
+    "display_name": "Bassin d'Alès - Saint-Hilaire-de-Brethmas",
     "type": "region",
-    "region_name": "Saint-Hilaire-de-Brethmas - plateau"
+    "region_name": "Bassin d'Alès"
   },
   "draft_terrain_341": {
     "lat": 44.262984,
     "lon": 7.527125,
-    "display_name": "Boves - mountains - Boves",
+    "display_name": "Bisalta e valli Pesio-Vermenagna - Boves",
     "type": "region",
-    "region_name": "Boves - mountains"
+    "region_name": "Bisalta e valli Pesio-Vermenagna"
   },
   "draft_terrain_342": {
     "lat": 44.200442782903885,
     "lon": 8.117970081158369,
-    "display_name": "Bardineto - mountains - Bardineto",
+    "display_name": "Val Bormida - Bardineto",
     "type": "region",
-    "region_name": "Bardineto - mountains"
+    "region_name": "Val Bormida"
   },
   "draft_terrain_343": {
     "lat": 44.09564191882136,
     "lon": 9.84113327365334,
-    "display_name": "La Spezia - uplands - La Spezia",
+    "display_name": "Val di Vara e Golfo della Spezia - La Spezia",
     "type": "region",
-    "region_name": "La Spezia - uplands"
+    "region_name": "Val di Vara e Golfo della Spezia"
   },
   "draft_terrain_344": {
     "lat": 44.153792313460805,
     "lon": 10.35235738255144,
-    "display_name": "San Romano in Garfagnana - mountains - San Romano in Garfagnana",
+    "display_name": "Garfagnana - San Romano in Garfagnana",
     "type": "region",
-    "region_name": "San Romano in Garfagnana - mountains"
+    "region_name": "Garfagnana"
   },
   "draft_terrain_345": {
     "lat": 44.34782630453936,
     "lon": 11.705369112252871,
-    "display_name": "Imola - uplands - Imola",
+    "display_name": "Colline imolesi - Imola",
     "type": "region",
-    "region_name": "Imola - uplands"
+    "region_name": "Colline imolesi"
   },
   "draft_terrain_346": {
     "lat": 44.15280787378712,
     "lon": 12.236084308078572,
-    "display_name": "Cesena - plateau - Cesena",
+    "display_name": "Collina cesenate - Cesena",
     "type": "region",
-    "region_name": "Cesena - plateau"
+    "region_name": "Collina cesenate"
   },
   "draft_terrain_347": {
     "lat": 44.12250973450099,
     "lon": 15.387462827148745,
-    "display_name": "Zemunik Donji - plain - Zemunik Donji",
+    "display_name": "Ravni kotari - Zemunik Donji",
     "type": "region",
-    "region_name": "Zemunik Donji - plain"
+    "region_name": "Ravni kotari"
   },
   "draft_terrain_348": {
     "lat": 44.204722755063244,
     "lon": 15.708301840696365,
-    "display_name": "Obrovac - mountains - Obrovac",
+    "display_name": "Bukovica - Obrovac",
     "type": "region",
-    "region_name": "Obrovac - mountains"
+    "region_name": "Bukovica"
   },
   "draft_terrain_349": {
     "lat": 44.03978466889996,
     "lon": 16.216552265374354,
-    "display_name": "Knin - uplands - Knin",
+    "display_name": "Kninsko polje - Knin",
     "type": "region",
-    "region_name": "Knin - uplands"
+    "region_name": "Kninsko polje"
   },
   "draft_terrain_350": {
     "lat": 43.634086116039036,
     "lon": 0.8923995182076597,
-    "display_name": "Gimont - plain - Gimont",
+    "display_name": "Savès - Gimont",
     "type": "region",
-    "region_name": "Gimont - plain"
+    "region_name": "Savès"
   },
   "draft_terrain_351": {
     "lat": 43.65338242700674,
     "lon": 1.9918228024083644,
-    "display_name": "Saint-Paul-Cap-de-Joux - plain - Saint-Paul-Cap-de-Joux",
+    "display_name": "Pays de Cocagne - Saint-Paul-Cap-de-Joux",
     "type": "region",
-    "region_name": "Saint-Paul-Cap-de-Joux - plain"
+    "region_name": "Pays de Cocagne"
   },
   "draft_terrain_352": {
     "lat": 43.87239932047887,
     "lon": 2.248599089931371,
-    "display_name": "Fréjairolles - uplands - Fréjairolles",
+    "display_name": "Albigeois - Fréjairolles",
     "type": "region",
-    "region_name": "Fréjairolles - uplands"
+    "region_name": "Albigeois"
   },
   "draft_terrain_353": {
     "lat": 43.99155862179142,
     "lon": 3.164106526018958,
-    "display_name": "La Cavalerie - uplands - La Cavalerie",
+    "display_name": "Larzac - La Cavalerie",
     "type": "region",
-    "region_name": "La Cavalerie - uplands"
+    "region_name": "Larzac"
   },
   "draft_terrain_354": {
     "lat": 43.70353815184994,
     "lon": 3.8320907683494,
-    "display_name": "Saint-Gély-du-Fesc - plateau - Saint-Gély-du-Fesc",
+    "display_name": "Garrigues montpelliéraines - Saint-Gély-du-Fesc",
     "type": "region",
-    "region_name": "Saint-Gély-du-Fesc - plateau"
+    "region_name": "Garrigues montpelliéraines"
   },
   "draft_terrain_355": {
     "lat": 43.94190765522943,
     "lon": 4.791493128484833,
-    "display_name": "Avignon - plain - Avignon",
+    "display_name": "Bassin d'Avignon - Avignon",
     "type": "region",
-    "region_name": "Avignon - plain"
+    "region_name": "Bassin d'Avignon"
   },
   "draft_terrain_356": {
     "lat": 43.837451280220236,
     "lon": 5.05588773857623,
-    "display_name": "Cavaillon - uplands - Cavaillon",
+    "display_name": "Petit Luberon - Cavaillon",
     "type": "region",
-    "region_name": "Cavaillon - uplands"
+    "region_name": "Petit Luberon"
   },
   "draft_terrain_357": {
     "lat": 43.979925523342594,
     "lon": 11.252897949517287,
-    "display_name": "Cavallina - uplands - Cavallina",
+    "display_name": "Mugello - Cavallina",
     "type": "region",
-    "region_name": "Cavallina - uplands"
+    "region_name": "Mugello"
   },
   "draft_terrain_358": {
     "lat": 43.95336120316292,
     "lon": 15.75810561773249,
-    "display_name": "Lišane Ostrovičke - plateau - Lišane Ostrovičke",
+    "display_name": "Istočni Ravni kotari - Lišane Ostrovičke",
     "type": "region",
-    "region_name": "Lišane Ostrovičke - plateau"
+    "region_name": "Istočni Ravni kotari"
   },
   "draft_terrain_359": {
     "lat": 43.590183687467345,
     "lon": 1.4346525744780294,
-    "display_name": "Toulouse - plain - Toulouse",
+    "display_name": "Plaine toulousaine - Toulouse",
     "type": "region",
-    "region_name": "Toulouse - plain"
+    "region_name": "Plaine toulousaine"
   },
   "draft_terrain_360": {
     "lat": 43.398298081513936,
     "lon": 2.26852814575691,
-    "display_name": "Cuxac-Cabardès - uplands - Cuxac-Cabardès",
+    "display_name": "Montagne Noire - Cuxac-Cabardès",
     "type": "region",
-    "region_name": "Cuxac-Cabardès - uplands"
+    "region_name": "Montagne Noire"
   },
   "draft_terrain_361": {
     "lat": 43.60489723159891,
     "lon": 2.675881791580445,
-    "display_name": "La Salvetat-sur-Agout - uplands - La Salvetat-sur-Agout",
+    "display_name": "Monts de Lacaune orientaux - La Salvetat-sur-Agout",
     "type": "region",
-    "region_name": "La Salvetat-sur-Agout - uplands"
+    "region_name": "Monts de Lacaune orientaux"
   },
   "draft_terrain_362": {
     "lat": 43.582904533367845,
     "lon": 3.0758962948836857,
-    "display_name": "Lamalou-les-Bains - uplands - Lamalou-les-Bains",
+    "display_name": "Avant-monts du Languedoc - Lamalou-les-Bains",
     "type": "region",
-    "region_name": "Lamalou-les-Bains - uplands"
+    "region_name": "Avant-monts du Languedoc"
   },
   "draft_terrain_363": {
     "lat": 43.471239859513,
     "lon": 3.4421115243866325,
-    "display_name": "Pézenas - plateau - Pézenas",
+    "display_name": "Vallée de l'Hérault - Pézenas",
     "type": "region",
-    "region_name": "Pézenas - plateau"
+    "region_name": "Vallée de l'Hérault"
   },
   "draft_terrain_364": {
     "lat": 43.671503915628044,
     "lon": 4.214120743517139,
-    "display_name": "Aimargues - plain - Aimargues",
+    "display_name": "Petite Camargue - Aimargues",
     "type": "region",
-    "region_name": "Aimargues - plain"
+    "region_name": "Petite Camargue"
   },
   "draft_terrain_365": {
     "lat": 43.63474830598615,
     "lon": 4.794337080180682,
-    "display_name": "Saint-Martin-de-Crau - plain - Saint-Martin-de-Crau",
+    "display_name": "Crau - Saint-Martin-de-Crau",
     "type": "region",
-    "region_name": "Saint-Martin-de-Crau - plain"
+    "region_name": "Crau"
   },
   "draft_terrain_366": {
     "lat": 43.65294382273109,
     "lon": 5.567331856811849,
-    "display_name": "Peyrolles-en-Provence - plateau - Peyrolles-en-Provence",
+    "display_name": "Basse vallée de la Durance - Peyrolles-en-Provence",
     "type": "region",
-    "region_name": "Peyrolles-en-Provence - plateau"
+    "region_name": "Basse vallée de la Durance"
   },
   "draft_terrain_367": {
     "lat": 43.67914887910759,
     "lon": 7.051862320658436,
-    "display_name": "Le Rouret - mountains - Le Rouret",
+    "display_name": "Préalpes de Grasse - Le Rouret",
     "type": "region",
-    "region_name": "Le Rouret - mountains"
+    "region_name": "Préalpes de Grasse"
   },
   "draft_terrain_368": {
     "lat": 43.89352737627768,
     "lon": 7.668389479561846,
-    "display_name": "Apricale - mountains - Apricale",
+    "display_name": "Val Nervia - Apricale",
     "type": "region",
-    "region_name": "Apricale - mountains"
+    "region_name": "Val Nervia"
   },
   "draft_terrain_369": {
     "lat": 43.83286162083287,
     "lon": 10.517846001604283,
-    "display_name": "Lucca - uplands - Lucca",
+    "display_name": "Piana di Lucca - Lucca",
     "type": "region",
-    "region_name": "Lucca - uplands"
+    "region_name": "Piana di Lucca"
   },
   "draft_terrain_370": {
     "lat": 43.725908311825734,
     "lon": 10.962613147938532,
-    "display_name": "Empoli - plateau - Empoli",
+    "display_name": "Valdarno inferiore - Empoli",
     "type": "region",
-    "region_name": "Empoli - plateau"
+    "region_name": "Valdarno inferiore"
   },
   "draft_terrain_371": {
     "lat": 43.73821075380652,
     "lon": 11.743102138442692,
-    "display_name": "Ponte a Poppi - mountains - Ponte a Poppi",
+    "display_name": "Casentino - Ponte a Poppi",
     "type": "region",
-    "region_name": "Ponte a Poppi - mountains"
+    "region_name": "Casentino"
   },
   "draft_terrain_372": {
     "lat": 43.720550199268956,
     "lon": 12.194594875109496,
-    "display_name": "Badia Tedalda - uplands - Badia Tedalda",
+    "display_name": "Alta Valmarecchia - Badia Tedalda",
     "type": "region",
-    "region_name": "Badia Tedalda - uplands"
+    "region_name": "Alta Valmarecchia"
   },
   "draft_terrain_373": {
     "lat": 43.8131289019928,
     "lon": 12.669558364621672,
-    "display_name": "Borgo Massano - uplands - Borgo Massano",
+    "display_name": "Valle del Foglia - Borgo Massano",
     "type": "region",
-    "region_name": "Borgo Massano - uplands"
+    "region_name": "Valle del Foglia"
   },
   "draft_terrain_374": {
     "lat": 43.74847684967989,
     "lon": 16.172707174887734,
-    "display_name": "Unešić - uplands - Unešić",
+    "display_name": "Zagora šibenska - Unešić",
     "type": "region",
-    "region_name": "Unešić - uplands"
+    "region_name": "Zagora šibenska"
   },
   "draft_terrain_375": {
     "lat": 43.26898648255782,
     "lon": 1.073357978372809,
-    "display_name": "Le Fousseret - plain - Le Fousseret",
+    "display_name": "Comminges septentrional - Le Fousseret",
     "type": "region",
-    "region_name": "Le Fousseret - plain"
+    "region_name": "Comminges septentrional"
   },
   "draft_terrain_376": {
     "lat": 43.192694281406666,
     "lon": 1.2395698235684733,
-    "display_name": "Montesquieu-Volvestre - plateau - Montesquieu-Volvestre",
+    "display_name": "Volvestre - Montesquieu-Volvestre",
     "type": "region",
-    "region_name": "Montesquieu-Volvestre - plateau"
+    "region_name": "Volvestre"
   },
   "draft_terrain_377": {
     "lat": 43.398871601108766,
     "lon": 1.698447104501302,
-    "display_name": "Villefranche-de-Lauragais - plain - Villefranche-de-Lauragais",
+    "display_name": "Lauragais - Villefranche-de-Lauragais",
     "type": "region",
-    "region_name": "Villefranche-de-Lauragais - plain"
+    "region_name": "Lauragais"
   },
   "draft_terrain_378": {
     "lat": 43.246862288596965,
     "lon": 3.060185710085654,
-    "display_name": "Coursan - plain - Coursan",
+    "display_name": "Basse vallée de l'Aude - Coursan",
     "type": "region",
-    "region_name": "Coursan - plain"
+    "region_name": "Basse vallée de l'Aude"
   },
   "draft_terrain_379": {
     "lat": 43.47337977782211,
     "lon": 5.191864157977611,
-    "display_name": "Berre-l'Étang - plateau - Berre-l'Étang",
+    "display_name": "Bassin de l'étang de Berre - Berre-l'Étang",
     "type": "region",
-    "region_name": "Berre-l'Étang - plateau"
+    "region_name": "Bassin de l'étang de Berre"
   },
   "draft_terrain_380": {
     "lat": 43.454627577532115,
     "lon": 6.6499818932653705,
-    "display_name": "Roquebrune-sur-Argens - uplands - Roquebrune-sur-Argens",
+    "display_name": "Estérel et basse vallée de l'Argens - Roquebrune-sur-Argens",
     "type": "region",
-    "region_name": "Roquebrune-sur-Argens - uplands"
+    "region_name": "Estérel et basse vallée de l'Argens"
   },
   "draft_terrain_381": {
     "lat": 43.64361030686679,
     "lon": 13.082450568766502,
-    "display_name": "Corinaldo - uplands - Corinaldo",
+    "display_name": "Valle del Cesano - Corinaldo",
     "type": "region",
-    "region_name": "Corinaldo - uplands"
+    "region_name": "Valle del Cesano"
   },
   "draft_terrain_382": {
     "lat": 42.98296135208018,
     "lon": 1.122975611991984,
-    "display_name": "Saint-Girons - uplands - Saint-Girons",
+    "display_name": "Couserans - Saint-Girons",
     "type": "region",
-    "region_name": "Saint-Girons - uplands"
+    "region_name": "Couserans"
   },
   "draft_terrain_383": {
     "lat": 42.96307127753605,
     "lon": 1.5815477887348424,
-    "display_name": "Foix - mountains - Foix",
+    "display_name": "Pays de Foix - Foix",
     "type": "region",
-    "region_name": "Foix - mountains"
+    "region_name": "Pays de Foix"
   },
   "draft_terrain_384": {
     "lat": 43.089509430486295,
     "lon": 1.853229128085344,
-    "display_name": "Mirepoix - plateau - Mirepoix",
+    "display_name": "Pays de Mirepoix - Mirepoix",
     "type": "region",
-    "region_name": "Mirepoix - plateau"
+    "region_name": "Pays de Mirepoix"
   },
   "draft_terrain_385": {
     "lat": 43.212666061096655,
     "lon": 2.330100312666722,
-    "display_name": "Carcassonne - plateau - Carcassonne",
+    "display_name": "Carcassès - Carcassonne",
     "type": "region",
-    "region_name": "Carcassonne - plateau"
+    "region_name": "Carcassès"
   },
   "draft_terrain_386": {
     "lat": 43.18474643730219,
     "lon": 2.7531553877665442,
-    "display_name": "Lézignan-Corbières - plateau - Lézignan-Corbières",
+    "display_name": "Corbières - Lézignan-Corbières",
     "type": "region",
-    "region_name": "Lézignan-Corbières - plateau"
+    "region_name": "Corbières"
   },
   "draft_terrain_387": {
     "lat": 43.28494923399147,
     "lon": 5.8414124681437585,
-    "display_name": "Signes - uplands - Signes",
+    "display_name": "Sainte-Baume - Signes",
     "type": "region",
-    "region_name": "Signes - uplands"
+    "region_name": "Sainte-Baume"
   },
   "draft_terrain_388": {
     "lat": 43.37562850168648,
     "lon": 6.32182270346304,
-    "display_name": "Le Luc - uplands - Le Luc",
+    "display_name": "Plaine des Maures - Le Luc",
     "type": "region",
-    "region_name": "Le Luc - uplands"
+    "region_name": "Plaine des Maures"
   },
   "draft_terrain_389": {
     "lat": 43.52987585229536,
     "lon": 10.644712477330101,
-    "display_name": "Casciana Terme - uplands - Casciana Terme",
+    "display_name": "Colline pisane - Casciana Terme",
     "type": "region",
-    "region_name": "Casciana Terme - uplands"
+    "region_name": "Colline pisane"
   },
   "draft_terrain_390": {
     "lat": 43.333487696157746,
     "lon": 11.349728466286479,
-    "display_name": "Siena - uplands - Siena",
+    "display_name": "Colline senesi - Siena",
     "type": "region",
-    "region_name": "Siena - uplands"
+    "region_name": "Colline senesi"
   },
   "draft_terrain_391": {
     "lat": 43.26512659574454,
     "lon": 11.95019823354296,
-    "display_name": "Camucia-Monsigliolo - uplands - Camucia-Monsigliolo",
+    "display_name": "Valdichiana - Camucia-Monsigliolo",
     "type": "region",
-    "region_name": "Camucia-Monsigliolo - uplands"
+    "region_name": "Valdichiana"
   },
   "draft_terrain_392": {
     "lat": 43.33772010765616,
     "lon": 12.549387788568756,
-    "display_name": "Gubbio - uplands - Gubbio",
+    "display_name": "Appennino eugubino - Gubbio",
     "type": "region",
-    "region_name": "Gubbio - uplands"
+    "region_name": "Appennino eugubino"
   },
   "draft_terrain_393": {
     "lat": 43.31511087232982,
     "lon": 13.471272991624899,
-    "display_name": "Macerata - plain - Macerata",
+    "display_name": "Colline maceratesi - Macerata",
     "type": "region",
-    "region_name": "Macerata - plain"
+    "region_name": "Colline maceratesi"
   },
   "draft_terrain_394": {
     "lat": 42.806948315077115,
     "lon": 1.290670864038348,
-    "display_name": "Sérac - mountains - Sérac",
+    "display_name": "Haut-Couserans - Sérac",
     "type": "region",
-    "region_name": "Sérac - mountains"
+    "region_name": "Haut-Couserans"
   },
   "draft_terrain_395": {
     "lat": 42.75572665681187,
     "lon": 1.8746496308131626,
-    "display_name": "Ax-les-Thermes - mountains - Ax-les-Thermes",
+    "display_name": "Haute vallée de l'Ariège - Ax-les-Thermes",
     "type": "region",
-    "region_name": "Ax-les-Thermes - mountains"
+    "region_name": "Haute vallée de l'Ariège"
   },
   "draft_terrain_396": {
     "lat": 42.81965184386634,
     "lon": 2.5282353760698997,
-    "display_name": "Saint-Paul-de-Fenouillet - uplands - Saint-Paul-de-Fenouillet",
+    "display_name": "Fenouillèdes - Saint-Paul-de-Fenouillet",
     "type": "region",
-    "region_name": "Saint-Paul-de-Fenouillet - uplands"
+    "region_name": "Fenouillèdes"
   },
   "draft_terrain_397": {
     "lat": 42.777634986766344,
     "lon": 2.888707471971538,
-    "display_name": "Rivesaltes - plateau - Rivesaltes",
+    "display_name": "Plaine du Roussillon - Rivesaltes",
     "type": "region",
-    "region_name": "Rivesaltes - plateau"
+    "region_name": "Plaine du Roussillon"
   },
   "draft_terrain_398": {
     "lat": 43.150816528454804,
     "lon": 11.155492455650926,
-    "display_name": "Monticiano - uplands - Monticiano",
+    "display_name": "Val di Merse - Monticiano",
     "type": "region",
-    "region_name": "Monticiano - uplands"
+    "region_name": "Val di Merse"
   },
   "draft_terrain_399": {
     "lat": 43.253779127628846,
     "lon": 12.982047138970252,
-    "display_name": "Matelica - uplands - Matelica",
+    "display_name": "Alta valle dell'Esino - Matelica",
     "type": "region",
-    "region_name": "Matelica - uplands"
+    "region_name": "Alta valle dell'Esino"
   },
   "draft_terrain_400": {
     "lat": 43.01809916656564,
     "lon": 13.57015249605583,
-    "display_name": "Monte Rinaldo - uplands - Monte Rinaldo",
+    "display_name": "Colline del Fermano - Monte Rinaldo",
     "type": "region",
-    "region_name": "Monte Rinaldo - uplands"
+    "region_name": "Colline del Fermano"
   },
   "draft_terrain_401": {
     "lat": 42.597986534387765,
     "lon": 1.131556184324353,
-    "display_name": "Espot - mountains - Espot",
+    "display_name": "Pallars Sobirà - Espot",
     "type": "region",
-    "region_name": "Espot - mountains"
+    "region_name": "Pallars Sobirà"
   },
   "draft_terrain_402": {
     "lat": 42.44717456086834,
     "lon": 1.9288124925363672,
-    "display_name": "Puigcerdà - mountains - Puigcerdà",
+    "display_name": "Cerdanya - Puigcerdà",
     "type": "region",
-    "region_name": "Puigcerdà - mountains"
+    "region_name": "Cerdanya"
   },
   "draft_terrain_403": {
     "lat": 42.56275027513513,
     "lon": 2.365109361044282,
-    "display_name": "Vernet-les-Bains - mountains - Vernet-les-Bains",
+    "display_name": "Conflent et Canigó - Vernet-les-Bains",
     "type": "region",
-    "region_name": "Vernet-les-Bains - mountains"
+    "region_name": "Conflent et Canigó"
   },
   "draft_terrain_404": {
     "lat": 42.91533294253203,
     "lon": 10.75402045531639,
-    "display_name": "Follonica - plateau - Follonica",
+    "display_name": "Golfo di Follonica - Follonica",
     "type": "region",
-    "region_name": "Follonica - plateau"
+    "region_name": "Golfo di Follonica"
   },
   "draft_terrain_405": {
     "lat": 42.81985105517816,
     "lon": 11.594112637384729,
-    "display_name": "Santa Fiora - uplands - Santa Fiora",
+    "display_name": "Monte Amiata - Santa Fiora",
     "type": "region",
-    "region_name": "Santa Fiora - uplands"
+    "region_name": "Monte Amiata"
   },
   "draft_terrain_406": {
     "lat": 42.9846582826369,
     "lon": 12.39959968623546,
-    "display_name": "Deruta - plateau - Deruta",
+    "display_name": "Media valle del Tevere - Deruta",
     "type": "region",
-    "region_name": "Deruta - plateau"
+    "region_name": "Media valle del Tevere"
   },
   "draft_terrain_407": {
     "lat": 42.81758857447414,
     "lon": 13.06994142546091,
-    "display_name": "Norcia - mountains - Norcia",
+    "display_name": "Valnerina - Norcia",
     "type": "region",
-    "region_name": "Norcia - mountains"
+    "region_name": "Valnerina"
   },
   "draft_terrain_408": {
     "lat": 42.51879434805486,
     "lon": 2.815904562546325,
-    "display_name": "Le Boulou - mountains - Le Boulou",
+    "display_name": "Vallespir et Albères - Le Boulou",
     "type": "region",
-    "region_name": "Le Boulou - mountains"
+    "region_name": "Vallespir et Albères"
   },
   "draft_terrain_409": {
     "lat": 42.69456056919258,
     "lon": 9.309599676923554,
-    "display_name": "Saint-Florent - uplands - Saint-Florent",
+    "display_name": "Nebbiu - Saint-Florent",
     "type": "region",
-    "region_name": "Saint-Florent - uplands"
+    "region_name": "Nebbiu"
   },
   "draft_terrain_410": {
     "lat": 42.581659245693785,
     "lon": 11.180915449265374,
-    "display_name": "Fonteblanda - plateau - Fonteblanda",
+    "display_name": "Maremma grossetana - Fonteblanda",
     "type": "region",
-    "region_name": "Fonteblanda - plateau"
+    "region_name": "Maremma grossetana"
   },
   "draft_terrain_411": {
     "lat": 42.58146669433364,
     "lon": 11.806391180440254,
-    "display_name": "Valentano - uplands - Valentano",
+    "display_name": "Monti Volsini - Valentano",
     "type": "region",
-    "region_name": "Valentano - uplands"
+    "region_name": "Monti Volsini"
   },
   "draft_terrain_412": {
     "lat": 42.52226869518685,
     "lon": 12.27789729880535,
-    "display_name": "Attigliano - uplands - Attigliano",
+    "display_name": "Teverina - Attigliano",
     "type": "region",
-    "region_name": "Attigliano - uplands"
+    "region_name": "Teverina"
   },
   "draft_terrain_413": {
     "lat": 42.559023480337025,
     "lon": 12.625432871355338,
-    "display_name": "Terni - uplands - Terni",
+    "display_name": "Conca ternana - Terni",
     "type": "region",
-    "region_name": "Terni - uplands"
+    "region_name": "Conca ternana"
   },
   "draft_terrain_414": {
     "lat": 42.52245569629299,
     "lon": 13.261240229399844,
-    "display_name": "Montereale - mountains - Montereale",
+    "display_name": "Conca di Montereale - Montereale",
     "type": "region",
-    "region_name": "Montereale - mountains"
+    "region_name": "Conca di Montereale"
   },
   "draft_terrain_415": {
     "lat": 42.66208812130393,
     "lon": 13.670579975593466,
-    "display_name": "Teramo - mountains - Teramo",
+    "display_name": "Colline teramane - Teramo",
     "type": "region",
-    "region_name": "Teramo - mountains"
+    "region_name": "Colline teramane"
   },
   "draft_terrain_416": {
     "lat": 42.62951370572814,
     "lon": 13.936316337293725,
-    "display_name": "Pianura Vomano - plateau - Pianura Vomano",
+    "display_name": "Valle del Vomano - Pianura Vomano",
     "type": "region",
-    "region_name": "Pianura Vomano - plateau"
+    "region_name": "Valle del Vomano"
   },
   "draft_terrain_417": {
     "lat": 42.532343547424304,
     "lon": 8.850390446546854,
-    "display_name": "Calenzana - mountains - Calenzana",
+    "display_name": "Balagne occidentale - Calenzana",
     "type": "region",
-    "region_name": "Calenzana - mountains"
+    "region_name": "Balagne occidentale"
   },
   "draft_terrain_418": {
     "lat": 42.61058849782536,
     "lon": 8.988612190984826,
-    "display_name": "Monticello - mountains - Monticello",
+    "display_name": "Balagne orientale - Monticello",
     "type": "region",
-    "region_name": "Monticello - mountains"
+    "region_name": "Balagne orientale"
   },
   "ubaye": {
     "lat": 44.384878,

@@ -15,6 +15,14 @@ generation identity includes `locations.json`, so an expanded catalog invalidate
 old reuse receipts. Existing download, chunking and publication paths are retained.
 Command-line chunk-size overrides are authoritative for both fetching and export
 validation, including when they replace inherited environment settings.
+
+The 2026-11-18 name curation preserves all 137 previously hand-named regions,
+including Walliser Hochalpen, and all 560 already named reference points. Only
+455 draft region labels and 32 numbered points changed. The authoring repository
+records protected names and rejects unresolved terrain labels on export. Names
+use established geographic regions and reference places; IDs, boundaries and
+reference coordinates are unchanged. `region_catalog.json` records the curation
+hash and authoring revision.
 Retained exports never advertise locations removed from the current catalog;
 their existing files remain subject to normal run retention.
 `Dockerfile.regions` overlays the catalog, completeness guards, chunk settings,

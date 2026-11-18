@@ -419,9 +419,10 @@ def rebuild_main_manifest(
                     thermal_url = products.get("thermal_panel")
                     run_manifest["locations"][location_id] = {
                         "type": location.get("type", locations.get(location_id, {}).get("type", "legacy")),
-                        "display_name": location.get(
-                            "display_name",
-                            locations.get(location_id, {}).get("display_name", location_id),
+                        # Labels belong to the current catalog. An older
+                        # retained forecast can still carry a draft name.
+                        "display_name": locations[location_id].get(
+                            "display_name", location.get("display_name", location_id),
                         ),
                         "steps": steps,
                         "valid_times": forecast.get("valid_times") or [],

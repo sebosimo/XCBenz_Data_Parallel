@@ -8,7 +8,7 @@ from scripts import apply_web_retention as retention
 
 
 class RegionCatalogRetentionTests(unittest.TestCase):
-    def test_merging_expanded_catalog_does_not_restore_retired_points(self):
+    def test_catalog_merge_keeps_current_names_and_omits_retired_points(self):
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
             web, staging = root / "web_exports", root / "staging"
@@ -18,6 +18,7 @@ class RegionCatalogRetentionTests(unittest.TestCase):
                 key: {"type": "region", "display_name": key}
                 for key in ("bern", "draft_terrain_048")
             }
+            catalog['draft_terrain_048']['display_name'] = 'Champagne rémoise - Reims'
             (staging / "locations.json").write_text(json.dumps(catalog))
 
             def forecast(tree, run, location_id):
@@ -42,6 +43,9 @@ class RegionCatalogRetentionTests(unittest.TestCase):
             runs = manifest["models"]["icon-ch1"]["runs"]
             self.assertEqual(set(runs["20261117_1800"]["locations"]), set(catalog))
             self.assertEqual(set(runs["20261117_1500"]["locations"]), {"bern"})
+            for run in runs.values():
+                for location_id, entry in run['locations'].items():
+                    self.assertEqual(entry['display_name'], catalog[location_id]['display_name'])
             self.assertEqual(manifest["counts"]["emagram_bundles"], 3)
             self.assertEqual(manifest["counts"]["region_forecasts"], 3)
             self.assertTrue(retired.exists(), "Existing files stay subject to normal run retention")
