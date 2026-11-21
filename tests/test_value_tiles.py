@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import os
+import re
 import shutil
 import sys
 import tempfile
@@ -645,8 +646,40 @@ class ValueTileGenerationTests(unittest.TestCase):
         )[0]
         self.assertLess(
             production_cache_block.index("max-age=3600"),
+            production_cache_block.index("max-age=604800, immutable"),
+        )
+        self.assertLess(
+            production_cache_block.index("max-age=604800, immutable"),
             production_cache_block.index("max-age=31536000, immutable"),
         )
+        self.assertIn("env=xcbenz_run_immutable", production_cache_block)
+        run_immutable_match = re.search(
+            r'SetEnvIf Request_URI "([^"]+)" xcbenz_run_immutable=1',
+            production,
+        )
+        self.assertIsNotNone(run_immutable_match)
+        run_pattern = re.compile(run_immutable_match.group(1))
+        for immutable_uri in (
+            "/web_exports/wind_maps/icon-ch1/20261120_1800/1000m_AMSL/steps/H00.bin",
+            "/web_exports/wind_maps/icon-ch1/20261120_1800/1000m_AMSL/metadata.json",
+            "/web_exports/sunrain_maps/icon-ch1/20261120_1800/surface/steps/H01.bin",
+            "/web_exports/cloud_maps/icon-ch2/20261120_1200/high/steps/H06.bin",
+            "/web_exports/rain_maps/icon-ch1/20261120_1800/surface/steps/H00.bin",
+            "/web_exports/emagrams/icon-ch1/20261120_1800/aargauer_mitteland/bundle.json",
+            "/web_exports/emagrams/icon-ch1/20261120_1800/aargauer_mitteland/bundle.bin",
+            "/web_exports/region_forecasts/icon-ch1/20261120_1800/aargauer_mitteland.json",
+        ):
+            self.assertRegex(immutable_uri, run_pattern)
+        for mutable_uri in (
+            "/web_exports/manifest.json",
+            "/web_exports/manifest.compact.json",
+            "/web_exports/locations.json",
+            "/web_exports/wind_maps/manifest.compact.json",
+            "/web_exports/live_stations/latest.json",
+            "/web_exports/radar_maps/mosaic/manifest.json",
+            "/web_exports/satellite_cloud_maps/manifest.json",
+        ):
+            self.assertNotRegex(mutable_uri, run_pattern)
         self.assertNotIn("infomaniak-value-tiles-staging.htaccess", production_deploy)
         self.assertIn(
             "for subtree in live_stations webcams radar_maps airspace fai_records satellite_cloud_maps w_forecast; do",

@@ -17,6 +17,7 @@ AddType application/octet-stream .bin .xvt
   SetEnvIfNoCase Range . no-gzip=1 no-brotli=1
   SetEnvIf Request_URI "^/web_exports/(live_stations/(latest|manifest)\.json|webcams/(latest|catalog)\.json|webcams/history/index\.json|webcams/thumbs/[^/]+\.jpg)$" xcbenz_live_no_cache=1
   SetEnvIf Request_URI "^/web_exports/value_tiles/v1/[^/]+/[^/]+/[0-9a-f]{12}/" xcbenz_value_tile_immutable=1
+  SetEnvIf Request_URI "^/web_exports/(?:wind_maps|sunrain_maps|rain_maps|cloud_maps|sunshine_maps|emagrams|region_forecasts|thermal_panels)/[^/]+/[0-9]{8}_[0-9]{4}/" xcbenz_run_immutable=1
 </IfModule>
 
 <IfModule mod_deflate.c>
@@ -32,6 +33,7 @@ AddType application/octet-stream .bin .xvt
 
   <FilesMatch "\.(bin|xvt|json|geojson)$">
     Header set Cache-Control "public, max-age=3600" env=!xcbenz_live_no_cache
+    Header set Cache-Control "public, max-age=604800, immutable" env=xcbenz_run_immutable
     Header set Cache-Control "public, max-age=31536000, immutable" env=xcbenz_value_tile_immutable
   </FilesMatch>
 
