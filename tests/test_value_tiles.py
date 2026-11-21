@@ -641,9 +641,18 @@ class ValueTileGenerationTests(unittest.TestCase):
         self.assertIn("^/value-tiles-staging/web_exports/value_tiles/v1/", staging)
         self.assertIn("application/octet-stream .bin .xvt", production)
         self.assertIn("^/web_exports/value_tiles/v1/", production)
-        production_cache_block = production.split('<FilesMatch "\\.(bin|xvt|json|geojson)$">', 1)[1].split(
+        self.assertIn("RemoveLanguage .br", production)
+        self.assertIn("RemoveType .br", production)
+        self.assertIn("AddEncoding br .br", production)
+        self.assertIn("RewriteCond %{HTTP:Range} ^$", production)
+        self.assertLess(
+            production.index("RewriteCond %{HTTP:Range} ^$"),
+            production.index("RewriteRule ^(.+\\.(?:bin|xvt|json|geojson))$ $1.br [QSA,L]"),
+        )
+        production_cache_block = production.split('<FilesMatch "\\.(bin|xvt|json|geojson)(?:\\.br)?$">', 1)[1].split(
             "</FilesMatch>", 1
         )[0]
+        self.assertIn('<FilesMatch "manifest(?:\\.compact)?\\.json(?:\\.br)?$">', production)
         self.assertLess(
             production_cache_block.index("max-age=3600"),
             production_cache_block.index("max-age=604800, immutable"),

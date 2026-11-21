@@ -11,6 +11,24 @@ AddType application/json .json
 AddType application/geo+json .geojson
 AddType application/octet-stream .bin .xvt
 
+<IfModule mod_mime.c>
+  # Keep .br strictly as content-coding metadata so the underlying
+  # .bin/.xvt/.json/.geojson extension continues to own Content-Type.
+  RemoveLanguage .br
+  RemoveType .br
+  AddEncoding br .br
+</IfModule>
+
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+  # Never serve precompressed sidecars to byte-range requests (for example
+  # float32 emagram profiles.bin slices): offsets address raw bytes.
+  RewriteCond %{HTTP:Range} ^$
+  RewriteCond %{HTTP:Accept-Encoding} \bbr\b [NC]
+  RewriteCond %{REQUEST_FILENAME}.br -f
+  RewriteRule ^(.+\.(?:bin|xvt|json|geojson))$ $1.br [QSA,L]
+</IfModule>
+
 <IfModule mod_setenvif.c>
   # Profile offsets address raw float32 bytes. Compressed ranges cannot be
   # decoded independently and do not have the same offsets as the raw data.
@@ -31,13 +49,13 @@ AddType application/octet-stream .bin .xvt
 <IfModule mod_headers.c>
   Header merge Vary Accept-Encoding
 
-  <FilesMatch "\.(bin|xvt|json|geojson)$">
+  <FilesMatch "\.(bin|xvt|json|geojson)(?:\.br)?$">
     Header set Cache-Control "public, max-age=3600" env=!xcbenz_live_no_cache
     Header set Cache-Control "public, max-age=604800, immutable" env=xcbenz_run_immutable
     Header set Cache-Control "public, max-age=31536000, immutable" env=xcbenz_value_tile_immutable
   </FilesMatch>
 
-  <FilesMatch "manifest(?:\.compact)?\.json$">
+  <FilesMatch "manifest(?:\.compact)?\.json(?:\.br)?$">
     Header set Cache-Control "no-cache, must-revalidate"
   </FilesMatch>
 

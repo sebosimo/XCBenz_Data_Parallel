@@ -33,6 +33,7 @@ from web_export_support import (
     write_json as write_web_json,
 )
 from forecast_retention import MODEL_ANCHOR_HOURS, kept_model_run_tags, parse_run_tag
+from scripts.precompress_web_exports import precompress_web_exports, precompression_enabled
 
 
 WEB_DIR = Path(os.getenv("WEB_EXPORT_DIR", "web_exports"))
@@ -503,6 +504,23 @@ def main() -> None:
         cloud_manifest,
         value_tile_manifest,
     )
+    if precompression_enabled():
+        result = precompress_web_exports(
+            WEB_DIR,
+            include_value_tiles=os.getenv("PRECOMPRESS_VALUE_TILES", "false").strip().lower() == "true",
+        )
+        if result.skipped_no_encoder:
+            log(
+                "Skipped Brotli sidecars: no Brotli encoder available "
+                f"(orphans_removed={result.removed_orphans})"
+            )
+        else:
+            log(
+                f"Precompressed web exports ({result.encoder}): "
+                f"compressed={result.compressed_files}, reused={result.reused_files}, "
+                f"skipped={result.skipped_incompressible}, orphans_removed={result.removed_orphans}, "
+                f"bytes={result.source_bytes}->{result.compressed_bytes}"
+            )
 
 
 if __name__ == "__main__":
