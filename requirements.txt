@@ -8,3 +8,4 @@ netCDF4
 numpy
 requests
 scipy
+brotli>=1.1.0
