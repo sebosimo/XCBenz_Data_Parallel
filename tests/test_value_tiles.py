@@ -652,13 +652,14 @@ class ValueTileGenerationTests(unittest.TestCase):
         production_cache_block = production.split('<FilesMatch "\\.(bin|xvt|json|geojson)(?:\\.br)?$">', 1)[1].split(
             "</FilesMatch>", 1
         )[0]
+        self.assertIn("RewriteCond %{HTTP:Accept-Encoding} !\\bbr\\s*;\\s*q=0(?:\\.0+)?(?:\\s*,|\\s*$) [NC]", production)
         self.assertIn('<FilesMatch "manifest(?:\\.compact)?\\.json(?:\\.br)?$">', production)
         self.assertLess(
             production_cache_block.index("max-age=3600"),
-            production_cache_block.index("max-age=604800, immutable"),
+            production_cache_block.index('Cache-Control "public, max-age=86400" env=xcbenz_run_immutable'),
         )
         self.assertLess(
-            production_cache_block.index("max-age=604800, immutable"),
+            production_cache_block.index('Cache-Control "public, max-age=86400" env=xcbenz_run_immutable'),
             production_cache_block.index("max-age=31536000, immutable"),
         )
         self.assertIn("env=xcbenz_run_immutable", production_cache_block)

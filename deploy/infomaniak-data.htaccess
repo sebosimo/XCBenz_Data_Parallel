@@ -25,6 +25,7 @@ AddType application/octet-stream .bin .xvt
   # float32 emagram profiles.bin slices): offsets address raw bytes.
   RewriteCond %{HTTP:Range} ^$
   RewriteCond %{HTTP:Accept-Encoding} \bbr\b [NC]
+  RewriteCond %{HTTP:Accept-Encoding} !\bbr\s*;\s*q=0(?:\.0+)?(?:\s*,|\s*$) [NC]
   RewriteCond %{REQUEST_FILENAME}.br -f
   RewriteRule ^(.+\.(?:bin|xvt|json|geojson))$ $1.br [QSA,L]
 </IfModule>
@@ -51,7 +52,7 @@ AddType application/octet-stream .bin .xvt
 
   <FilesMatch "\.(bin|xvt|json|geojson)(?:\.br)?$">
     Header set Cache-Control "public, max-age=3600" env=!xcbenz_live_no_cache
-    Header set Cache-Control "public, max-age=604800, immutable" env=xcbenz_run_immutable
+    Header set Cache-Control "public, max-age=86400" env=xcbenz_run_immutable
     Header set Cache-Control "public, max-age=31536000, immutable" env=xcbenz_value_tile_immutable
   </FilesMatch>
 

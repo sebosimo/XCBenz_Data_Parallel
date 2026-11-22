@@ -34,6 +34,7 @@ from pipeline_orchestration.forecast_completeness import (
     profile_run_errors,
     step_labels,
 )
+from scripts.precompress_web_exports import decompress_brotli_bytes
 
 
 BASE_URL = os.environ.get("DATA_BASE_URL", "https://data.xcbenz.com").rstrip("/") + "/"
@@ -41,6 +42,7 @@ TIMEOUT = float(os.environ.get("REMOTE_VALIDATE_TIMEOUT", "30"))
 RETRIES = int(os.environ.get("REMOTE_VALIDATE_RETRIES", "3"))
 RETRY_DELAY = float(os.environ.get("REMOTE_VALIDATE_RETRY_DELAY", "10"))
 EXPECTED_VALUE_TILES_STATE = os.environ.get("EXPECTED_VALUE_TILES_STATE", "optional").strip().lower()
+REQUIRE_BROTLI_DELIVERY = os.environ.get("REQUIRE_BROTLI_DELIVERY", "false").strip().lower() == "true"
 
 
 class ValidationError(RuntimeError):
@@ -73,8 +75,15 @@ def resolve_url(path: str, context_url: str | None = None) -> str:
     return urljoin(BASE_URL, path)
 
 
-def fetch(url: str, *, max_bytes: int | None = None) -> FetchResult:
+def fetch(
+    url: str,
+    *,
+    max_bytes: int | None = None,
+    extra_headers: dict[str, str] | None = None,
+) -> FetchResult:
     headers = {"User-Agent": "xcbenz-remote-validator/1.0"}
+    if extra_headers:
+        headers.update(extra_headers)
     if max_bytes is not None:
         headers["Range"] = f"bytes=0-{max_bytes - 1}"
     request = Request(url, headers=headers)
@@ -159,7 +168,71 @@ def validate_models(
     return selected
 
 
-def validate_compact_manifest(manifest: dict[str, Any]) -> None:
+def _header_values(headers: Any, name: str) -> list[str]:
+    get_all = getattr(headers, "get_all", None)
+    if callable(get_all):
+        values = get_all(name) or []
+    else:
+        raw = headers.get(name)
+        values = [raw] if raw is not None else []
+    tokens: list[str] = []
+    for value in values:
+        for part in str(value).split(","):
+            cleaned = part.strip().lower()
+            if cleaned:
+                tokens.append(cleaned)
+    return tokens
+
+
+def validate_brotli_response(
+    url: str,
+    *,
+    expected_plain: bytes,
+    expected_content_type: str,
+    expected_cache_token: str | None = None,
+    required: bool = False,
+) -> bool:
+    """Exercise the Accept-Encoding: br delivery path and verify single-encoding integrity."""
+    result = fetch(url, extra_headers={"Accept-Encoding": "br"})
+    encodings = _header_values(result.headers, "Content-Encoding")
+    if not encodings:
+        if required:
+            raise ValidationError(f"{url} did not return Content-Encoding: br when requested")
+        return False
+    if encodings != ["br"]:
+        raise ValidationError(f"{url} returned unexpected Content-Encoding {encodings!r}; expected ['br']")
+
+    content_type = str(result.headers.get("Content-Type") or "").split(";", 1)[0].strip().lower()
+    if content_type != expected_content_type.lower():
+        raise ValidationError(
+            f"{url} (br) returned Content-Type {content_type!r}; expected {expected_content_type!r}"
+        )
+
+    vary_tokens = _header_values(result.headers, "Vary")
+    if "accept-encoding" not in vary_tokens:
+        raise ValidationError(f"{url} (br) Vary header lacks 'Accept-Encoding': {vary_tokens!r}")
+
+    if expected_cache_token:
+        _require_cache_header(result.headers, expected_cache_token, url)
+
+    try:
+        decoded = decompress_brotli_bytes(result.data)
+    except Exception as exc:
+        raise ValidationError(f"{url} (br) failed Brotli decompression: {exc}") from exc
+
+    if sha256_bytes(decoded) != sha256_bytes(expected_plain):
+        raise ValidationError(
+            f"{url} (br) decoded payload SHA-256 differs from uncompressed fetch "
+            f"(br_decoded={len(decoded)}B plain={len(expected_plain)}B)"
+        )
+    log(
+        f"brotli OK: {url} plain={len(expected_plain)}B br={len(result.data)}B "
+        f"type={content_type}"
+    )
+    return True
+
+
+def validate_compact_manifest(manifest: dict[str, Any]) -> str:
     compact, compact_url, _headers = fetch_json(f"web_exports/{COMPACT_MANIFEST_FILENAME}")
     try:
         expanded = expand_compact_manifest(compact)
@@ -168,6 +241,7 @@ def validate_compact_manifest(manifest: dict[str, Any]) -> None:
     if expanded != manifest:
         raise ValidationError(f"{compact_url} does not expand to web_exports/manifest.json")
     log(f"compact manifest OK: bytes={len(json.dumps(compact, separators=(',', ':')))}")
+    return compact_url
 
 
 def validate_bundle(manifest: dict[str, Any], model_key: str, run_key: str, location_id: str) -> None:
@@ -197,10 +271,19 @@ def validate_bundle(manifest: dict[str, Any], model_key: str, run_key: str, loca
     actual = int(content_length) if content_length else len(profile.data)
     if actual != expected:
         raise ValidationError(f"{data_url} byte length is {actual}, expected {expected}")
+    range_len = min(64, expected)
+    profile_range = fetch(data_url, max_bytes=range_len, extra_headers={"Accept-Encoding": "br"})
+    range_encodings = _header_values(profile_range.headers, "Content-Encoding")
+    if range_encodings:
+        raise ValidationError(
+            f"{data_url} Range request returned Content-Encoding {range_encodings!r}; expected raw bytes"
+        )
+    if len(profile_range.data) != range_len or profile_range.data != profile.data[:range_len]:
+        raise ValidationError(f"{data_url} Range slice mismatch (len={len(profile_range.data)}, expected={range_len})")
     log(f"bundle OK: {model_key}/{run_key}/{location_id} bytes={actual}")
 
 
-def validate_map_product(manifest: dict[str, Any], product: str) -> None:
+def validate_map_product(manifest: dict[str, Any], product: str) -> tuple[str, bytes]:
     map_path = ((manifest.get("products") or {}).get("maps") or {}).get(product)
     if not map_path:
         raise ValidationError(f"manifest has no {product} map product")
@@ -240,6 +323,7 @@ def validate_map_product(manifest: dict[str, Any], product: str) -> None:
     if expected and actual != expected:
         raise ValidationError(f"{step_url} byte length is {actual}, expected {expected}")
     log(f"{product} OK: {model_key}/{run_key}/{level_key}/{step.get('step')} bytes={actual}")
+    return step_url, payload.data
 
 
 def validate_wind_directions(root_manifest: dict[str, Any]) -> None:
@@ -368,7 +452,14 @@ def main() -> int:
         locations, _locations_url, _locations_headers = fetch_json("web_exports/locations.json")
         if "models" not in manifest or "products" not in manifest:
             raise ValidationError(f"{manifest_url} does not look like a web_exports manifest")
-        validate_compact_manifest(manifest)
+        compact_url = validate_compact_manifest(manifest)
+        validate_brotli_response(
+            compact_url,
+            expected_plain=fetch(compact_url).data,
+            expected_content_type="application/json",
+            expected_cache_token="no-cache",
+            required=REQUIRE_BROTLI_DELIVERY,
+        )
         validate_expected_value_tile_state(manifest, EXPECTED_VALUE_TILES_STATE)
         if EXPECTED_VALUE_TILES_STATE == "disabled":
             require_missing(capability_declaration()["manifest"])
@@ -378,7 +469,14 @@ def main() -> int:
         selected_bundles = validate_models(manifest, expected_locations=locations)
         for model_key, run_key, location_id in selected_bundles:
             validate_bundle(manifest, model_key, run_key, location_id)
-        validate_map_product(manifest, "wind")
+        wind_step_url, wind_step_plain = validate_map_product(manifest, "wind")
+        validate_brotli_response(
+            wind_step_url,
+            expected_plain=wind_step_plain,
+            expected_content_type="application/octet-stream",
+            expected_cache_token="max-age=86400",
+            required=REQUIRE_BROTLI_DELIVERY,
+        )
         if os.environ.get("REQUIRE_WIND_DIRECTIONS", "false").lower() == "true":
             validate_wind_directions(manifest)
         validate_map_product(manifest, "sunshine")

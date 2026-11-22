@@ -26,8 +26,9 @@ hash and authoring revision.
 Retained exports never advertise locations removed from the current catalog;
 their existing files remain subject to normal run retention.
 `Dockerfile.regions` overlays the catalog, completeness guards, chunk settings,
-retention index and range compression policy on the deployed reuse image,
-without dependency changes.
+retention index, Brotli precompression (`brotli==1.1.0`), and range compression
+policy on the deployed reuse image. Keep `PRECOMPRESS_VALUE_TILES=false` so
+value-tile sidecars never exceed model-reuse receipt file/size limits.
 
 Verified 2026-11-07: this runtime is the primary forecast publisher, executed
 by `Hetzner_Server/backend-coordinator`. The coding-server forecast timer is
@@ -115,8 +116,12 @@ image, preserving its dependencies. Push the source revision before deployment.
 Change only `XCBENZ_FORECAST_IMAGE` in the weather Compose environment, verify the
 effective configuration differs only in that image, and preserve both execution
 gates. The coordinator reads the pin for each new job and needs no restart.
-For rollback, restore the preceding image pin, `xcbenz-forecast:audit-2e9e042288`.
-Its combined fingerprints safely reject version-2 identities and regenerate.
+For rollback of the Brotli regions overlay, restore the preceding active image
+pin, `xcbenz-forecast:names-144c40d5d7` (not `reuse-35275ec4e1`, which carries
+the older 140-location catalog, and not `audit-2e9e042288`). Restoring
+`names-144c40d5d7` also re-uploads the previous `.htaccess`; pause or align the
+GitHub Actions fallback during rollback so it does not re-upload the new
+`.htaccess` while old `.br` files remain in the volume.
 
 This image lets the weather server's durable backend coordinator probe source
 readiness and run one pinned forecast publication under the shared heavy-work

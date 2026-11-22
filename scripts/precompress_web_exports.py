@@ -11,12 +11,13 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import re
 import shutil
 import subprocess
 import sys
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Iterable
+from typing import Iterable, Iterator
 
 
 COMPRESSIBLE_EXTENSIONS = frozenset({".bin", ".xvt", ".json", ".geojson"})
@@ -34,6 +35,7 @@ SKIPPED_FILENAMES = frozenset({
     # Emagram profiles.bin files are read via HTTP Range requests on raw float32 offsets.
     "profiles.bin",
 })
+RUN_TAG_RE = re.compile(r"^\d{8}_\d{4}$")
 DEFAULT_MIN_BYTES = 1024
 DEFAULT_BROTLI_QUALITY = 5
 MIN_SAVINGS_RATIO = 0.95
@@ -55,6 +57,17 @@ class PrecompressResult:
 def precompression_enabled() -> bool:
     raw = os.getenv("PRECOMPRESS_WEB_EXPORTS", "true").strip().lower()
     return raw not in {"0", "false", "no", "off"}
+
+
+def is_run_scoped_path(relative: Path) -> bool:
+    """Return True when a path sits under a YYYYMMDD_HHMM forecast run folder.
+
+    Top-level mutable manifests (manifest.json, manifest.compact.json,
+    locations.json, *_maps/manifest*.json, etc.) are never mtime-reused so a
+    restored or hydrated file with an older mtime can never leave a stale .br
+    sidecar behind.
+    """
+    return any(RUN_TAG_RE.fullmatch(part) for part in relative.parts[:-1])
 
 
 def should_precompress_file(
@@ -83,6 +96,23 @@ def should_precompress_file(
     return path.stat().st_size >= min_bytes
 
 
+def _iter_managed_files(root: Path, *, include_value_tiles: bool) -> Iterator[Path]:
+    """Walk web_exports while pruning live-owned subtrees and (by default) value_tiles."""
+    for dirpath, dirnames, filenames in os.walk(root):
+        current = Path(dirpath)
+        if current == root:
+            dirnames[:] = sorted(
+                name
+                for name in dirnames
+                if name not in LIVE_OWNED_SUBTREES
+                and (include_value_tiles or name != "value_tiles")
+            )
+        else:
+            dirnames.sort()
+        for filename in sorted(filenames):
+            yield current / filename
+
+
 def _python_brotli_module():
     for module_name in ("brotli", "brotlicffi"):
         try:
@@ -102,10 +132,45 @@ def detect_brotli_encoder() -> str | None:
     return None
 
 
+def decompress_brotli_bytes(payload: bytes) -> bytes:
+    """Decode Brotli bytes using the first available backend."""
+    mod = _python_brotli_module()
+    if mod is not None:
+        return mod.decompress(payload)
+    if shutil.which("brotli"):
+        completed = subprocess.run(
+            ["brotli", "-d", "-c"],
+            input=payload,
+            check=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+        )
+        return completed.stdout
+    if shutil.which("node"):
+        completed = subprocess.run(
+            [
+                "node",
+                "-e",
+                "const zlib=require('node:zlib');const fs=require('node:fs');"
+                "process.stdout.write(zlib.brotliDecompressSync(fs.readFileSync(0)));",
+            ],
+            input=payload,
+            check=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+        )
+        return completed.stdout
+    raise RuntimeError("No Brotli decoder available (install python brotli/brotlicffi, brotli CLI, or node)")
+
+
 def _write_sidecar_atomic(sidecar: Path, payload: bytes) -> None:
     tmp = sidecar.with_name(sidecar.name + ".tmp")
-    tmp.write_bytes(payload)
-    os.replace(tmp, sidecar)
+    try:
+        tmp.write_bytes(payload)
+        os.replace(tmp, sidecar)
+    except Exception:
+        tmp.unlink(missing_ok=True)
+        raise
 
 
 def _compress_with_python_brotli(
@@ -271,19 +336,19 @@ def _compress_with_node(
     )
 
 
-def _prune_orphaned_sidecars(root: Path, *, include_value_tiles: bool) -> int:
+def cleanup_precompressed_sidecars(root: Path, *, include_value_tiles: bool = False) -> int:
+    """Remove all managed .br and leftover .br.tmp sidecars outside live-owned subtrees.
+
+    Used when PRECOMPRESS_WEB_EXPORTS is disabled or no Brotli encoder is
+    available so Apache never serves stale manifests pointing at deleted runs.
+    """
+    resolved_root = root.resolve()
+    if not resolved_root.exists():
+        return 0
     removed = 0
-    for sidecar in root.rglob("*.br"):
-        if not sidecar.is_file():
-            continue
-        relative = sidecar.relative_to(root)
-        if relative.parts and relative.parts[0] in LIVE_OWNED_SUBTREES:
-            continue
-        source = sidecar.with_name(sidecar.name[:-3])
-        if not source.is_file() or not should_precompress_file(
-            source, root, min_bytes=0, include_value_tiles=include_value_tiles
-        ):
-            sidecar.unlink(missing_ok=True)
+    for path in _iter_managed_files(resolved_root, include_value_tiles=include_value_tiles):
+        if path.name.endswith((".br", ".br.tmp")) and path.is_file():
+            path.unlink(missing_ok=True)
             removed += 1
     return removed
 
@@ -302,22 +367,21 @@ def precompress_web_exports(
     if not resolved_root.exists():
         return PrecompressResult(None, 0, 0, 0, 0, 0, 0, 0, skipped_no_encoder=False)
 
-    removed_orphans = _prune_orphaned_sidecars(
-        resolved_root, include_value_tiles=include_value_tiles
-    )
-
     chosen_encoder = encoder or detect_brotli_encoder()
     if not chosen_encoder:
         if require_encoder:
             raise RuntimeError(
                 "No Brotli encoder available (install python brotli/brotlicffi, brotli CLI, or node)"
             )
+        removed_all = cleanup_precompressed_sidecars(
+            resolved_root, include_value_tiles=include_value_tiles
+        )
         return PrecompressResult(
             encoder=None,
             scanned_files=0,
             compressed_files=0,
             reused_files=0,
-            removed_orphans=removed_orphans,
+            removed_orphans=removed_all,
             skipped_incompressible=0,
             source_bytes=0,
             compressed_bytes=0,
@@ -329,8 +393,24 @@ def precompress_web_exports(
     reused_source_bytes = 0
     reused_compressed_bytes = 0
     scanned_files = 0
+    removed_orphans = 0
 
-    for path in sorted(resolved_root.rglob("*")):
+    for path in _iter_managed_files(resolved_root, include_value_tiles=include_value_tiles):
+        if path.name.endswith(".br.tmp"):
+            path.unlink(missing_ok=True)
+            removed_orphans += 1
+            continue
+        if path.name.endswith(".br"):
+            if not path.is_file():
+                continue
+            source = path.with_name(path.name[:-3])
+            if not source.is_file() or not should_precompress_file(
+                source, resolved_root, min_bytes=0, include_value_tiles=include_value_tiles
+            ):
+                path.unlink(missing_ok=True)
+                removed_orphans += 1
+            continue
+
         if not should_precompress_file(
             path,
             resolved_root,
@@ -340,7 +420,8 @@ def precompress_web_exports(
             continue
         scanned_files += 1
         sidecar = Path(f"{path}.br")
-        if sidecar.is_file():
+        relative = path.relative_to(resolved_root)
+        if is_run_scoped_path(relative) and sidecar.is_file():
             src_stat = path.stat()
             br_stat = sidecar.stat()
             if br_stat.st_size > 0 and br_stat.st_mtime_ns >= src_stat.st_mtime_ns:
@@ -422,7 +503,7 @@ def main(argv: Iterable[str] | None = None) -> int:
     if result.skipped_no_encoder:
         print(
             "[precompress] Skipped Brotli sidecars: no Brotli encoder found "
-            f"(removed_orphans={result.removed_orphans})",
+            f"(removed_sidecars={result.removed_orphans})",
             flush=True,
         )
         return 0

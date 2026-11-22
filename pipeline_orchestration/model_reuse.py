@@ -25,6 +25,7 @@ REQUIRED_ROOTS = PRODUCT_ROOTS[:7]
 MAX_RECEIPT_BYTES = 32 * 1024 * 1024
 # A full CH2 run currently includes about 112,500 value tiles plus other
 # products. Keep the independent 32 MiB serialized receipt limit as well.
+# Keep PRECOMPRESS_VALUE_TILES=false so tile sidecars cannot push CH2 past MAX_FILES.
 MAX_FILES = 200000
 MODEL_FIELDS = {"ch1": "runs", "ch2": "runs_ch2"}
 
@@ -77,6 +78,7 @@ def generation_identities(
     prefixes = (
         "CH1_", "CH2_", "ENABLE_", "WIND_", "RAIN_", "SUNRAIN_", "SUNSHINE_",
         "CLOUD_", "VALUE_", "REQUIRE_", "WEB_", "EMAGRAM_", "GRIB_", "ECCODES_",
+        "PRECOMPRESS_",
     )
     policy = {key: value for key, value in env.items() if key.startswith(prefixes)}
     for key in ("CH1_RUN_TAG", "CH2_RUN_TAG"):
