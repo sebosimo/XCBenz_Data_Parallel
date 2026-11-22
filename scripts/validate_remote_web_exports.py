@@ -198,6 +198,7 @@ def validate_brotli_response(
     if not encodings:
         if required:
             raise ValidationError(f"{url} did not return Content-Encoding: br when requested")
+        log(f"brotli not active: {url} returned uncompressed (Content-Encoding absent)")
         return False
     if encodings != ["br"]:
         raise ValidationError(f"{url} returned unexpected Content-Encoding {encodings!r}; expected ['br']")

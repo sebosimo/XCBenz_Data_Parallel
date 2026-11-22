@@ -417,6 +417,11 @@ def precompress_web_exports(
             min_bytes=min_bytes,
             include_value_tiles=include_value_tiles,
         ):
+            # If an eligible file shrunk below min_bytes, remove any stale sidecar.
+            stale_sidecar = Path(f"{path}.br")
+            if stale_sidecar.is_file():
+                stale_sidecar.unlink(missing_ok=True)
+                removed_orphans += 1
             continue
         scanned_files += 1
         sidecar = Path(f"{path}.br")
